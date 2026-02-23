@@ -1,0 +1,282 @@
+﻿Aaron Bastian — Complete Career Corpus (Resume/ATS Source)
+0) Identity + Links
+* Name: Aaron Bastian
+* Email: aaronbastian31@gmail.com
+* LinkedIn: www.linkedin.com/in/aaron-c-bastian
+* GitHub: github.com/ACB-prgm
+* YouTube (personal): UCEyzutdxmqyZuMqXPVT8ziA
+* Location: Los Angeles Metropolitan Area (work in Vernon, CA)
+1) Current Professional Positioning (High-Level)
+Solutions Architect / Automation & Improvement / Business Systems Analyst with deep hands-on delivery across:
+* Microsoft Power Platform (Power Apps, Power Automate, Power BI)
+* Python-based analytics and automation (data pipelines, OCR, APIs, ML)
+* Enterprise process design and system integration (HR/ADP, D365FO, SharePoint, ticketing, e-sign, external data providers)
+Core theme: turn messy human workflows into auditable systems; reduce labor, increase visibility, and connect operational processes to trustworthy analytics.
+2) Skills Inventory (with Self-Assessed Depth)
+2.1 Python (6+ years) — Advanced
+Primary uses: automation, analytics, ETL, dashboards/apps, OCR, lightweight ML, APIs.
+* Data/Analytics: Pandas, SciPy, Matplotlib; “basic data analytics” (practical statistics, cleaning, transformations, visualization)
+* Machine Learning (applied):
+   * Regression
+   * Classification / categorization
+   * NLP / sentiment analysis
+* OCR:
+   * Traditional OCR tooling + “LLM OCR” style extraction workflows (document → structured JSON)
+* Web/App Dev:
+   * Flask (simple API development, routing server for smart home / intent forwarding)
+   * Streamlit (analytics engine / internal app-like dashboards)
+* Integration patterns:
+   * API ingestion (e.g., Dropbox API; external datasets)
+   * Web scraping at scale (thousands of pages → structured tables)
+* Representative Python work (non-GT):
+   * Research analyst work (NYIT School of Medicine): analytics, stats, visualization
+   * Freelance analytics engine (SixTwentySix / “626 Productions”): Dropbox → OCR → standardized data model → interactive visual app (Streamlit/Matplotlib)
+2.2 SQL — Basic/Functional
+* Writes SQL when needed; comfortable with fundamentals (filters, joins, grouping, basic modeling).
+* Pragmatic approach: often accelerates drafting via LLM, then validates logic/results.
+2.3 Microsoft Power Platform — Primary Professional Toolset
+* Power Automate (3+ years) — Expert
+   * Complex workflow automation, approvals, notifications, integrations, ETL orchestration, scheduled reporting
+* Power Apps Canvas (3+ years) — Expert
+   * Multi-screen business apps, role-based UX, data validation, guided submission flows
+* Power BI (2+ years) — Intermediate
+   * Semantic modeling, DAX as needed, multi-audience dashboards, automated distribution patterns
+* Power Apps Model-Driven (~1 year) — Intermediate
+* Dataverse (~1 year) — Intermediate
+   * Security/roles, relational modeling, app integration patterns
+* Copilot Studio — Working knowledge / applied
+   * Building copilots on top of curated organizational knowledge bases
+2.4 Azure / Data Engineering
+* Azure Synapse Pipelines (~1 year) — Intermediate
+   * ETL orchestration, loading into SQL tables, operationalizing refresh flows
+2.5 Additional Skill Themes (Cross-Cutting)
+* Process design (approval chains, escalation, auditability, exception handling)
+* Integration and systems thinking (HRIS ↔ apps ↔ analytics ↔ ERP)
+* Documentation/version control concepts applied to process documentation
+* Stakeholder translation: converting operations/finance/HR pain into technical deliverables
+3) Tools / Platforms / Systems (Keywords for Matching)
+Include these for ATS matching and for resume tailoring by job target.
+* Microsoft: Power Apps, Power Automate, Power BI, Dataverse, SharePoint, Copilot Studio
+* ERP: Dynamics 365 Finance & Operations (D365FO)
+* HRIS / Timekeeping: ADP (time/attendance data integrations; downstream reporting)
+* Ticketing / ITSM: HALO (ticket creation + inventory integration)
+* E-sign: Adobe Sign
+* External Data Provider: SPINS (API ingestion + historical loads + ongoing refresh)
+* Python stack: Pandas, SciPy, Matplotlib, Flask, Streamlit
+* Other: OCR pipelines, LLM-based extraction, web scraping, API design
+4) Professional Experience (Timeline-Accurate Backbone)
+GT’s Living Foods — Vernon, CA
+Associate Business System Analyst — Sep 2024 to Present
+Automation and Improvement Analyst — Sep 2023 to Sep 2024
+Role summary: Own end-to-end delivery of internal systems and automations spanning IT, HR, Sales, Finance, and Operations. Build apps, automate approvals, integrate enterprise systems, and connect operational workflows to reliable reporting.
+Major Systems/Projects at GT’s Living Foods (structured for reuse)
+4.1 Temp Management System (Temp Ordering + Termination + Conversion Eligibility)
+Business problem: Temp labor requests and offboarding lived in email; low visibility; missed steps; weak audit trail; conversion timing created avoidable agency royalty costs.
+Solution: Power Apps + Power Automate system enabling:
+* Manager temp requests → approval routing + manpower planning check
+* Approved requests → automated outreach to talent agencies with relevant details
+* Termination requests → HR approval + automated agency notification
+* Hour tracking consolidation → automatic conversion eligibility detection
+* Notifications to HR/managers when temps qualify; formal submission + approvals for conversion
+Integrations: ADP (hours/time data)
+Value/impact themes: reduces administrative churn, improves auditability, controls cost leakage via timely conversions, centralizes temp workforce management.
+(LinkedIn-aligned related entries)
+   * “Automated Temp Ordering System” (Power Apps/Power Automate) — ~1,900 hours/year administrative savings at $40/hr
+   * “Temp-to-Permanent Employee Conversion System” — consolidated hours DB + eligibility calculation + manager-facing app; ~400 hours/year savings at $40/hr
+4.2 Automated Overtime Reporting (ADP → SQL → Power BI → Daily Emails)
+Business problem: Managers needed timely labor/overtime visibility; manual reporting didn’t scale.
+Solution: Built an ETL flow that:
+   * Extracts hours data from ADP on cadence
+   * Uses Power Automate + Synapse Pipelines to load/maintain a SQL table
+   * Powers a Power BI report and generates automated daily email reports to managers
+Value/impact themes: proactive labor management, consistent metrics, reduced manual reporting.
+4.3 Internal IT Hardware & Software Request System (with Automated Approvals)
+Business problem: Hardware/software requests required manual routing; limited inventory transparency during approvals; downstream ticket creation required extra steps.
+Solution: Power Apps + Power Automate system enabling:
+      * Request intake (hardware/software) with structured fields
+      * Integration to IT inventory data (from ticketing system) to show selectable options
+      * Approval workflows that display inventory levels to approvers at decision-time
+      * Automated ticket creation in HALO upon approval
+Value/impact themes: faster fulfillment, better governance, fewer back-and-forth loops, stronger audit trail.
+4.4 Sales Promotion Planning System (App + Approvals + Guideline Enforcement + D365FO Posting)
+Business problem: Promotion planning and execution requires tight coordination (Sales/Finance/Marketing/ERP). Off-the-shelf alternatives were expensive and less tailored.
+Solution: Full-feature system built with Power Apps, Power Automate, Dataverse, Power BI, and D365FO:
+         * Sales creates promotions; statuses tracked end-to-end
+         * Promotional guideline checks enforced (validation gates + structured exceptions)
+         * Approval workflows (finance review, send back for revisions, etc.)
+         * Automatic creation of trade allowance agreements in D365FO upon approval
+         * “Budget snapshot” capability: finance can capture full dataset snapshots at points in time for comparison
+         * BI dashboard provides department-specific views (finance, marketing, sales, ERP)
+         * Tracks prorated spends, timing/Gantt-style views, and deduction progress
+Value/impact themes: governance + speed, reduced errors, shared source of truth, and high ROI vs commercial solutions (“similar systems ~$200–300k”).
+4.5 HR Offboarding & Onboarding Application
+Business problem: HR needed formal tracking and workflow management for onboarding/offboarding with clear progress visibility and approvals.
+Solution: Power Apps app supporting:
+            * Structured task tracking and status visibility
+            * Approvals where required
+            * Automation for document-filling steps associated with onboarding/offboarding
+Value/impact themes: reduced misses, standardized execution, audit-ready processes.
+4.6 Document Management System (Process Docs + Versioning + Approval + AI Readiness)
+Business problem: Process documentation scattered; weak version control; hard discoverability; inconsistent templates; “tribal knowledge” risk.
+Solution: Power Apps + SharePoint-based system providing:
+               * Submission through formal document templates
+               * Approval workflow before publication
+               * Standardized filing structure (by department + document type) AND tabular list views for fast discovery
+               * Version history with comments, document IDs, approval dates, and tags
+               * AI readiness through strict categorization and metadata hygiene
+               * Integrated Copilot: employees can ask questions; copilot finds relevant docs and summarizes the relevant sections
+Value/impact themes: institutional memory, compliance, faster onboarding/training, searchable knowledge base.
+4.7 Contract Management Systems (HR + Marketing)
+Business problem: Contracts needed controlled intake, signature workflow, storage, and renewal/expiration tracking.
+Solution: Power Apps + Power Automate systems enabling:
+                  * Contract request intake
+                  * Integration with Adobe Sign for signatures
+                  * Automated saving of executed documents
+                  * Expiration tracking + notifications to relevant parties
+Value/impact themes: reduced risk, fewer missed renewals, centralized control.
+4.8 SPINS Data Integration + Analytics Products (PPA + Competitor Probability Model)
+Business problem: External market/promotions data needed to be operationalized internally for ongoing analysis and decision support.
+Solution: Built ingestion + refresh workflows:
+                     * Integrated SPINS dataset via API
+                     * Power Automate + Synapse Pipelines ETL to load full historical dataset and keep it current
+                     * Built analytical datasets including:
+                     * PPA (Post Promotion Analysis) planned vs actuals dataset: lift, ROI, incremental sales
+                     * Competitor dataset that predicts competitor promotion periods using probability distributions over store/week/product behavior
+Value/impact themes: better planning, data-driven promo strategy, competitive intelligence.
+4.9 “Synergy Atlas” Copilot (AI Idea Intake + Executive Summaries)
+Business problem: AI ideas arrive unstructured; difficult to prompt for sufficient detail; hard to summarize for exec review.
+Solution: Custom copilot functioning as a guided “chatbot form”:
+                        * Probes users for complete, requirement-aligned submissions
+                        * Saves outputs to a database for review
+                        * Summarizes themes/results for executive visibility
+Value/impact themes: higher-quality intake, scalable ideation pipeline, better prioritization.
+4.10 ERICA — Custom GPT for Promotion Planning
+Purpose: Decision-support assistant grounded in internal datasets (PPA + competitor models).
+Capabilities: Helps users plan promotions by recommending timing/type/rates and other strategy suggestions based on historic performance + competitor signals.
+4.11 JAMIE — Deduction Matching System (LLM OCR + Matching Algorithm + D365FO Creation)
+Business problem: Manual deduction matching is slow and error-prone; customer backup documents vary widely in format.
+Solution: Automated pipeline:
+                           * Finance uploads customer backup PDFs
+                           * AI/LLM-based OCR extracts key fields into JSON (robust across novel templates)
+                           * Matching algorithm identifies best-fit deductions; system auto-creates deduction in D365FO when confidence is high
+                           * Low-confidence cases become drafts for human review
+Value/impact themes: accelerates deduction processing, reduces template brittleness, improves throughput and accuracy.
+4.12 Maintenance Shift Reporting App (Downtime Events)
+(LinkedIn-backed)
+                              * Built a Power App for maintenance staff to report equipment downtime events
+                              * Integrated with dashboards for real-time utilization and analysis
+4.13 Automated Meal Penalty Calculation (California Labor Rules)
+(LinkedIn-backed)
+                              * Python program to calculate meal penalties using ADP timesheet data
+                              * 2,000 hours/year administrative time savings at ~$40/hr
+________________
+
+
+SixTwentySix — Los Angeles, CA
+Data Engineer / Analyst — Jun 2023 to Sep 2023
+Role summary: Built a data aggregation + visualization solution (hosted on AWS) to improve budget management and cost savings.
+Key responsibilities/achievements (LinkedIn-backed):
+                              * Built web application that automatically extracts project budget data from Dropbox via API
+                              * Transformed disparate documents into standardized formats for reliable analysis
+                              * Created interactive, auto-updating dashboard (Looker noted in LinkedIn)
+                              * Implemented near-real-time updates via webhooks as new content arrives in Dropbox
+Additional project detail (your notes):
+                              * OCR pipeline as part of document ingestion
+                              * Streamlit + Matplotlib style “Python-built BI app”
+                              * Large-scale web scraping to build structured datasets
+                              * Period where programming skills accelerated significantly (“came into my own”)
+________________
+
+
+New York Institute of Technology — Old Westbury, NY
+Research Assistant — Aug 2021 to Jul 2022
+Lab of Dr. Granatosky | Anatomy Dept.
+Work themes (LinkedIn-backed + your notes):
+                              * Investigated evolutionary origins of gait using bio-inspired robotics
+                              * Analyzed gait/force data and produced animated graphs in Python
+                              * Created heat maps of sightings data using Google Maps API
+                              * Web scraped thousands of pages of data points using Python
+                              * Programmed robotic components (neck of a tree-climbing parrot-inspired robot)
+________________
+
+
+Project Malawi — University of Wisconsin–Madison
+Co-President — May 2018 to May 2021
+VP of Finance and Design — Jan 2017 to May 2018
+Leadership + operations:
+                              * Fundraised and coordinated shipment/distribution of medical supplies
+                              * Helped organize distribution of ~ $1M worth of aid to hospitals in Malawi
+                              * Led meetings, delegated tasks, maintained org infrastructure
+                              * Raised >$17K toward sending supplies (as VP)
+                              * Designed/managed organization website; ran fundraising + social marketing
+________________
+
+
+Rescue Services International, Ltd. — Greater Los Angeles Area
+Emergency Medical Technician (EMT) — Sep 2019 to Jan 2020
+                              * Patient transport; BLS assessments/monitoring; detailed care reporting; vehicle readiness
+________________
+
+
+University of Wisconsin–Madison — Madison, WI
+Teaching Assistant — Sep 2018 to Dec 2018
+                              * Delivered microbiology lectures; graded; managed course records; strong feedback noted
+________________
+
+
+Mae Fah Luang University — Chiang Rai, Thailand
+Research Assistant — May 2018 to Aug 2018
+                              * Built experiments to increase research throughput; cross-cultural collaboration; co-authored article submitted for publication
+________________
+
+
+Wisconsin Academy of Nutrition and Dietetics (WAND) — Madison, WI
+Board Member + Social Media Coordinator — Aug 2017 to May 2018
+                              * Board meetings on infrastructure + advocacy; ran org Twitter; marketing strategy work
+________________
+
+
+USC School of Gerontology — Los Angeles, CA
+Research Assistant (Oncological Research) — May 2015 to Aug 2015
+                              * Lab operations, aseptic technique, team coordination, equipment management
+5) Education
+                              * University of Wisconsin–Madison — B.S. Microbiology (2014–2019)
+                              * Flatiron School — Certificate in Data Science / Computer Science (Aug 2022–May 2023)
+                              * New York Institute of Technology — Osteopathic Medicine/Osteopathy (Sep 2021–Jul 2022)
+                              * Madison Area Technical College — EMT Basic (2019)
+6) Certifications
+                              * GT’s Lean Six Sigma White Belt
+                              * EMT-B (Emergency Medical Technician Basic)
+7) Publications
+                              * “Mobility Impairment and Life Satisfaction in the Northern Region of Malawi” — Aaron Bastian
+8) Personal / Non-Employer Technical Projects
+8.1 Custom Home Assistant Voice Pipeline (Personal)
+Goal: End-to-end voice assistant pipeline integrated with smart home control + local LLM inference.
+Implementation: Python + Bash
+Pipeline: Wake word + VAD → ASR → local LLM inference/routing → TTS → smart home actions
+Value themes: low-latency, privacy-preserving local inference, custom orchestration and routing server patterns.
+9) “Impact Metrics” Inventory (Use as reusable resume bullets)
+(Only metrics explicitly stated in your materials)
+                              * ~1,900 hours/year admin time saved via automated temp ordering system (priced at ~$40/hr)
+                              * >2,000 hours/year saved via automated meal penalty calculations (priced at ~$40/hr)
+                              * ~400 hours/year saved via temp-to-perm conversion automation (priced at ~$40/hr)
+                              * Promotion planning platform positioned as alternative to $200–300k commercial systems (internal build) (self-reported)
+10) Keyword Buckets (for Resume Tailoring)
+10.1 Automation / Process
+workflow automation, approvals, governance, audit trail, escalation, exception handling, operational efficiency, SOP standardization, documentation systems, intake forms, request management
+10.2 Data / BI / Analytics
+ETL, data integration, SQL tables, semantic modeling, dashboards, reporting automation, planned vs actuals, ROI, lift, incremental sales, competitive intelligence, probability distribution modeling
+10.3 Enterprise Systems / Integration
+D365FO, ADP, SharePoint, Dataverse, HALO ITSM ticketing, Adobe Sign, API integrations, webhooks, authentication, data refresh
+10.4 AI / Applied ML
+LLM OCR, document-to-JSON extraction, copilots, knowledge base grounding, prompt-guided intake, ML classification/regression, NLP/sentiment
+11) Resume-Ready Narrative Snippets (Raw Material)
+11.1 One-sentence headline variants
+                              * Solutions Architect specializing in Power Platform + Python automation, integrating HRIS/ERP/data sources into auditable workflows and decision-grade analytics.
+                              * Business Systems Analyst delivering end-to-end internal products (apps, automations, BI) across HR, Finance, Sales, and Operations with measurable efficiency gains.
+11.2 Core value proposition (longer)
+I build internal systems that replace email-driven workflows with governed, trackable applications—integrating ADP, D365FO, SharePoint/Dataverse, and external datasets into automated processes and analytics. My work focuses on scalability, auditability, and making cross-department operations visible and predictable.
+________________
+
+
+End of corpus.
