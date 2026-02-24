@@ -2,18 +2,13 @@ from reportlab.platypus import (
 	SimpleDocTemplate,
 	Paragraph,
 	Spacer,
-	HRFlowable,
-	ListFlowable,
-	ListItem
+	HRFlowable
 )
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_LEFT
-from reportlab.lib.pagesizes import A4
+from dataclasses import fields
 import re
 
-from resume_theme import ResumeTheme
+from resume_theme import ResumeTheme, ParagraphConfig
 
 
 class ResumeRenderer:
@@ -22,33 +17,35 @@ class ResumeRenderer:
 		self.theme = theme
 		self.styles = self._build_styles()
 
+	def _config_kwargs(self, config_obj, skip_none: bool = True):
+		kwargs = {}
+		for field in fields(config_obj):
+			value = getattr(config_obj, field.name)
+			if skip_none and value is None:
+				continue
+			kwargs[field.name] = value
+		return kwargs
+
 	def _build_styles(self):
 		styles = {}
 
 		styles["normal"] = ParagraphStyle(
 			"Normal",
-			fontName=self.theme.normal.font_name,
-			fontSize=self.theme.normal.font_size,
-			leading=self.theme.normal.leading,
-			spaceBefore=self.theme.normal.space_before,
-			spaceAfter=self.theme.normal.space_after,
-			leftIndent=self.theme.normal.left_indent,
-			rightIndent=self.theme.normal.right_indent,
-			firstLineIndent=self.theme.normal.first_line_indent,
-			alignment=self.theme.normal.alignment
+			**self._config_kwargs(self.theme.normal)
 		)
 
-		styles["h2"] = ParagraphStyle(
-			"H2",
-			parent=styles["normal"],
-			fontName=self.theme.h2.font_name,
-			fontSize=self.theme.h2.font_size,
-			leading=self.theme.h2.leading,
-			spaceAfter=self.theme.h2.space_after,
-			keepWithNext=self.theme.h2.keep_with_next
-		)
+		# Auto-register any additional ParagraphConfig fields on the theme.
+		for name, config in vars(self.theme).items():
+			if name == "normal" or not isinstance(config, ParagraphConfig):
+				continue
+			styles[name] = ParagraphStyle(
+				name.upper(),
+				parent=styles["normal"],
+				**self._config_kwargs(config)
+			)
 
-		styles["bullet"] = styles["normal"]
+		if "bullet" not in styles:
+			styles["bullet"] = styles["normal"]
 
 		return styles
 
@@ -72,29 +69,28 @@ class ResumeRenderer:
 		if not line:
 			return None
 
-		# Section Heading
-		if line.startswith("## "):
-			return ("section", line[3:].strip())
+		# Heading (##..######) maps to style keys h2..h6.
+		heading_match = re.match(r"^(#{2,6})\s+(.*)$", line)
+		if heading_match:
+			level = len(heading_match.group(1))
+			return (f"h{level}", heading_match.group(2).strip())
 
 		# Horizontal rule
 		if line == "---":
 			return ("hr", None)
 
 		# Bullet
-		if line.startswith("- "):
+		if line.startswith("- ") or line.startswith("* "):
 			return ("bullet", line[2:].strip())
 
 		# Normal paragraph
-		return ("paragraph", line)
+		return ("normal", line)
 
 	def render(self, markdown_text: str, output_path: str):
+		doc_kwargs = self._config_kwargs(self.theme.doc)
 		doc = SimpleDocTemplate(
 			output_path,
-			pagesize=self.theme.doc.page_size,
-			leftMargin=self.theme.doc.left_margin,
-			rightMargin=self.theme.doc.right_margin,
-			topMargin=self.theme.doc.top_margin,
-			bottomMargin=self.theme.doc.bottom_margin
+			**doc_kwargs
 		)
 
 		story = []
@@ -111,31 +107,32 @@ class ResumeRenderer:
 
 			# Flush bullet buffer if switching types
 			if type_ != "bullet" and bullet_buffer:
-				story.append(
-					ListFlowable(
-						[ListItem(Paragraph(item, self.styles["normal"])) for item in bullet_buffer],
-						bulletType='bullet'
-					)
-				)
-				story.append(Spacer(1, self.theme.section_spacer.height))
+				for item in bullet_buffer:
+					story.append(Paragraph(item, self.styles["bullet"], bulletText="\u2022"))
+				# If the next block is a section heading (h2), let heading spacing handle it.
+				if type_ != "h2":
+					story.append(Spacer(1, self.theme.section_spacer.height))
 				bullet_buffer = []
 
-			if type_ == "section":
-				story.append(Paragraph(content, self.styles["h2"]))
-				story.append(
-					HRFlowable(
-						thickness=self.theme.section_rule.thickness,
-						width=self.theme.section_rule.width,
-						spaceBefore=self.theme.section_rule.space_before,
-						spaceAfter=self.theme.section_rule.space_after
+			if type_.startswith("h") and type_[1:].isdigit():
+				style_name = type_ if type_ in self.styles else "normal"
+				story.append(Paragraph(content, self.styles[style_name]))
+
+				# Keep current behavior: only h2 headings get divider lines.
+				if type_ == "h2":
+					story.append(
+						HRFlowable(
+							**self._config_kwargs(self.theme.section_rule)
+						)
 					)
-				)
 
 			elif type_ == "hr":
+				hr_kwargs = self._config_kwargs(self.theme.section_rule)
+				hr_kwargs.pop("spaceBefore", None)
+				hr_kwargs.pop("spaceAfter", None)
 				story.append(
 					HRFlowable(
-						thickness=self.theme.section_rule.thickness,
-						width=self.theme.section_rule.width
+						**hr_kwargs
 					)
 				)
 
@@ -143,17 +140,13 @@ class ResumeRenderer:
 				formatted = self._convert_links(self._convert_bold(content))
 				bullet_buffer.append(formatted)
 
-			elif type_ == "paragraph":
+			elif type_ == "normal":
 				formatted = self._convert_links(self._convert_bold(content))
 				story.append(Paragraph(formatted, self.styles["normal"]))
 
 		# Flush remaining bullets
 		if bullet_buffer:
-			story.append(
-				ListFlowable(
-					[ListItem(Paragraph(item, self.styles["normal"])) for item in bullet_buffer],
-					bulletType='bullet'
-				)
-			)
+			for item in bullet_buffer:
+				story.append(Paragraph(item, self.styles["bullet"], bulletText="\u2022"))
 
 		doc.build(story)

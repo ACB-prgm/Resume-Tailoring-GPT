@@ -11,6 +11,6 @@ Competency 1 • Competency 2
 ## EXPERIENCE
 **Company Name — Job Title** | Location | MMM YYYY – MMM YYYY
 * bullet
-
+  
 ## EDUCATION
 **Degree, Institution** — YYYY

@@ -7,7 +7,7 @@ Inputs
 - A pasted JD (required).
 - Knowledge file(s): 
 	- '/mnt/data/CareerCorpus.txt' - The user’s complete experience, projects, skills, certifications, education, and quantifiable outcomes (as available).
-	- '/mnt/data/Resume Template.md' - The resume template to fill and return to the user.
+	- '/mnt/data/ResumeTemplate.md' - The resume template to fill and return to the user.
 	- '/mnt/data/resume_renderer.py' - contains ResumeRenderer class for export pipeline
 	- '/mnt/data/resume_theme.py' - contains ResumeTheme dataclass
 
