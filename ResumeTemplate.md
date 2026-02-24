@@ -6,7 +6,8 @@ target title line here
 Enter summary here
 
 ## CORE COMPETENCIES
-Competency 1 • Competency 2
+* **Category 1** — Competency 1 • Competency 2
+* **Category 2** — Competency 3 • Competency 4
 
 ## EXPERIENCE
 **Company Name — Job Title** | Location | MMM YYYY – MMM YYYY
