@@ -1,16 +1,16 @@
-## **AARON BASTIAN**  
+### AARON BASTIAN  
 Los Angeles, CA | (818) 282-3868 | aaronbastian31@gmail.com | [LinkedIn](https://www.linkedin.com/in/aaron-c-bastian) | [GitHub](https://github.com/ACB-prgm)  
 target title line here
 
-## **SUMMARY**
+## SUMMARY
 Enter summary here
 
-## **CORE COMPETENCIES**
+## CORE COMPETENCIES
 Competency 1 • Competency 2
 
-## **EXPERIENCE**
+## EXPERIENCE
 **Company Name — Job Title** | Location | MMM YYYY – MMM YYYY
 * bullet
 
-## **EDUCATION**
+## EDUCATION
 **Degree, Institution** — YYYY
