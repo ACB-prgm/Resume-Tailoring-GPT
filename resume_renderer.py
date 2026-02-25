@@ -146,13 +146,13 @@ class ResumeRenderer:
 
 		return story
 
-	def exceeds_one_page(self, markdown_text: str) -> bool:
-		"""Return True when this markdown would render to more than one page."""
+	def exceeds_one_page(self, markdown_text: str) -> int:
+		"""Return the rendered page count for this markdown."""
 		doc_kwargs = self._config_kwargs(self.theme.doc)
 		buffer = BytesIO()
 		doc = SimpleDocTemplate(buffer, **doc_kwargs)
 		doc.build(self._build_story(markdown_text))
-		return getattr(doc, "page", 1) > 1
+		return int(getattr(doc, "page", 1))
 
 	def render(self, markdown_text: str, output_path: str):
 		doc_kwargs = self._config_kwargs(self.theme.doc)

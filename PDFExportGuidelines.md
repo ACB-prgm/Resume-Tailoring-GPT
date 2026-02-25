@@ -16,8 +16,11 @@ from resume_theme import ResumeTheme
 
 theme = ResumeTheme()
 renderer = ResumeRenderer(theme)
+page_count = renderer.exceeds_one_page(markdown_text)
 
-if renderer.exceeds_one_page(markdown_text):
+max_pages = 1  # set to 2 only for approved senior-scope resumes
+
+if page_count > max_pages:
     # Do not export yet; return to editing and shorten content.
     ...
 else:
@@ -25,12 +28,16 @@ else:
 ```
 
 ## Page-length enforcement
-- `renderer.exceeds_one_page(markdown_text)` must run before export.
-- If `True`, do not export.
-- Reduce content and re-check until it returns `False`.
+- `renderer.exceeds_one_page(markdown_text)` now returns an integer page count.
+- Set `max_pages` to:
+  - `1` for default/mid-level roles
+  - `2` only when senior scope is explicitly allowed
+- If `page_count > max_pages`, do not export.
+- Reduce content and re-check until `page_count <= max_pages`.
 
 ## Output requirements
-- Format: single-page A4 PDF.
+- Format: A4 PDF.
+- Page target: 1 page by default; up to 2 pages only for approved senior-scope roles.
 - ATS-safe: no tables/columns/decorative layouts that hide critical text.
 - File naming:
   - `Aaron Bastian Resume - <TargetRole> - <CompanyIfKnown>.pdf`
