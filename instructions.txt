@@ -106,15 +106,23 @@ Failure behavior
 7) PDF Compilation Stage (Mandatory)
 - After the user confirms the canvas content is final, retrieve the exact markdown from canvas.
 - Use the provided python knowledge files.
-- Instantiate:
-	theme = ResumeTheme()
-	renderer = ResumeRenderer(theme)
-- Render using:
-	renderer.render(markdown_text, output_path)
+- Import
+	import sys
+	sys.path.append("/mnt/data")
+	from resume_renderer import ResumeRenderer
+	from resume_theme import ResumeTheme
+	- Instantiate:
+		theme = ResumeTheme()
+		renderer = ResumeRenderer(theme)
+	- Check page length BEFORE exporting:
+		if renderer.exceeds_one_page(markdown_text):
+			# Do not export yet. Reduce content until it fits on one page.
+			# Re-check with renderer.exceeds_one_page(markdown_text) after edits.
+			...
+	- Render using:
+		renderer.render(markdown_text, output_path)
 - Enforce:
-	- A4 page size
 	- Single-page output
-	- No layout modifications beyond ResumeTheme definitions
 	- ATS-safe formatting (no tables, columns, shapes, headers/footers for critical data)
 - File naming convention:
 	- “Aaron Bastian Resume - <TargetRole> - <CompanyIfKnown>.pdf”

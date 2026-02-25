@@ -6,6 +6,7 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import ParagraphStyle
 from dataclasses import fields
+from io import BytesIO
 import re
 
 from resume_theme import ResumeTheme, ParagraphConfig
@@ -86,13 +87,7 @@ class ResumeRenderer:
 		# Normal paragraph
 		return ("normal", line)
 
-	def render(self, markdown_text: str, output_path: str):
-		doc_kwargs = self._config_kwargs(self.theme.doc)
-		doc = SimpleDocTemplate(
-			output_path,
-			**doc_kwargs
-		)
-
+	def _build_story(self, markdown_text: str):
 		story = []
 		lines = markdown_text.split("\n")
 		bullet_buffer = []
@@ -149,4 +144,21 @@ class ResumeRenderer:
 			for item in bullet_buffer:
 				story.append(Paragraph(item, self.styles["bullet"], bulletText="\u2022"))
 
+		return story
+
+	def exceeds_one_page(self, markdown_text: str) -> bool:
+		"""Return True when this markdown would render to more than one page."""
+		doc_kwargs = self._config_kwargs(self.theme.doc)
+		buffer = BytesIO()
+		doc = SimpleDocTemplate(buffer, **doc_kwargs)
+		doc.build(self._build_story(markdown_text))
+		return getattr(doc, "page", 1) > 1
+
+	def render(self, markdown_text: str, output_path: str):
+		doc_kwargs = self._config_kwargs(self.theme.doc)
+		doc = SimpleDocTemplate(
+			output_path,
+			**doc_kwargs
+		)
+		story = self._build_story(markdown_text)
 		doc.build(story)
