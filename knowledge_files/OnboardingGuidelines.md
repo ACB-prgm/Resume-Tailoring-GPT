@@ -19,6 +19,18 @@ Start onboarding with this optional suggestion:
 - State clearly this step is optional.
 - Include privacy reminder: user should review/redact sensitive details before upload.
 
+## Uploaded-source ingestion receipt (required)
+- If user uploads corpus text, resume text, or LinkedIn PDF-derived text, read it before assessment.
+- Emit this receipt before any quality claim:
+
+```text
+INGESTION RECEIPT
+- source: <filename>
+- read_confirmed: yes
+- sections_detected: [profile, experience, projects, skills, ...]
+- gaps_detected: [missing dates, missing metrics, unknown employer/location, ...]
+```
+
 ## Guided interview sections (required)
 Collect structured data in this order if upload is missing or incomplete:
 1. Profile and contact basics
@@ -48,12 +60,16 @@ Collect structured data in this order if upload is missing or incomplete:
 ## Normalization and persistence
 1. Normalize all collected content into `career_corpus.json` schema shape.
 2. Initialize `preferences.json` with defaults if missing.
-3. Show a concise summary preview to user.
-4. Ask for explicit confirmation before first save.
-5. Validate both documents with `/mnt/data/knowledge_files/memory_validation.py` before writing.
-6. Persist only schema-valid JSON via memory repo upsert operations.
+3. Build a provenance ledger for each major section:
+- source basis is `uploaded_file`, `current_chat`, or `user_confirmed_correction`.
+4. Mark uncertain fields explicitly and request confirmation before persistence.
+5. Show a concise summary preview to user.
+6. Ask for explicit confirmation before first save.
+7. Validate both documents with `/mnt/data/knowledge_files/memory_validation.py` before writing.
+8. Persist only schema-valid JSON via memory repo upsert operations.
 
 ## Guardrails
 - Do not invent missing details.
 - Mark unknowns explicitly and continue onboarding.
+- Do not persist uncertain/inferred claims unless user confirms them.
 - If user declines onboarding, do not fabricate a corpus; proceed with limitations called out.

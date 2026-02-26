@@ -16,15 +16,19 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - If a JD requirement is unsupported, do not claim it.
 - Prefer recent, high-impact evidence.
 - Do not invent employers, titles, dates, metrics, tools, certs, or education.
+- Maintain an evidence ledger while drafting: `claim -> source -> section`.
+- Use provenance tags per claim: `corpus`, `current_chat`, or `user_confirmed_update`.
 - If the user shares relevant new facts that are not in corpus, ask whether to persist them to corpus memory before the session ends.
 - If `career_corpus.json` is missing, invalid, or schema-noncompliant, route to onboarding/repair before resume drafting.
 - Validate corpus/preferences with `/mnt/data/knowledge_files/memory_validation.py` before using them for drafting.
+- Block unsupported factual inserts unless user explicitly confirms and approves persistence path.
 
 ## Build workflow
 1) Evidence retrieval
 - Map each Tier 1 requirement to one or more proof points.
 - Map Tier 2 only where supported.
 - Keep a short evidence map used for section drafting.
+- Surface unsupported Tier 1 requirements as explicit gaps.
 
 2) Resume construction (ATS-safe)
 - Header:
@@ -61,6 +65,7 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
   - Summary
   - Core Competencies
   - First 2-3 bullets in most relevant role
+- Confirm every represented Tier 1 token has a linked evidence ledger entry.
 
 4) Length control before user review
 - Default target: one page.

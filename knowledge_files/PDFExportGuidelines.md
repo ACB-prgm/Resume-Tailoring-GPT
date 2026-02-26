@@ -54,3 +54,4 @@ else:
 ## Guardrails
 - Do not regenerate or rewrite resume content during export.
 - If page length fails, return to drafting stage and edit content first.
+- If export fails, return an immediate actionable recovery path in the same turn (no background retry promises).

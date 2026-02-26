@@ -1,67 +1,58 @@
 # Memory Persistence Guide
 
 ## Objective
-Persist long-term user memory in one fixed GitHub repository across sessions.
+Persist durable user memory safely in one fixed GitHub repository with strict validation and deterministic status reporting.
 
-## Fixed repository rule (mandatory)
-- Repository name is constant: `career-corpus-memory`
-- Do not create or use any other memory repository.
+## Fixed repository rule
+- Use only repository `career-corpus-memory`.
+- Do not create or read any alternative memory repository.
 
-## Required startup sequence
-1) Resolve authenticated user
-- Call `getAuthenticatedUser` and read login as `{owner}`.
+## Canonical memory files
+- `career_corpus.json`
+- `preferences.json`
 
-2) Ensure fixed memory repo exists
-- Call `getMemoryRepo` with `{owner}`.
-- If `404`, call `createMemoryRepo` with:
-  - `name`: `career-corpus-memory`
-  - `private`: `true`
-  - `auto_init`: `true`
+## Startup bootstrap (required)
+1. Resolve `{owner}` via `getAuthenticatedUser`.
+2. Check fixed repo via `getMemoryRepo`.
+3. If `404`, create via `createMemoryRepo` with fixed values:
+- `name=career-corpus-memory`
+- `private=true`
+- `auto_init=true`
+4. Optionally call `setMemoryRepoTopics` with `["career-corpus-memory"]`; continue if topic call fails.
+5. Check `career_corpus.json` and `preferences.json` existence via read endpoints.
+6. Report the canonical check line:
+- `Memory repo exists: Yes/No; career_corpus.json exists: Yes/No.`
+7. Emit the required status block from `MemoryStateModel.md`.
 
-3) Optional topic tagging (no extra scopes beyond `repo`)
-- Call `setMemoryRepoTopics` with:
-  - `names`: `["career-corpus-memory"]`
-- If topic update fails, continue without blocking core workflow.
+## Validation + preflight sequence (hard fail)
+Before **any** write:
+1. Import helpers from `/mnt/data/knowledge_files/memory_validation.py`.
+2. Read existing JSON (and `sha`) from the target file when present.
+3. Apply minimal patch + validate:
+- `validate_career_patch(existing, patch)` or `validate_preferences_patch(existing, patch)`
+4. Enforce write guard:
+- `assert_validated_before_write(validated, context)`
+5. Build transport payload:
+- `build_upsert_payload(message, merged_json, sha=sha_if_present)`
+6. Run preflight:
+- `verify_base64_roundtrip(merged_json)` must pass.
+7. Only then call upsert endpoint.
 
-## Canonical memory files in fixed repo
-- `career_corpus.json` (persistent user career evidence)
-- `preferences.json` (persistent user formatting/style/process preferences)
+## Retry and failure handling
+- If GitHub upsert returns `422`, perform exactly one retry after rebuilding payload/preflight.
+- If retry fails, stop writes and set state to `PERSIST_FAILED`.
+- Provide explicit manual next steps; no async/background promises.
 
-## Onboarding trigger
-- If `career_corpus.json` is missing (`404`) or invalid JSON/schema, route to onboarding.
-- Onboarding should initialize both `career_corpus.json` and `preferences.json`.
-- Onboarding behavior is defined in `/mnt/data/knowledge_files/OnboardingGuidelines.md` (includes optional LinkedIn PDF intake).
+## Persistence outcome contract
+- `persisted=true` only when API returns success (`200` or `201`).
+- Local fallback files are allowed only as temporary recovery aids and must be labeled:
+- `persisted=false`, `fallback_used=true`, `status=NOT PERSISTED`
 
-## Read/update rules
-1) Read current values when present:
-- `readCareerCorpusJson`
-- `readPreferencesJson`
+## Onboarding and repair triggers
+- If `career_corpus.json` is missing or schema-invalid, route to onboarding/repair before tailoring.
+- Onboarding behavior is defined in `/mnt/data/knowledge_files/OnboardingGuidelines.md`.
 
-2) Upsert values using base64 content:
-- `upsertCareerCorpusJson`
-- `upsertPreferencesJson`
-
-3) For updates, include latest file `sha` from the corresponding GET response.
-
-## Required schema validation sequence (hard fail)
-Before writing either JSON file:
-1. Import validation helpers from `/mnt/data/knowledge_files/memory_validation.py`.
-2. Read current JSON document from memory repo.
-3. Apply minimal patch and validate full document using:
-  - `validate_career_patch(existing, patch)` for corpus
-  - `validate_preferences_patch(existing, patch)` for preferences
-4. Optionally run direct validators as a final guard:
-  - `validate_career_corpus(merged_doc)`
-  - `validate_preferences(merged_doc)`
-5. If invalid, reject write and request correction.
-6. If valid and user-approved, upsert with correct `sha`.
-
-## Operational guardrails
-- Never overwrite corpus/preferences with blank content unless user explicitly asks.
-- Do not invent memory content; store only user-provided or user-approved updates.
-- If new relevant user facts appear in chat and are missing from corpus, ask for explicit confirmation before writing them to `career_corpus.json`.
-- Keep commit messages specific (for example: `Update career_corpus.json from approved session edits`).
-
-## Non-canonical legacy notes
-- Legacy `.txt` corpus files may exist from earlier versions.
-- Treat legacy text as non-canonical context only; all new writes must use JSON canonical files.
+## Guardrails
+- Never overwrite memory with blank content unless user explicitly requests it.
+- Never persist inferred or unsupported claims.
+- If user introduces new facts not in corpus, ask for explicit persist approval first.
