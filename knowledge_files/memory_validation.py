@@ -16,9 +16,8 @@ from jsonschema import Draft202012Validator
 
 
 REPO_ROOT = Path(__file__).resolve().parent
-SCHEMA_DIR = REPO_ROOT / "schemas"
-CAREER_CORPUS_SCHEMA_PATH = SCHEMA_DIR / "career_corpus.schema.json"
-PREFERENCES_SCHEMA_PATH = SCHEMA_DIR / "preferences.schema.json"
+CAREER_CORPUS_SCHEMA_PATH = REPO_ROOT / "career_corpus.schema.json"
+PREFERENCES_SCHEMA_PATH = REPO_ROOT / "preferences.schema.json"
 
 
 def _load_json_file(path: Path) -> Dict[str, Any]:

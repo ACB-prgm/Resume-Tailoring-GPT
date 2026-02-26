@@ -30,7 +30,7 @@ Persist long-term user memory in one fixed GitHub repository across sessions.
 ## Onboarding trigger
 - If `career_corpus.json` is missing (`404`) or invalid JSON/schema, route to onboarding.
 - Onboarding should initialize both `career_corpus.json` and `preferences.json`.
-- Onboarding behavior is defined in `/mnt/data/OnboardingGuidelines.md` (includes optional LinkedIn PDF intake).
+- Onboarding behavior is defined in `/mnt/data/knowledge_files/OnboardingGuidelines.md` (includes optional LinkedIn PDF intake).
 
 ## Read/update rules
 1) Read current values when present:
@@ -45,7 +45,7 @@ Persist long-term user memory in one fixed GitHub repository across sessions.
 
 ## Required schema validation sequence (hard fail)
 Before writing either JSON file:
-1. Import validation helpers from `/mnt/data/memory_validation.py`.
+1. Import validation helpers from `/mnt/data/knowledge_files/memory_validation.py`.
 2. Read current JSON document from memory repo.
 3. Apply minimal patch and validate full document using:
   - `validate_career_patch(existing, patch)` for corpus
