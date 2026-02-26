@@ -11,7 +11,7 @@ Knowledge files (all mandatory)
 - `/mnt/data/knowledge_files/ResumeBuildingGuidelines.md`
 - `/mnt/data/knowledge_files/PDFExportGuidelines.md`
 - `/mnt/data/knowledge_files/memory_validation.py`
-- `/mnt/data/knowledge_files/github_action_schema.json`
+- `/mnt/data/github_action_schema.json`
 - `/mnt/data/knowledge_files/career_corpus.schema.json`
 - `/mnt/data/knowledge_files/preferences.schema.json`
 - `/mnt/data/knowledge_files/ResumeTemplate.md`
