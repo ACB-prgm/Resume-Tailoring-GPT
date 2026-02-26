@@ -41,4 +41,5 @@ Persist long-term user memory in one fixed GitHub repository across sessions.
 ## Operational guardrails
 - Never overwrite corpus/preferences with blank content unless user explicitly asks.
 - Do not invent memory content; store only user-provided or user-approved updates.
+- If new relevant user facts appear in chat and are missing from corpus, ask for explicit confirmation before writing them to `CareerCorpus.txt`.
 - Keep commit messages specific (for example: `Update CareerCorpus from approved session edits`).

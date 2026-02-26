@@ -29,6 +29,9 @@ Core Process Outline (run every time)
 3) Evidence retrieval (keyed off Phase 1 output)
 - Map Tier 1/Tier 2 requirements from `JD ANALYSIS OUTPUT` to concrete corpus evidence.
 - Keep only supported claims; explicitly flag unsupported gaps.
+- If user provides relevant new facts not found in persistent corpus, ask:
+  - "Do you want me to add this to your persistent corpus memory?"
+- Only persist after explicit user confirmation.
 
 4) Resume build stage
 - Read and execute '/mnt/data/ResumeBuildingGuidelines.md'.

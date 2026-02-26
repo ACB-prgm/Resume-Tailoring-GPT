@@ -15,6 +15,7 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - If a JD requirement is unsupported, do not claim it.
 - Prefer recent, high-impact evidence.
 - Do not invent employers, titles, dates, metrics, tools, certs, or education.
+- If the user shares relevant new facts that are not in corpus, ask whether to persist them to corpus memory before the session ends.
 
 ## Build workflow
 1) Evidence retrieval
