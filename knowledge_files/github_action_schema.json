@@ -81,7 +81,9 @@
                     },
                     "content": {
                         "type": "string",
-                        "description": "Base64-encoded file content"
+                        "description": "Base64-encoded file content",
+                        "minLength": 1,
+                        "contentEncoding": "base64"
                     },
                     "sha": {
                         "type": "string",
@@ -130,6 +132,9 @@
                 "responses": {
                     "201": {
                         "description": "Created"
+                    },
+                    "422": {
+                        "description": "Validation failed (often malformed base64 or invalid request payload)"
                     }
                 }
             }
@@ -291,6 +296,9 @@
                     },
                     "201": {
                         "description": "Created"
+                    },
+                    "422": {
+                        "description": "Validation failed (often malformed base64 or invalid request payload)"
                     }
                 }
             }

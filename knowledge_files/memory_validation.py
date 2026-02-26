@@ -8,9 +8,11 @@ before any GitHub upsert call is made.
 
 from __future__ import annotations
 
+import base64
+import json
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from jsonschema import Draft202012Validator
 
@@ -22,8 +24,6 @@ PREFERENCES_SCHEMA_PATH = REPO_ROOT / "preferences.schema.json"
 
 def _load_json_file(path: Path) -> Dict[str, Any]:
     """Read a JSON file from disk and return a parsed object."""
-    import json
-
     with path.open("r", encoding="utf-8") as f:
         data = json.load(f)
     if not isinstance(data, dict):
@@ -137,3 +137,81 @@ def validate_preferences_patch(
     return apply_patch_and_validate(
         existing_preferences, patch, PREFERENCES_SCHEMA_PATH
     )
+
+
+def encode_base64_utf8(text: str) -> str:
+    """
+    Encode UTF-8 text as a base64 ASCII string.
+
+    Use this for GitHub contents API `content` fields.
+    """
+    return base64.b64encode(text.encode("utf-8")).decode("ascii")
+
+
+def decode_base64_utf8(content_b64: str) -> str:
+    """
+    Decode a base64 ASCII string back to UTF-8 text.
+
+    Raises:
+        ValueError: when the payload is not valid base64/UTF-8.
+    """
+    try:
+        raw = base64.b64decode(content_b64.encode("ascii"), validate=True)
+        return raw.decode("utf-8")
+    except Exception as exc:  # pragma: no cover - precise exception type not required here.
+        raise ValueError(f"Invalid base64 UTF-8 payload: {exc}") from exc
+
+
+def build_upsert_payload(
+    message: str,
+    json_obj: Dict[str, Any],
+    sha: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Build a GitHub contents API upsert payload from a JSON object.
+
+    The JSON is canonicalized (sorted keys + compact separators) before base64
+    encoding so repeated writes are deterministic.
+    """
+    json_text = json.dumps(json_obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    payload: Dict[str, Any] = {
+        "message": message,
+        "content": encode_base64_utf8(json_text),
+    }
+    if sha:
+        payload["sha"] = sha
+    return payload
+
+
+def verify_base64_roundtrip(json_obj: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
+    """
+    Verify JSON -> base64 -> JSON roundtrip consistency.
+
+    Returns:
+        (ok, error)
+        - ok: True when the object survives roundtrip exactly.
+        - error: human-readable reason when verification fails.
+    """
+    try:
+        canonical = json.dumps(
+            json_obj, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        )
+        encoded = encode_base64_utf8(canonical)
+        decoded = decode_base64_utf8(encoded)
+        decoded_obj = json.loads(decoded)
+        if decoded_obj != json_obj:
+            return False, "Roundtrip mismatch after base64 encode/decode."
+        return True, None
+    except Exception as exc:  # pragma: no cover - surfaced to caller as string
+        return False, str(exc)
+
+
+def assert_validated_before_write(validated: bool, context: str = "") -> None:
+    """
+    Raise a hard error if a write is attempted without a successful validation gate.
+
+    This function is a process guard used by instructions/workflows before GitHub upserts.
+    """
+    if not validated:
+        suffix = f" ({context})" if context else ""
+        raise RuntimeError(f"Validation gate failed before write{suffix}.")
