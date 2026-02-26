@@ -187,9 +187,9 @@
                 }
             }
         },
-        "/repos/{owner}/career-corpus-memory/contents/preferences.txt": {
+        "/repos/{owner}/career-corpus-memory/contents/preferences.json": {
             "get": {
-                "operationId": "readUserPreferences",
+                "operationId": "readPreferencesJson",
                 "parameters": [
                     {
                         "name": "owner",
@@ -210,7 +210,7 @@
                 }
             },
             "put": {
-                "operationId": "upsertUserPreferences",
+                "operationId": "upsertPreferencesJson",
                 "parameters": [
                     {
                         "name": "owner",
@@ -241,9 +241,9 @@
                 }
             }
         },
-        "/repos/{owner}/career-corpus-memory/contents/CareerCorpus.txt": {
+        "/repos/{owner}/career-corpus-memory/contents/career_corpus.json": {
             "get": {
-                "operationId": "readCareerCorpus",
+                "operationId": "readCareerCorpusJson",
                 "parameters": [
                     {
                         "name": "owner",
@@ -264,7 +264,7 @@
                 }
             },
             "put": {
-                "operationId": "upsertCareerCorpus",
+                "operationId": "upsertCareerCorpusJson",
                 "parameters": [
                     {
                         "name": "owner",

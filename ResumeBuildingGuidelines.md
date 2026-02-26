@@ -5,9 +5,10 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 
 ## Inputs required
 - JD Analysis Output (from `JDAnalysisGuidelines.md`)
-- Career corpus file(s) from persistent memory repo (`CareerCorpus.txt`) and/or local corpus file
+- Canonical memory files from persistent memory repo:
+  - `career_corpus.json`
+  - `preferences.json`
 - Current chat facts provided by user
-- User preferences from persistent memory repo (`preferences.txt`) when available
 - Resume template markdown
 
 ## Evidence rules (non-negotiable)
@@ -16,6 +17,7 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - Prefer recent, high-impact evidence.
 - Do not invent employers, titles, dates, metrics, tools, certs, or education.
 - If the user shares relevant new facts that are not in corpus, ask whether to persist them to corpus memory before the session ends.
+- If `career_corpus.json` is missing, invalid, or schema-noncompliant, route to onboarding/repair before resume drafting.
 
 ## Build workflow
 1) Evidence retrieval
