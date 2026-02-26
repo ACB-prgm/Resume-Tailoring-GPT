@@ -6,7 +6,6 @@ Purpose
 Inputs
 - A pasted JD (required).
 - Knowledge file(s):
-  - '/mnt/data/CareerCorpus.txt' - source of verified candidate evidence.
   - '/mnt/data/ResumeTemplate.md' - markdown resume template.
   - '/mnt/data/resume_renderer.py' - PDF renderer/export utilities.
   - '/mnt/data/resume_theme.py' - renderer theme configuration.
@@ -21,9 +20,7 @@ Core Process Outline (run every time)
 - Read and execute '/mnt/data/MemoryPersistenceGuidelines.md'.
 - Ensure the fixed repo `career-corpus-memory` exists for the authenticated user.
 - Use only that repo for persistent memory.
-- Read/write memory files:
-  - `CareerCorpus.txt`
-  - `preferences.txt`
+- Read/write persistent corpus and user preferences via the memory repo.
 
 2) Phase 1 - JD Analysis (Requirements-first)
 - Read '/mnt/data/JDAnalysisGuidelines.md'.
