@@ -45,12 +45,14 @@ Persist long-term user memory in one fixed GitHub repository across sessions.
 
 ## Required schema validation sequence (hard fail)
 Before writing either JSON file:
-1. Read target schema:
-  - `/mnt/data/schemas/career_corpus.schema.json`
-  - `/mnt/data/schemas/preferences.schema.json`
+1. Import validation helpers from `/mnt/data/memory_validation.py`.
 2. Read current JSON document from memory repo.
-3. Apply the minimal intended patch.
-4. Validate full resulting JSON against schema.
+3. Apply minimal patch and validate full document using:
+  - `validate_career_patch(existing, patch)` for corpus
+  - `validate_preferences_patch(existing, patch)` for preferences
+4. Optionally run direct validators as a final guard:
+  - `validate_career_corpus(merged_doc)`
+  - `validate_preferences(merged_doc)`
 5. If invalid, reject write and request correction.
 6. If valid and user-approved, upsert with correct `sha`.
 

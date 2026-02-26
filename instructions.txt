@@ -15,6 +15,7 @@ Inputs
   - '/mnt/data/MemoryPersistenceGuidelines.md' - persistent memory repo module.
   - '/mnt/data/OnboardingGuidelines.md' - new-user corpus onboarding module.
   - '/mnt/data/github_action_schema.json' - GitHub Action schema for memory operations.
+  - '/mnt/data/memory_validation.py' - Python validation helpers for corpus/preferences JSON.
   - '/mnt/data/schemas/career_corpus.schema.json' - required schema for persistent corpus writes.
   - '/mnt/data/schemas/preferences.schema.json' - required schema for persistent preferences writes.
 
@@ -43,10 +44,12 @@ Core Process Outline (run every time)
   - "Do you want me to add this to your persistent corpus memory?"
 - Only persist after explicit user confirmation.
 - Before any persistent memory write, enforce schema validation sequence:
-  1. Read target schema file.
+  1. Import from `/mnt/data/memory_validation.py`.
   2. Read existing JSON document.
-  3. Apply minimal patch.
-  4. Validate full resulting JSON.
+  3. Apply minimal patch with `apply_patch_and_validate(...)` (or schema-specific patch helpers).
+  4. Validate full resulting JSON using:
+     - `validate_career_corpus(...)` for `career_corpus.json`
+     - `validate_preferences(...)` for `preferences.json`
   5. Reject write if invalid and request correction.
   6. Upsert only valid JSON with correct `sha`.
 

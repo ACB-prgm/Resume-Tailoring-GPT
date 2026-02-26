@@ -50,7 +50,8 @@ Collect structured data in this order if upload is missing or incomplete:
 2. Initialize `preferences.json` with defaults if missing.
 3. Show a concise summary preview to user.
 4. Ask for explicit confirmation before first save.
-5. Persist only schema-valid JSON via memory repo upsert operations.
+5. Validate both documents with `/mnt/data/memory_validation.py` before writing.
+6. Persist only schema-valid JSON via memory repo upsert operations.
 
 ## Guardrails
 - Do not invent missing details.
