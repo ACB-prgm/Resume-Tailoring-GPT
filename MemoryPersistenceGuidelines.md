@@ -30,6 +30,7 @@ Persist long-term user memory in one fixed GitHub repository across sessions.
 ## Onboarding trigger
 - If `career_corpus.json` is missing (`404`) or invalid JSON/schema, route to onboarding.
 - Onboarding should initialize both `career_corpus.json` and `preferences.json`.
+- Onboarding behavior is defined in `/mnt/data/OnboardingGuidelines.md` (includes optional LinkedIn PDF intake).
 
 ## Read/update rules
 1) Read current values when present:
