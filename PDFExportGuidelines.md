@@ -37,12 +37,11 @@ else:
 
 ## Output requirements
 - Format: A4 PDF.
-- Page target: 1 page by default; up to 2 pages only for approved senior-scope roles.
-- ATS-safe: no tables/columns/decorative layouts that hide critical text.
+- Page target: 1 page by default; up to 2 pages only for approved senior-scope roles or CV requests.
 - File naming:
   - `Aaron Bastian Resume - <TargetRole> - <CompanyIfKnown>.pdf`
   - If company unknown: `Aaron Bastian Resume - <TargetRole>.pdf`
-- Attach only the PDF artifact.
+- Attach only the PDF artifact unless the users asks for the markdown.
 - Include a brief Change Log in chat:
   - Top targeted keywords
   - Roles/projects emphasized

@@ -5,8 +5,9 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 
 ## Inputs required
 - JD Analysis Output (from `JDAnalysisGuidelines.md`)
-- Career corpus file(s)
+- Career corpus file(s) from persistent memory repo (`CareerCorpus.txt`) and/or local corpus file
 - Current chat facts provided by user
+- User preferences from persistent memory repo (`preferences.txt`) when available
 - Resume template markdown
 
 ## Evidence rules (non-negotiable)

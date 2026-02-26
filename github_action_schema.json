@@ -1,0 +1,299 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "GitHub Memory",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "https://api.github.com"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "githubOAuth": {
+                "type": "oauth2",
+                "flows": {
+                    "authorizationCode": {
+                        "authorizationUrl": "https://github.com/login/oauth/authorize",
+                        "tokenUrl": "https://github.com/login/oauth/access_token",
+                        "scopes": {
+                            "repo": "Full control of private repositories",
+                            "read:user": "Read user profile"
+                        }
+                    }
+                }
+            }
+        },
+        "schemas": {
+            "CreateRepoRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "enum": [
+                            "career-corpus-memory"
+                        ]
+                    },
+                    "private": {
+                        "type": "boolean",
+                        "enum": [
+                            true
+                        ]
+                    },
+                    "auto_init": {
+                        "type": "boolean",
+                        "enum": [
+                            true
+                        ]
+                    }
+                },
+                "required": [
+                    "name",
+                    "private",
+                    "auto_init"
+                ]
+            },
+            "SetRepoTopicsRequest": {
+                "type": "object",
+                "properties": {
+                    "names": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 1,
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "career-corpus-memory"
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "names"
+                ]
+            },
+            "UpsertFileRequest": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    },
+                    "content": {
+                        "type": "string",
+                        "description": "Base64-encoded file content"
+                    },
+                    "sha": {
+                        "type": "string",
+                        "description": "Required when updating an existing file"
+                    }
+                },
+                "required": [
+                    "message",
+                    "content"
+                ]
+            }
+        }
+    },
+    "security": [
+        {
+            "githubOAuth": [
+                "repo",
+                "read:user"
+            ]
+        }
+    ],
+    "paths": {
+        "/user": {
+            "get": {
+                "operationId": "getAuthenticatedUser",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/user/repos": {
+            "post": {
+                "operationId": "createMemoryRepo",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateRepoRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    }
+                }
+            }
+        },
+        "/repos/{owner}/career-corpus-memory": {
+            "get": {
+                "operationId": "getMemoryRepo",
+                "parameters": [
+                    {
+                        "name": "owner",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                }
+            }
+        },
+        "/repos/{owner}/career-corpus-memory/topics": {
+            "put": {
+                "operationId": "setMemoryRepoTopics",
+                "parameters": [
+                    {
+                        "name": "owner",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SetRepoTopicsRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated"
+                    }
+                }
+            }
+        },
+        "/repos/{owner}/career-corpus-memory/contents/preferences.txt": {
+            "get": {
+                "operationId": "readUserPreferences",
+                "parameters": [
+                    {
+                        "name": "owner",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "upsertUserPreferences",
+                "parameters": [
+                    {
+                        "name": "owner",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpsertFileRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated"
+                    },
+                    "201": {
+                        "description": "Created"
+                    }
+                }
+            }
+        },
+        "/repos/{owner}/career-corpus-memory/contents/CareerCorpus.txt": {
+            "get": {
+                "operationId": "readCareerCorpus",
+                "parameters": [
+                    {
+                        "name": "owner",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "upsertCareerCorpus",
+                "parameters": [
+                    {
+                        "name": "owner",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpsertFileRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated"
+                    },
+                    "201": {
+                        "description": "Created"
+                    }
+                }
+            }
+        }
+    }
+}
