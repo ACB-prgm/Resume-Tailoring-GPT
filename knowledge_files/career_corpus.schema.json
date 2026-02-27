@@ -71,6 +71,10 @@
           "domain_tags"
         ],
         "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
           "employer": {
             "type": "string"
           },
@@ -128,6 +132,10 @@
           "outcomes"
         ],
         "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
           "name": {
             "type": "string"
           },
@@ -199,6 +207,10 @@
           "status"
         ],
         "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
           "name": {
             "type": "string"
           },
@@ -225,6 +237,10 @@
           "graduation_year"
         ],
         "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
           "degree": {
             "type": "string"
           },
