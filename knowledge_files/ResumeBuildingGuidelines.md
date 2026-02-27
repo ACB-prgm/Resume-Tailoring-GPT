@@ -20,7 +20,7 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - Use provenance tags per claim: `corpus`, `current_chat`, or `user_confirmed_update`.
 - If the user shares relevant new facts that are not in corpus, ask whether to persist them to corpus memory before the session ends.
 - If `career_corpus.json` is missing, invalid, or schema-noncompliant, route to onboarding/repair before resume drafting.
-- Validate corpus/preferences with `/mnt/data/knowledge_files/memory_validation.py` before using them for drafting.
+- Validate corpus/preferences with `/mnt/data/memory_validation.py` before using them for drafting.
 - Block unsupported factual inserts unless user explicitly confirms and approves persistence path.
 
 ## Build workflow

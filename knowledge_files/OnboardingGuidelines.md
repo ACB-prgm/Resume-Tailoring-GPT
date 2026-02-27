@@ -65,7 +65,7 @@ Collect structured data in this order if upload is missing or incomplete:
 4. Mark uncertain fields explicitly and request confirmation before persistence.
 5. Show a concise summary preview to user.
 6. Ask for explicit confirmation before first save.
-7. Validate both documents with `/mnt/data/knowledge_files/memory_validation.py` before writing.
+7. Validate both documents with `/mnt/data/memory_validation.py` before writing.
 8. Persist only schema-valid JSON via memory repo upsert operations.
 
 ## Guardrails

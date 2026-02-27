@@ -10,6 +10,16 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 ## Canonical memory files
 - `career_corpus.json`
 - `preferences.json`
+- Local corpus cache path: `/mnt/data/career_corpus.json`
+- Local sync metadata path: `/mnt/data/career_corpus.meta.json`
+
+## Local-first runtime model (required)
+- Use `CareerCorpusStore` for all in-session reads/edits.
+- Keep corpus loaded in memory; avoid repeated tool fetches.
+- Use `CareerCorpusSync` only for explicit:
+  - `pull()` (refresh local cache from GitHub)
+  - `push()` (persist approved changes to GitHub)
+- Do not fetch/decode/parse the full corpus through tools for every edit.
 
 ## Startup bootstrap (required)
 1. Resolve `{owner}` via `getAuthenticatedUser`.
@@ -24,9 +34,20 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 - `Memory repo exists: Yes/No; career_corpus.json exists: Yes/No.`
 7. Emit the required status block from `MemoryStateModel.md`.
 
+## Explicit sync behavior
+- `pull(force=False)`:
+  - Call `readCareerCorpusJson`.
+  - If remote `sha` matches `meta.remote_sha` and `force` is false, no-op.
+  - Else decode base64 content, replace local `/mnt/data/career_corpus.json`, update meta timestamps and sha.
+- `push(message)`:
+  - Run schema validation and preflight.
+  - Upload only when local store is dirty.
+  - Include `sha` for updates.
+  - On success, update `meta.remote_sha` and `last_push_utc`.
+
 ## Validation + preflight sequence (hard fail)
 Before **any** write:
-1. Import helpers from `/mnt/data/knowledge_files/memory_validation.py`.
+1. Import helpers from `/mnt/data/memory_validation.py`.
 2. Read existing JSON (and `sha`) from the target file when present.
 3. Apply minimal patch + validate:
 - `validate_career_patch(existing, patch)` or `validate_preferences_patch(existing, patch)`
@@ -50,7 +71,7 @@ Before **any** write:
 
 ## Onboarding and repair triggers
 - If `career_corpus.json` is missing or schema-invalid, route to onboarding/repair before tailoring.
-- Onboarding behavior is defined in `/mnt/data/knowledge_files/OnboardingGuidelines.md`.
+- Onboarding behavior is defined in `/mnt/data/OnboardingGuidelines.md`.
 
 ## Guardrails
 - Never overwrite memory with blank content unless user explicitly requests it.
