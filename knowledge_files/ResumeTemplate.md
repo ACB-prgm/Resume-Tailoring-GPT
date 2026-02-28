@@ -1,5 +1,5 @@
-### AARON BASTIAN  
-Los Angeles, CA | (818) 282-3868 | aaronbastian31@gmail.com | [LinkedIn](https://www.linkedin.com/in/aaron-c-bastian) | [GitHub](https://github.com/ACB-prgm)  
+### USER_FIRSTNAME USER_LASTNAME
+Location | Phone | Email | [LinkName1](https://link1) | [LinkName2](https://link2)
 target title line here
 
 ## SUMMARY
@@ -15,3 +15,11 @@ Enter summary here
   
 ## EDUCATION
 **Degree, Institution** — YYYY
+
+## PUBLICATIONS (Only include if relevant to JD)
+1. ["Publication Title"](URL) (Year)— **Journal** Status optional: Accepted / In press / Under review
+
+## PROJECTS (Only include if relevant to JD and NOT within an experience)
+**Project Name** | MMM YYYY
+Tools: tool1, tool2...
+* bullet
