@@ -19,6 +19,7 @@ except ImportError:
 
 try:
     from memory_validation import (
+        assert_notes_content_only,
         assert_persist_claim_allowed,
         assert_sections_explicitly_approved,
         assert_validation_claim_allowed,
@@ -29,6 +30,7 @@ try:
     )
 except ImportError:
     from knowledge_files.memory_validation import (  # type: ignore
+        assert_notes_content_only,
         assert_persist_claim_allowed,
         assert_sections_explicitly_approved,
         assert_validation_claim_allowed,
@@ -193,8 +195,11 @@ class CareerCorpusSync:
         message: str = "Update career corpus memory",
         target_sections: Optional[List[str]] = None,
         approved_sections: Optional[Dict[str, Any]] = None,
+        user_git_fluency: str = "non_technical",
+        technical_details_requested: bool = False,
     ) -> Dict[str, Any]:
         result = self._base_result()
+        before_snapshot = self._status_snapshot(self.store.status())
         if not self.store.is_loaded:
             self.store.load()
 
@@ -209,7 +214,9 @@ class CareerCorpusSync:
                         "error_code": "approval_missing",
                     }
                 )
-                return result
+                return self._finalize_push_result(
+                    result, before_snapshot, user_git_fluency, technical_details_requested
+                )
 
         if not self.store.dirty:
             result.update(
@@ -221,7 +228,9 @@ class CareerCorpusSync:
                 }
             )
             result["verify_ok"] = True
-            return result
+            return self._finalize_push_result(
+                result, before_snapshot, user_git_fluency, technical_details_requested
+            )
 
         missing = self._missing_push_adapters()
         if missing:
@@ -232,13 +241,28 @@ class CareerCorpusSync:
                     "error_code": "api_unknown",
                 }
             )
-            return result
+            return self._finalize_push_result(
+                result, before_snapshot, user_git_fluency, technical_details_requested
+            )
 
         try:
             self.store.validate()
+            assert_notes_content_only(self.store.snapshot())
             result["validated"] = True
             result["validation_ran"] = True
             assert_validation_claim_allowed(validated_ran=True, validation_ok=True)
+        except RuntimeError as exc:
+            result.update(
+                {
+                    "ok": False,
+                    "reason": str(exc),
+                    "error_code": "notes_policy_violation",
+                }
+            )
+            result["validation_ran"] = True
+            return self._finalize_push_result(
+                result, before_snapshot, user_git_fluency, technical_details_requested
+            )
         except Exception as exc:
             result.update(
                 {
@@ -248,7 +272,9 @@ class CareerCorpusSync:
                 }
             )
             result["validation_ran"] = True
-            return result
+            return self._finalize_push_result(
+                result, before_snapshot, user_git_fluency, technical_details_requested
+            )
 
         # Local-first invariant.
         self.store.save()
@@ -282,7 +308,9 @@ class CareerCorpusSync:
                 }
             )
             result["verify_ok"] = True
-            return result
+            return self._finalize_push_result(
+                result, before_snapshot, user_git_fluency, technical_details_requested
+            )
 
         if target_sections:
             disallowed = self._disallowed_changed_paths(changed_paths, deleted_paths, set(target_sections))
@@ -296,7 +324,9 @@ class CareerCorpusSync:
                         "error_code": "unapproved_section_changes",
                     }
                 )
-                return result
+                return self._finalize_push_result(
+                    result, before_snapshot, user_git_fluency, technical_details_requested
+                )
 
         attempt = 0
         attempt_result: Optional[PushAttemptResult] = None
@@ -324,7 +354,9 @@ class CareerCorpusSync:
                     "error_code": attempt_result.error_code if attempt_result else "api_unknown",
                 }
             )
-            return result
+            return self._finalize_push_result(
+                result, before_snapshot, user_git_fluency, technical_details_requested
+            )
 
         result["remote_written"] = True
         result["remote_blob_sha"] = attempt_result.remote_blob_shas.get(CareerCorpusStore.INDEX_FILE)
@@ -349,7 +381,9 @@ class CareerCorpusSync:
                     "error_code": "transport_corruption",
                 }
             )
-            return result
+            return self._finalize_push_result(
+                result, before_snapshot, user_git_fluency, technical_details_requested
+            )
 
         try:
             assert_persist_claim_allowed(push_ok=True, verify_ok=True)
@@ -363,7 +397,9 @@ class CareerCorpusSync:
                     "error_code": "persist_claim_invalid",
                 }
             )
-            return result
+            return self._finalize_push_result(
+                result, before_snapshot, user_git_fluency, technical_details_requested
+            )
 
         self.store.mark_push_success(
             remote_file_sha=verification.get("remote_index_sha"),
@@ -383,7 +419,9 @@ class CareerCorpusSync:
                 "error_code": None,
             }
         )
-        return result
+        return self._finalize_push_result(
+            result, before_snapshot, user_git_fluency, technical_details_requested
+        )
 
     def _pull_split(self, force: bool = False) -> Dict[str, Any]:
         repo_response = self._get_memory_repo()
@@ -439,6 +477,7 @@ class CareerCorpusSync:
             remote_file_sha=index_sha,
             remote_branch=branch,
             remote_file_hashes=remote_hashes,
+            validate=False,
         )
         return {
             "ok": True,
@@ -479,7 +518,7 @@ class CareerCorpusSync:
         document = json.loads(decoded_text)
         if not isinstance(document, dict):
             raise ValueError("Remote career_corpus.json is not a JSON object.")
-        self.store.replace_corpus(document, remote_file_sha=remote_file_sha)
+        self.store.replace_corpus(document, remote_file_sha=remote_file_sha, validate=False)
         return {"ok": True, "changed": True, "reason": "pulled", "remote_file_sha": remote_file_sha}
 
     def _attempt_git_push(
@@ -795,7 +834,74 @@ class CareerCorpusSync:
             "local_saved": False,
             "remote_written": False,
             "verify_ok": False,
+            "status_changed": False,
+            "user_message": None,
         }
+
+    @staticmethod
+    def _status_snapshot(status: Dict[str, Any]) -> Dict[str, Any]:
+        return {
+            "dirty": status.get("dirty"),
+            "local_hash": status.get("local_hash"),
+            "remote_file_sha": status.get("remote_file_sha"),
+            "remote_blob_sha": status.get("remote_blob_sha"),
+            "remote_commit_sha": status.get("remote_commit_sha"),
+            "remote_branch": status.get("remote_branch"),
+            "last_push_utc": status.get("last_push_utc"),
+            "last_verified_utc": status.get("last_verified_utc"),
+            "last_push_method": status.get("last_push_method"),
+        }
+
+    def _finalize_push_result(
+        self,
+        result: Dict[str, Any],
+        before_snapshot: Dict[str, Any],
+        user_git_fluency: str,
+        technical_details_requested: bool,
+    ) -> Dict[str, Any]:
+        after_snapshot = self._status_snapshot(self.store.status())
+        result["status_changed"] = before_snapshot != after_snapshot
+        result["user_message"] = self._build_user_message(
+            result,
+            user_git_fluency=user_git_fluency,
+            technical_details_requested=technical_details_requested,
+        )
+        return result
+
+    @staticmethod
+    def _build_user_message(
+        result: Dict[str, Any],
+        user_git_fluency: str = "non_technical",
+        technical_details_requested: bool = False,
+    ) -> str:
+        persisted = bool(result.get("persisted"))
+        reason = result.get("reason")
+        error_code = result.get("error_code")
+        technical = technical_details_requested or user_git_fluency == "technical"
+
+        if persisted:
+            if reason in {"not_dirty", "hashes_unchanged"}:
+                message = "No memory changes to save."
+            else:
+                message = "Saved to memory/corpus."
+        else:
+            message = "Couldn't save to memory."
+
+        if technical:
+            details: List[str] = []
+            if isinstance(reason, str) and reason:
+                details.append(f"reason={reason}")
+            if isinstance(error_code, str) and error_code:
+                details.append(f"error_code={error_code}")
+            branch = result.get("remote_branch")
+            commit_sha = result.get("remote_commit_sha")
+            if isinstance(branch, str) and branch:
+                details.append(f"branch={branch}")
+            if isinstance(commit_sha, str) and commit_sha:
+                details.append(f"commit={commit_sha}")
+            if details:
+                message = f"{message} ({', '.join(details)})"
+        return message
 
     @classmethod
     def _disallowed_changed_paths(
