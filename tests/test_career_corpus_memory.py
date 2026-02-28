@@ -511,6 +511,109 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertEqual(result["error_code"], "unapproved_section_changes")
 
+    def test_load_migrates_legacy_profile_links_strings_to_objects(self) -> None:
+        corpus = self._write_corpus(with_ids=True)
+        corpus["profile"]["links"] = [
+            "GitHub: github.com/ACB-prgm",
+            "https://linkedin.com/in/test-user",
+        ]
+        self.corpus_path.write_text(json.dumps(corpus), encoding="utf-8")
+
+        store = self._store()
+        loaded = store.load()
+        self.assertTrue(store.dirty)
+        self.assertEqual(
+            loaded["profile"]["links"][0],
+            {"name": "GitHub", "url": "github.com/ACB-prgm"},
+        )
+        self.assertEqual(
+            loaded["profile"]["links"][1],
+            {"name": "LinkedIn", "url": "https://linkedin.com/in/test-user"},
+        )
+
+    def test_push_rejects_invalid_link_shape_via_validation(self) -> None:
+        self._write_corpus(with_ids=True)
+        store = self._store()
+        store.load()
+        repo = FakeGitRepo(store.build_split_documents())
+        sync = self._sync_with_repo(store, repo)
+
+        store.set(["profile", "links"], [{"name": "GitHub", "link": "https://github.com/acb-prgm"}])
+        result = sync.push("Invalid links")
+        self.assertFalse(result["ok"])
+        self.assertFalse(result["persisted"])
+        self.assertEqual(result["error_code"], "validation_failed")
+
+    def test_pull_skips_validation_but_push_requires_validation(self) -> None:
+        self._write_corpus(with_ids=True)
+        store = self._store()
+        store.load()
+        repo = FakeGitRepo(store.build_split_documents())
+        sync = self._sync_with_repo(store, repo)
+
+        original_validate = store.validate
+
+        def fail_validate() -> None:
+            raise AssertionError("validate called")
+
+        store.validate = fail_validate  # type: ignore[assignment]
+
+        pull_result = sync.pull(force=True)
+        self.assertTrue(pull_result["ok"])
+        self.assertTrue(pull_result["changed"])
+
+        store.set(["profile", "full_name"], "Needs Validation")
+        push_result = sync.push("Must validate")
+        self.assertFalse(push_result["ok"])
+        self.assertEqual(push_result["error_code"], "validation_failed")
+
+        store.validate = original_validate  # type: ignore[assignment]
+
+    def test_notes_empty_strings_normalize_to_null(self) -> None:
+        corpus = self._write_corpus(with_ids=True)
+        corpus["profile"]["notes"] = "   "
+        corpus["experience"][0]["notes"] = ""
+        corpus["skills"]["notes"] = " "
+        self.corpus_path.write_text(json.dumps(corpus), encoding="utf-8")
+
+        store = self._store()
+        loaded = store.load()
+        self.assertTrue(store.dirty)
+        self.assertIsNone(loaded["profile"]["notes"])
+        self.assertIsNone(loaded["experience"][0]["notes"])
+        self.assertIsNone(loaded["skills"]["notes"])
+
+    def test_push_user_message_plain_language_default(self) -> None:
+        self._write_corpus(with_ids=True)
+        store = self._store()
+        store.load()
+        repo = FakeGitRepo(store.build_split_documents())
+        sync = self._sync_with_repo(store, repo)
+
+        store.set(["profile", "full_name"], "Dirty User")
+        result = sync.push("User message default")
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["status_changed"])
+        self.assertEqual(result["user_message"], "Saved to memory/corpus.")
+        self.assertNotIn("commit=", result["user_message"])
+        self.assertNotIn("branch=", result["user_message"])
+
+    def test_push_user_message_technical_when_requested(self) -> None:
+        self._write_corpus(with_ids=True)
+        store = self._store()
+        store.load()
+        repo = FakeGitRepo(store.build_split_documents())
+        sync = self._sync_with_repo(store, repo)
+
+        store.set(["profile", "full_name"], "Dirty User")
+        result = sync.push(
+            "User message technical",
+            user_git_fluency="technical",
+        )
+        self.assertTrue(result["ok"])
+        self.assertIn("branch=", result["user_message"])
+        self.assertIn("commit=", result["user_message"])
+
 
 if __name__ == "__main__":
     unittest.main()

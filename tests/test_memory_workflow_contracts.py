@@ -4,12 +4,14 @@ import unittest
 
 from knowledge_files.career_corpus_sync import CareerCorpusSync
 from knowledge_files.memory_validation import (
+    assert_notes_content_only,
     assert_citations_from_current_turn,
     assert_persist_claim_allowed,
     assert_scaffolding_confirmation_allowed,
     assert_sections_explicitly_approved,
     assert_validation_claim_allowed,
     compute_onboarding_complete,
+    should_emit_memory_status,
 )
 
 
@@ -97,6 +99,44 @@ class MemoryWorkflowContractsTests(unittest.TestCase):
         assert_citations_from_current_turn(["marker_a"], ["marker_a", "marker_b"])
         with self.assertRaises(RuntimeError):
             assert_citations_from_current_turn(["marker_old"], ["marker_new"])
+
+    def test_status_emission_policy(self) -> None:
+        prev = {"repo_exists": True, "corpus_exists": True}
+        same = {"repo_exists": True, "corpus_exists": True}
+        changed = {"repo_exists": True, "corpus_exists": False}
+
+        self.assertFalse(
+            should_emit_memory_status(prev, same, requested=False, failed=False, policy="on_change")
+        )
+        self.assertTrue(
+            should_emit_memory_status(prev, changed, requested=False, failed=False, policy="on_change")
+        )
+        self.assertFalse(
+            should_emit_memory_status(prev, changed, requested=False, failed=False, policy="on_request")
+        )
+        self.assertTrue(
+            should_emit_memory_status(prev, same, requested=True, failed=False, policy="on_request")
+        )
+        self.assertTrue(
+            should_emit_memory_status(prev, same, requested=False, failed=True, policy="on_change")
+        )
+        self.assertTrue(
+            should_emit_memory_status(prev, same, requested=False, failed=False, policy="always")
+        )
+
+    def test_notes_policy_guard(self) -> None:
+        assert_notes_content_only(
+            {
+                "profile": {"notes": "Graduated with honors"},
+                "experience": [{"notes": "Received employee award"}],
+            }
+        )
+        with self.assertRaises(RuntimeError):
+            assert_notes_content_only(
+                {
+                    "profile": {"notes": "Source: CareerCorpus.txt uploaded during onboarding."},
+                }
+            )
 
 
 if __name__ == "__main__":
