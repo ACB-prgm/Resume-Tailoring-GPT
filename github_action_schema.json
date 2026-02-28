@@ -525,7 +525,9 @@
                                             "$ref": "#/components/schemas/GitBlobResponse"
                                         },
                                         {
-                                            "type": "object"
+                                            "type": "object",
+                                            "properties": {},
+                                            "additionalProperties": true
                                         },
                                         {
                                             "type": "string"
