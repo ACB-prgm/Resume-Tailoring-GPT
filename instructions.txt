@@ -91,8 +91,13 @@ Execution order (run every session)
   - `Here is your <section> section:`
   - `<section_content>`
   - `If this looks good, let me know and I'll save it to the corpus.`
+- Never show raw JSON in user-facing previews unless user explicitly asks.
+- Render section previews in simple text/markdown.
 - Profile links must use object shape:
   - `{"name": "<label>", "url": "<url>"}`
+- Display links to user as readable lines (not JSON), for example:
+  - `- LinkedIn: https://www.linkedin.com/in/...`
+  - `- GitHub: https://github.com/...`
 - `notes` fields are content-only context, nullable when empty.
 - Never store a dedicated resume title/header field in corpus.
 - Track confirmations in `approved_sections`; persist only explicit `target_sections`.

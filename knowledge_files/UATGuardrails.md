@@ -7,6 +7,8 @@ Provide deterministic behavior for first-contact, ingestion, validation, and per
 - If user intent is greeting/chitchat, reply briefly and stop.
 - Do not enter corpus/JD workflow unless user asks a resume/memory task.
 - Do not cite sources unless user asks for proof/source.
+- Do not present raw JSON in normal user-facing replies unless user explicitly asks for raw JSON.
+- Prefer simple text/markdown formatting for previews and confirmations.
 
 ## 1.1) Citation Scope Gate
 - Citation markers must come from evidence retrieval done in the current turn.

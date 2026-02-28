@@ -49,6 +49,8 @@ NORMALIZATION SUMMARY
 ## Section-by-section confirmation gate (required)
 - Even when a full LinkedIn PDF or large CV is uploaded, do not persist in one bulk write.
 - Present normalized content one section at a time and ask for explicit confirmation.
+- User-facing previews must be human-readable markdown/text.
+- Do not print raw JSON objects unless the user explicitly asks for raw JSON.
 - Use short wording only:
 
 ```text
@@ -65,6 +67,9 @@ If this looks good, let me know and I'll save it to the corpus.
   - certifications
   - education
   - metadata
+- Links preview format (required):
+  - show each link as `- <name>: <url>`
+  - never show links as raw JSON objects in normal flow
 - Only persist after user confirmation for the shown section(s).
 - Track confirmations in `approved_sections`:
   - `approved_sections[section] = {"approved": true, "approved_at_utc": "..."}`
