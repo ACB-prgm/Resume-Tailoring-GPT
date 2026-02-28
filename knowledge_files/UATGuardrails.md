@@ -8,6 +8,12 @@ Provide deterministic behavior for first-contact, ingestion, validation, and per
 - Do not enter corpus/JD workflow unless user asks a resume/memory task.
 - Do not cite sources unless user asks for proof/source.
 
+## 1.1) Citation Scope Gate
+- Citation markers must come from evidence retrieval done in the current turn.
+- Only cite uploaded docs after running fresh `file_search.msearch` in the current turn.
+- If no current-turn evidence marker exists, do not cite.
+- If a file was uploaded in earlier turns, re-query it before citing.
+
 ## 2) Read-Before-Claim Rule
 - Never assess corpus quality before reading the uploaded file contents.
 - After reading uploaded corpus/LinkedIn PDF text, emit an ingestion receipt:
@@ -30,9 +36,10 @@ INGESTION RECEIPT
 - Only say `persisted: true` after successful GitHub API write.
 - For Git Data flow, require both:
   - ref update success
-  - read-after-write hash verification success
+  - committed tree/blob verification success
 - If local fallback artifacts are created, report `persisted: false` and `fallback_used: true`.
 - Never describe fallback files as durable memory.
+- Only say `validated: true` after validator execution and success.
 
 ## 5) Deterministic Failure Recovery
 - Path A: fix payload/preflight issue and retry once.

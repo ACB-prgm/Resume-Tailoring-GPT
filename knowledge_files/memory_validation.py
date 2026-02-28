@@ -273,3 +273,104 @@ def assert_validated_before_write(validated: bool, context: str = "") -> None:
     if not validated:
         suffix = f" ({context})" if context else ""
         raise RuntimeError(f"Validation gate failed before write{suffix}.")
+
+
+def assert_sections_explicitly_approved(
+    approved_sections: Dict[str, Any],
+    target_sections: List[str],
+) -> None:
+    """
+    Enforce section-level explicit approvals before persistence.
+
+    `approved_sections` may be:
+    - {"education": True, "profile": {"approved": True, ...}}
+    """
+    if not target_sections:
+        raise RuntimeError("target_sections cannot be empty for guarded writes.")
+
+    missing: List[str] = []
+    for section in target_sections:
+        value = approved_sections.get(section)
+        is_approved = False
+        if isinstance(value, bool):
+            is_approved = value
+        elif isinstance(value, dict):
+            is_approved = bool(value.get("approved"))
+        if not is_approved:
+            missing.append(section)
+
+    if missing:
+        raise RuntimeError(f"Missing explicit approvals for sections: {', '.join(sorted(missing))}.")
+
+
+def assert_validation_claim_allowed(validated_ran: bool, validation_ok: bool) -> None:
+    """Block invalid `validated=true` claims."""
+    if not validated_ran:
+        raise RuntimeError("Cannot claim validated=true because validator did not run.")
+    if not validation_ok:
+        raise RuntimeError("Cannot claim validated=true because validation did not pass.")
+
+
+def assert_persist_claim_allowed(push_ok: bool, verify_ok: bool) -> None:
+    """Block invalid `persisted=true` claims."""
+    if not push_ok:
+        raise RuntimeError("Cannot claim persisted=true because push did not succeed.")
+    if not verify_ok:
+        raise RuntimeError("Cannot claim persisted=true because verification did not pass.")
+
+
+def assert_citations_from_current_turn(
+    citation_markers: List[str],
+    current_turn_markers: List[str],
+) -> None:
+    """
+    Require citation markers to come from evidence retrieval in the current turn.
+    """
+    if not citation_markers:
+        return
+    allowed = set(current_turn_markers)
+    invalid = sorted(marker for marker in citation_markers if marker not in allowed)
+    if invalid:
+        raise RuntimeError(
+            "Citation markers are not from current-turn evidence: " + ", ".join(invalid)
+        )
+
+
+def compute_onboarding_complete(
+    approved_sections: Dict[str, Any],
+    validated: bool,
+    persisted: bool,
+    required_sections: Optional[List[str]] = None,
+) -> bool:
+    """
+    True only when required sections are approved and validation/persistence passed.
+    """
+    if not validated or not persisted:
+        return False
+    needed = required_sections or [
+        "profile",
+        "summary_facts",
+        "experience",
+        "projects",
+        "skills",
+        "certifications",
+        "education",
+        "metadata",
+    ]
+    for section in needed:
+        value = approved_sections.get(section)
+        approved = (isinstance(value, bool) and value) or (
+            isinstance(value, dict) and bool(value.get("approved"))
+        )
+        if not approved:
+            return False
+    return True
+
+
+def assert_scaffolding_confirmation_allowed(
+    create_scaffold: bool,
+    user_confirmed: bool,
+) -> None:
+    """Require explicit confirmation before creating empty scaffold sections."""
+    if create_scaffold and not user_confirmed:
+        raise RuntimeError("Scaffold creation requires explicit user confirmation.")

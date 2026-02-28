@@ -31,6 +31,21 @@ INGESTION RECEIPT
 - gaps_detected: [missing dates, missing metrics, unknown employer/location, ...]
 ```
 
+## Normalization summary (required before approvals)
+Emit a compact normalization summary before section previews:
+
+```text
+NORMALIZATION SUMMARY
+- detected_sections: [profile, summary_facts, experience, projects, skills, certifications, education, metadata]
+- counts:
+  - experience: <n>
+  - projects: <n>
+  - certifications: <n>
+  - education: <n>
+  - skills.technical: <n>
+- ambiguous_fields: [<field/path>, ...]
+```
+
 ## Section-by-section confirmation gate (required)
 - Even when a full LinkedIn PDF or large CV is uploaded, do not persist in one bulk write.
 - Present normalized content one section at a time and ask for explicit confirmation.
@@ -52,6 +67,12 @@ If this looks good, let me know and I'll save it to the corpus.
   - education
   - metadata
 - Only persist after user confirmation for the shown section(s).
+- Track confirmations in `approved_sections`:
+  - `approved_sections[section] = {"approved": true, "approved_at_utc": "..."}`
+- Persist only `target_sections` that are explicitly approved.
+- Do not implicitly persist other sections.
+- For scaffolding, ask explicitly:
+  - `Create empty sections now? Yes/No.`
 
 ## Guided interview sections (required)
 Collect structured data in this order if upload is missing or incomplete:

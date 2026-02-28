@@ -27,19 +27,18 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 - Do not fetch/decode/parse the full corpus through tools for every edit.
 - Before Python imports, bootstrap:
   - add `/mnt/data` to `sys.path`.
+- Do not run direct Git writes before store/sync bootstrap completes.
 
 ## Startup bootstrap (required)
 1. Resolve `{owner}` via `getAuthenticatedUser`.
-2. Check fixed repo via `getMemoryRepo`.
-3. If `404`, create via `createMemoryRepo` with fixed values:
-- `name=career-corpus-memory`
-- `private=true`
-- `auto_init=true`
+2. Run deterministic bootstrap: `getMemoryRepo -> (if 404) createMemoryRepo -> getMemoryRepo(confirm)`.
+3. Enforce `repo_create_attempted_this_turn` guard (no double create in same turn).
 4. Optionally call `setMemoryRepoTopics` with `["career-corpus-memory"]`; continue if topic call fails.
-5. Check split corpus presence via manifest `corpus_index.json` (legacy `career_corpus.json` may still be read).
-6. Report the canonical check line:
+5. Initialize store/sync objects.
+6. Check split corpus presence via manifest `corpus_index.json` (legacy `career_corpus.json` may still be read).
+7. Report the canonical check line:
 - `Memory repo exists: Yes/No; career corpus exists: Yes/No.`
-7. Emit the required status block from `MemoryStateModel.md`.
+8. Emit the required status block from `MemoryStateModel.md`.
 
 ## Explicit sync behavior
 - `pull(force=False)`:
@@ -54,6 +53,9 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
   - If local store is already loaded and has `remote_file_sha`, skip pre-write pull.
   - This reduces redundant `getGitBlob` calls before write.
 - `push(message)`:
+  - Accept `target_sections` + `approved_sections` for guarded section writes.
+  - Reject write if target sections are not explicitly approved.
+  - Reject write when changed/deleted paths include unapproved sections.
   - Run schema validation and UTF-8 payload diagnostics.
   - Upload only when local store is dirty.
   - Materialize split docs + manifest and per-file hashes.
@@ -68,6 +70,7 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 
 ## Validation + preflight sequence (hard fail)
 Before **any** write:
+0. Confirm initialization completed (owner resolved, repo checked/created, store/sync initialized).
 1. Import helpers from `/mnt/data/memory_validation.py`.
 2. Validate full target document:
 - `validate_career_corpus(...)` / `validate_preferences(...)`
@@ -80,6 +83,7 @@ Before **any** write:
 - `diagnose_payload_integrity(canonical_json_text(...))`
 5. Enforce write guard:
 - `assert_validated_before_write(validated, context)`
+  - `assert_sections_explicitly_approved(approved_sections, target_sections)` when section writes are used
 6. Execute Git Data write flow.
 7. Verify committed tree/blob SHAs match expected changed paths.
 

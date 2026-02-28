@@ -10,7 +10,7 @@ from __future__ import annotations
 import base64
 import json
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Set
 
 try:
     from career_corpus_store import CareerCorpusStore
@@ -19,6 +19,9 @@ except ImportError:
 
 try:
     from memory_validation import (
+        assert_persist_claim_allowed,
+        assert_sections_explicitly_approved,
+        assert_validation_claim_allowed,
         canonical_json_sha256,
         canonical_json_text,
         decode_base64_utf8,
@@ -26,6 +29,9 @@ try:
     )
 except ImportError:
     from knowledge_files.memory_validation import (  # type: ignore
+        assert_persist_claim_allowed,
+        assert_sections_explicitly_approved,
+        assert_validation_claim_allowed,
         canonical_json_sha256,
         canonical_json_text,
         decode_base64_utf8,
@@ -43,6 +49,7 @@ CreateGitBlobFn = Callable[[Dict[str, Any]], Dict[str, Any]]
 CreateGitTreeFn = Callable[[Dict[str, Any]], Dict[str, Any]]
 CreateGitCommitFn = Callable[[Dict[str, Any]], Dict[str, Any]]
 UpdateBranchRefFn = Callable[[str, Dict[str, Any]], Dict[str, Any]]
+CreateMemoryRepoFn = Callable[[Dict[str, Any]], Dict[str, Any]]
 
 
 @dataclass
@@ -61,6 +68,16 @@ class CareerCorpusSync:
     """Sync local corpus state with GitHub via injected tool-call adapters."""
 
     METHOD = "git_blob_utf8_split"
+    REQUIRED_ONBOARDING_SECTIONS = {
+        "profile",
+        "summary_facts",
+        "experience",
+        "projects",
+        "skills",
+        "certifications",
+        "education",
+        "metadata",
+    }
 
     def __init__(
         self,
@@ -112,10 +129,88 @@ class CareerCorpusSync:
     def persist_memory_changes(self, message: str = "Update career corpus memory") -> Dict[str, Any]:
         return self.push(message=message)
 
-    def push(self, message: str = "Update career corpus memory") -> Dict[str, Any]:
+    @staticmethod
+    def bootstrap_memory_repo(
+        get_memory_repo: GetMemoryRepoFn,
+        create_memory_repo: CreateMemoryRepoFn,
+        turn_state: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Deterministic repo bootstrap: get -> (optional create) -> confirm get.
+
+        Enforces max one create attempt per turn via `turn_state`.
+        """
+        first = get_memory_repo()
+        first_status = CareerCorpusSync._status_code(first)
+        if first_status != 404:
+            return {
+                "ok": True,
+                "repo_exists": True,
+                "created": False,
+                "sequence": ["get"],
+                "repo_create_attempted_this_turn": bool(
+                    turn_state and turn_state.get("repo_create_attempted_this_turn")
+                ),
+            }
+
+        if turn_state is not None and turn_state.get("repo_create_attempted_this_turn"):
+            raise RuntimeError("createMemoryRepo already attempted this turn.")
+        if turn_state is not None:
+            turn_state["repo_create_attempted_this_turn"] = True
+
+        create_payload = {
+            "name": "career-corpus-memory",
+            "private": True,
+            "auto_init": True,
+        }
+        create_response = create_memory_repo(create_payload)
+        create_status = CareerCorpusSync._status_code(create_response)
+        if create_status and create_status >= 400:
+            return {
+                "ok": False,
+                "repo_exists": False,
+                "created": False,
+                "sequence": ["get", "create"],
+                "error_code": f"api_{create_status}",
+                "reason": "create_failed",
+                "repo_create_attempted_this_turn": True,
+            }
+
+        confirmed = get_memory_repo()
+        confirmed_status = CareerCorpusSync._status_code(confirmed)
+        repo_exists = confirmed_status != 404
+        return {
+            "ok": repo_exists,
+            "repo_exists": repo_exists,
+            "created": True,
+            "sequence": ["get", "create", "get_confirm"],
+            "error_code": None if repo_exists else "api_404",
+            "reason": "confirmed" if repo_exists else "confirm_failed",
+            "repo_create_attempted_this_turn": True,
+        }
+
+    def push(
+        self,
+        message: str = "Update career corpus memory",
+        target_sections: Optional[List[str]] = None,
+        approved_sections: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         result = self._base_result()
         if not self.store.is_loaded:
             self.store.load()
+
+        if target_sections:
+            try:
+                assert_sections_explicitly_approved(approved_sections or {}, target_sections)
+            except Exception as exc:
+                result.update(
+                    {
+                        "ok": False,
+                        "reason": str(exc),
+                        "error_code": "approval_missing",
+                    }
+                )
+                return result
 
         if not self.store.dirty:
             result.update(
@@ -126,6 +221,7 @@ class CareerCorpusSync:
                     "reason": "not_dirty",
                 }
             )
+            result["verify_ok"] = True
             return result
 
         missing = self._missing_push_adapters()
@@ -142,6 +238,8 @@ class CareerCorpusSync:
         try:
             self.store.validate()
             result["validated"] = True
+            result["validation_ran"] = True
+            assert_validation_claim_allowed(validated_ran=True, validation_ok=True)
         except Exception as exc:
             result.update(
                 {
@@ -150,6 +248,7 @@ class CareerCorpusSync:
                     "error_code": "validation_failed",
                 }
             )
+            result["validation_ran"] = True
             return result
 
         # Local-first invariant.
@@ -183,7 +282,22 @@ class CareerCorpusSync:
                     "reason": "hashes_unchanged",
                 }
             )
+            result["verify_ok"] = True
             return result
+
+        if target_sections:
+            disallowed = self._disallowed_changed_paths(changed_paths, deleted_paths, set(target_sections))
+            if disallowed:
+                result.update(
+                    {
+                        "ok": False,
+                        "pushed": False,
+                        "persisted": False,
+                        "reason": f"disallowed_changed_paths:{','.join(sorted(disallowed))}",
+                        "error_code": "unapproved_section_changes",
+                    }
+                )
+                return result
 
         attempt = 0
         attempt_result: Optional[PushAttemptResult] = None
@@ -225,6 +339,7 @@ class CareerCorpusSync:
             deleted_paths=deleted_paths,
         )
         result["verification"] = verification
+        result["verify_ok"] = bool(verification.get("ok"))
         if not verification["ok"]:
             result.update(
                 {
@@ -233,6 +348,20 @@ class CareerCorpusSync:
                     "persisted": False,
                     "reason": verification["error"],
                     "error_code": "transport_corruption",
+                }
+            )
+            return result
+
+        try:
+            assert_persist_claim_allowed(push_ok=True, verify_ok=True)
+        except Exception as exc:
+            result.update(
+                {
+                    "ok": False,
+                    "pushed": True,
+                    "persisted": False,
+                    "reason": str(exc),
+                    "error_code": "persist_claim_invalid",
                 }
             )
             return result
@@ -663,6 +792,46 @@ class CareerCorpusSync:
             "reason": None,
             "error_code": None,
             "validated": False,
+            "validation_ran": False,
             "local_saved": False,
             "remote_written": False,
+            "verify_ok": False,
         }
+
+    @classmethod
+    def _disallowed_changed_paths(
+        cls,
+        changed_paths: List[str],
+        deleted_paths: List[str],
+        target_sections: Set[str],
+    ) -> Set[str]:
+        allowed = cls._allowed_paths_for_sections(target_sections)
+        disallowed: Set[str] = set()
+        for path in changed_paths + deleted_paths:
+            if path not in allowed and not cls._path_prefix_allowed(path, target_sections):
+                disallowed.add(path)
+        return disallowed
+
+    @classmethod
+    def _allowed_paths_for_sections(cls, target_sections: Set[str]) -> Set[str]:
+        mapping = {
+            "profile": "corpus_profile.json",
+            "summary_facts": "corpus_summary_facts.json",
+            "skills": "corpus_skills.json",
+            "certifications": "corpus_certifications.json",
+            "education": "corpus_education.json",
+            "metadata": "corpus_metadata.json",
+        }
+        allowed = {CareerCorpusStore.INDEX_FILE}
+        for section, path in mapping.items():
+            if section in target_sections:
+                allowed.add(path)
+        return allowed
+
+    @staticmethod
+    def _path_prefix_allowed(path: str, target_sections: Set[str]) -> bool:
+        if "experience" in target_sections and path.startswith("corpus_experience_"):
+            return True
+        if "projects" in target_sections and path.startswith("corpus_project_"):
+            return True
+        return False

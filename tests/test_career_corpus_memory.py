@@ -360,6 +360,8 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertTrue(result["persisted"])
         self.assertEqual(result["method"], "git_blob_utf8_split")
         self.assertTrue(result["verification"]["ok"])
+        self.assertTrue(result["validation_ran"])
+        self.assertTrue(result["verify_ok"])
         self.assertEqual(result["retry_count"], 0)
         self.assertGreater(repo.calls["create_git_blob"], 0)
         self.assertEqual(store.status()["remote_branch"], "main")
@@ -375,6 +377,8 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertFalse(result["pushed"])
         self.assertTrue(result["persisted"])
+        self.assertFalse(result["validation_ran"])
+        self.assertTrue(result["verify_ok"])
         self.assertEqual(repo.calls["get_memory_repo"], 0)
         self.assertEqual(repo.calls["create_git_blob"], 0)
 
@@ -422,6 +426,8 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertTrue(result["pushed"])
         self.assertFalse(result["persisted"])
         self.assertEqual(result["error_code"], "transport_corruption")
+        self.assertTrue(result["validation_ran"])
+        self.assertFalse(result["verify_ok"])
 
     def test_meta_migration_old_remote_sha_fields_supported(self) -> None:
         self._write_corpus(with_ids=True)
@@ -460,6 +466,51 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         result = sync.pull(force=True)
         self.assertTrue(result["ok"])
         self.assertTrue(result["changed"])
+
+    def test_push_requires_explicit_section_approval(self) -> None:
+        self._write_corpus(with_ids=True)
+        store = self._store()
+        store.load()
+        split_docs = store.build_split_documents()
+        repo = FakeGitRepo(split_docs)
+        current_index_sha = repo.head_path_map()[CareerCorpusStore.INDEX_FILE]
+        store.mark_push_success(
+            remote_file_sha=current_index_sha,
+            remote_file_hashes=split_docs[CareerCorpusStore.INDEX_FILE]["file_hashes"],
+        )
+        store.set(["education", 0, "degree"], "MS")
+
+        sync = self._sync_with_repo(store, repo)
+        result = sync.push(
+            "Guarded section update",
+            target_sections=["education"],
+            approved_sections={"education": {"approved": True}},
+        )
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["persisted"])
+
+    def test_push_rejects_unapproved_or_cross_section_changes(self) -> None:
+        self._write_corpus(with_ids=True)
+        store = self._store()
+        store.load()
+        split_docs = store.build_split_documents()
+        repo = FakeGitRepo(split_docs)
+        current_index_sha = repo.head_path_map()[CareerCorpusStore.INDEX_FILE]
+        store.mark_push_success(
+            remote_file_sha=current_index_sha,
+            remote_file_hashes=split_docs[CareerCorpusStore.INDEX_FILE]["file_hashes"],
+        )
+        # Change outside target section intentionally.
+        store.set(["skills", "technical"], ["Python", "SQL"])
+
+        sync = self._sync_with_repo(store, repo)
+        result = sync.push(
+            "Bad scoped update",
+            target_sections=["education"],
+            approved_sections={"education": {"approved": True}},
+        )
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["error_code"], "unapproved_section_changes")
 
 
 if __name__ == "__main__":
