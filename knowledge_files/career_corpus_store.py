@@ -1,9 +1,8 @@
 """
 Local-first career corpus store.
 
-This module keeps a local authoritative cache of `career_corpus.json` and a
-small sync metadata file. It is optimized for fast in-session edits by loading
-once, editing in memory, and writing atomically only when changed.
+This module keeps an authoritative local `career_corpus.json`, supports
+in-memory editing, and can materialize split JSON documents for remote storage.
 """
 
 from __future__ import annotations
@@ -27,6 +26,14 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def _canonical_json_text(obj: Dict[str, Any]) -> str:
+    return json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _canonical_json_sha256(obj: Dict[str, Any]) -> str:
+    return hashlib.sha256(_canonical_json_text(obj).encode("utf-8")).hexdigest()
+
+
 def _default_schema_path() -> Path:
     candidates = [
         Path("/mnt/data/career_corpus.schema.json"),
@@ -41,6 +48,15 @@ def _default_schema_path() -> Path:
 
 class CareerCorpusStore:
     """In-memory editor + atomic persistence for `career_corpus.json`."""
+
+    INDEX_FILE = "corpus_index.json"
+    PROFILE_FILE = "corpus_profile.json"
+    SUMMARY_FILE = "corpus_summary_facts.json"
+    SKILLS_FILE = "corpus_skills.json"
+    CERTIFICATIONS_FILE = "corpus_certifications.json"
+    EDUCATION_FILE = "corpus_education.json"
+    METADATA_FILE = "corpus_metadata.json"
+    SPLIT_FORMAT_VERSION = "1.0.0"
 
     ID_PREFIXES = {
         "experience": "exp",
@@ -69,7 +85,6 @@ class CareerCorpusStore:
         self._meta = self._read_meta()
 
     def load(self) -> Dict[str, Any]:
-        """Load corpus JSON from disk into memory once per session."""
         if not self.path.exists():
             raise FileNotFoundError(f"Corpus file not found: {self.path}")
 
@@ -87,7 +102,6 @@ class CareerCorpusStore:
         return deepcopy(self._corpus)
 
     def save(self) -> None:
-        """Persist corpus to disk atomically only when dirty."""
         self._ensure_loaded()
         if not self.dirty:
             return
@@ -105,9 +119,16 @@ class CareerCorpusStore:
         return {
             "dirty": self.dirty,
             "local_hash": self._local_hash,
-            "remote_sha": self._meta.get("remote_sha"),
+            "remote_sha": self._meta.get("remote_sha"),  # legacy compatibility
+            "remote_file_sha": self._meta.get("remote_file_sha"),
+            "remote_blob_sha": self._meta.get("remote_blob_sha"),
+            "remote_commit_sha": self._meta.get("remote_commit_sha"),
+            "remote_branch": self._meta.get("remote_branch"),
+            "remote_file_hashes": self._meta.get("remote_file_hashes") or {},
             "last_pull_utc": self._meta.get("last_pull_utc"),
             "last_push_utc": self._meta.get("last_push_utc"),
+            "last_verified_utc": self._meta.get("last_verified_utc"),
+            "last_push_method": self._meta.get("last_push_method"),
         }
 
     @property
@@ -115,15 +136,12 @@ class CareerCorpusStore:
         return self._corpus is not None
 
     def validate(self) -> None:
-        """Validate current in-memory corpus against the configured schema."""
         self._ensure_loaded()
 
         try:
-            # Preferred path when deployed with memory_validation.py in /mnt/data.
             from memory_validation import validate_career_corpus  # type: ignore
         except ImportError:
             try:
-                # Local-repo fallback where validators live in knowledge_files/.
                 from knowledge_files.memory_validation import validate_career_corpus  # type: ignore
             except ImportError:
                 validate_career_corpus = None  # type: ignore
@@ -143,6 +161,132 @@ class CareerCorpusStore:
     def snapshot(self) -> Dict[str, Any]:
         self._ensure_loaded()
         return deepcopy(self._corpus)
+
+    def build_split_documents(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Materialize remote split documents.
+
+        Experiences and projects are stored as one file per record.
+        """
+        self._ensure_loaded()
+        corpus = self._corpus
+        docs: Dict[str, Dict[str, Any]] = {}
+
+        docs[self.PROFILE_FILE] = {"profile": deepcopy(corpus["profile"])}
+        docs[self.SUMMARY_FILE] = {"summary_facts": deepcopy(corpus["summary_facts"])}
+        docs[self.SKILLS_FILE] = {"skills": deepcopy(corpus["skills"])}
+        docs[self.CERTIFICATIONS_FILE] = {"certifications": deepcopy(corpus["certifications"])}
+        docs[self.EDUCATION_FILE] = {"education": deepcopy(corpus["education"])}
+        docs[self.METADATA_FILE] = {"metadata": deepcopy(corpus["metadata"])}
+
+        experience_files = []
+        for exp in corpus.get("experience", []):
+            exp_id = exp["id"]
+            path = f"corpus_experience_{exp_id}.json"
+            docs[path] = {"experience": deepcopy(exp)}
+            experience_files.append({"id": exp_id, "path": path})
+
+        project_files = []
+        for proj in corpus.get("projects", []):
+            proj_id = proj["id"]
+            path = f"corpus_project_{proj_id}.json"
+            docs[path] = {"project": deepcopy(proj)}
+            project_files.append({"id": proj_id, "path": path})
+
+        file_hashes = {
+            path: _canonical_json_sha256(doc)
+            for path, doc in docs.items()
+        }
+        index_doc = {
+            "format_version": self.SPLIT_FORMAT_VERSION,
+            "schema_version": corpus["schema_version"],
+            "generated_at_utc": _utc_now(),
+            "core_files": {
+                "profile": self.PROFILE_FILE,
+                "summary_facts": self.SUMMARY_FILE,
+                "skills": self.SKILLS_FILE,
+                "certifications": self.CERTIFICATIONS_FILE,
+                "education": self.EDUCATION_FILE,
+                "metadata": self.METADATA_FILE,
+            },
+            "experience_files": experience_files,
+            "project_files": project_files,
+            "file_hashes": file_hashes,
+        }
+        docs[self.INDEX_FILE] = index_doc
+        return docs
+
+    @classmethod
+    def index_referenced_paths(cls, index_doc: Dict[str, Any]) -> List[str]:
+        core_files = index_doc.get("core_files", {})
+        paths: List[str] = []
+        for key in ("profile", "summary_facts", "skills", "certifications", "education", "metadata"):
+            path = core_files.get(key)
+            if isinstance(path, str) and path:
+                paths.append(path)
+        for item in index_doc.get("experience_files", []):
+            path = item.get("path")
+            if isinstance(path, str) and path:
+                paths.append(path)
+        for item in index_doc.get("project_files", []):
+            path = item.get("path")
+            if isinstance(path, str) and path:
+                paths.append(path)
+        return paths
+
+    @classmethod
+    def assemble_from_split_documents(
+        cls,
+        index_doc: Dict[str, Any],
+        documents_by_path: Dict[str, Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        core_files = index_doc.get("core_files", {})
+
+        def _require(path_key: str) -> Dict[str, Any]:
+            path = core_files.get(path_key)
+            if not isinstance(path, str) or path not in documents_by_path:
+                raise ValueError(f"Missing required split file for '{path_key}'.")
+            return documents_by_path[path]
+
+        profile_doc = _require("profile")
+        summary_doc = _require("summary_facts")
+        skills_doc = _require("skills")
+        certs_doc = _require("certifications")
+        edu_doc = _require("education")
+        metadata_doc = _require("metadata")
+
+        experience = []
+        for item in index_doc.get("experience_files", []):
+            path = item.get("path")
+            if not isinstance(path, str) or path not in documents_by_path:
+                raise ValueError(f"Missing experience split file: {path}")
+            exp_doc = documents_by_path[path]
+            if "experience" not in exp_doc:
+                raise ValueError(f"Invalid experience split file shape: {path}")
+            experience.append(deepcopy(exp_doc["experience"]))
+
+        projects = []
+        for item in index_doc.get("project_files", []):
+            path = item.get("path")
+            if not isinstance(path, str) or path not in documents_by_path:
+                raise ValueError(f"Missing project split file: {path}")
+            proj_doc = documents_by_path[path]
+            if "project" not in proj_doc:
+                raise ValueError(f"Invalid project split file shape: {path}")
+            projects.append(deepcopy(proj_doc["project"]))
+
+        corpus = {
+            "schema_version": index_doc.get("schema_version", "1.0.0"),
+            "profile": deepcopy(profile_doc.get("profile", {})),
+            "summary_facts": deepcopy(summary_doc.get("summary_facts", [])),
+            "experience": experience,
+            "projects": projects,
+            "skills": deepcopy(skills_doc.get("skills", {})),
+            "certifications": deepcopy(certs_doc.get("certifications", [])),
+            "education": deepcopy(edu_doc.get("education", [])),
+            "metadata": deepcopy(metadata_doc.get("metadata", {})),
+        }
+        return corpus
 
     def list_experiences(self) -> List[Dict[str, Any]]:
         self._ensure_loaded()
@@ -222,7 +366,6 @@ class CareerCorpusStore:
         return True
 
     def get(self, path: List[PathPart]) -> Any:
-        """Read any nested value by path, for example ['profile', 'full_name']."""
         self._ensure_loaded()
         node: Any = self._corpus
         for part in path:
@@ -230,7 +373,6 @@ class CareerCorpusStore:
         return deepcopy(node)
 
     def set(self, path: List[PathPart], value: Any) -> None:
-        """Set any nested value by path, for example ['profile', 'full_name']."""
         self._ensure_loaded()
         if not path:
             raise ValueError("Path cannot be empty.")
@@ -239,11 +381,6 @@ class CareerCorpusStore:
         self._mark_dirty()
 
     def update(self, mutator_fn: Callable[[Dict[str, Any]], Optional[Dict[str, Any]]]) -> None:
-        """
-        Apply an in-memory mutator function.
-
-        If the mutator returns a dict, that replaces the current corpus object.
-        """
         self._ensure_loaded()
         before = self._compute_hash(self._corpus)
         replacement = mutator_fn(self._corpus)
@@ -256,12 +393,13 @@ class CareerCorpusStore:
         if after != before:
             self._mark_dirty()
 
-    def replace_corpus(self, corpus: Dict[str, Any], remote_sha: Optional[str] = None) -> None:
-        """
-        Replace in-memory corpus with a full document (used by sync pull).
-
-        The document is validated and written atomically to local disk.
-        """
+    def replace_corpus(
+        self,
+        corpus: Dict[str, Any],
+        remote_file_sha: Optional[str] = None,
+        remote_branch: Optional[str] = None,
+        remote_file_hashes: Optional[Dict[str, str]] = None,
+    ) -> None:
         if not isinstance(corpus, dict):
             raise TypeError("Corpus document must be an object.")
         self._corpus = deepcopy(corpus)
@@ -270,15 +408,42 @@ class CareerCorpusStore:
         self._atomic_write_json(self.path, self._corpus)
         self._local_hash = self._compute_hash(self._corpus)
         self._meta["local_hash"] = self._local_hash
-        if remote_sha is not None:
-            self._meta["remote_sha"] = remote_sha
+        if remote_file_sha is not None:
+            self._meta["remote_file_sha"] = remote_file_sha
+            self._meta["remote_sha"] = remote_file_sha
+        if remote_branch is not None:
+            self._meta["remote_branch"] = remote_branch
+        if remote_file_hashes is not None:
+            self._meta["remote_file_hashes"] = deepcopy(remote_file_hashes)
         self._meta["last_pull_utc"] = _utc_now()
         self.dirty = ids_added
         self._write_meta()
 
-    def mark_push_success(self, remote_sha: str) -> None:
-        self._meta["remote_sha"] = remote_sha
+    def mark_push_success(
+        self,
+        remote_file_sha: Optional[str] = None,
+        remote_blob_sha: Optional[str] = None,
+        remote_commit_sha: Optional[str] = None,
+        remote_branch: Optional[str] = None,
+        remote_file_hashes: Optional[Dict[str, str]] = None,
+        method: str = "git_blob_utf8",
+        verified: bool = True,
+    ) -> None:
+        if remote_file_sha is not None:
+            self._meta["remote_file_sha"] = remote_file_sha
+            self._meta["remote_sha"] = remote_file_sha
+        if remote_blob_sha is not None:
+            self._meta["remote_blob_sha"] = remote_blob_sha
+        if remote_commit_sha is not None:
+            self._meta["remote_commit_sha"] = remote_commit_sha
+        if remote_branch is not None:
+            self._meta["remote_branch"] = remote_branch
+        if remote_file_hashes is not None:
+            self._meta["remote_file_hashes"] = deepcopy(remote_file_hashes)
         self._meta["last_push_utc"] = _utc_now()
+        self._meta["last_push_method"] = method
+        if verified:
+            self._meta["last_verified_utc"] = _utc_now()
         self._write_meta()
 
     def _ensure_loaded(self) -> None:
@@ -345,7 +510,7 @@ class CareerCorpusStore:
 
     @staticmethod
     def _compute_hash(document: Dict[str, Any]) -> str:
-        canonical = json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        canonical = _canonical_json_text(document)
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
     def _resolve_parent(self, path: List[PathPart]) -> tuple[Any, PathPart]:
@@ -358,13 +523,30 @@ class CareerCorpusStore:
         if not self.meta_path.exists():
             return {
                 "remote_sha": None,
+                "remote_file_sha": None,
+                "remote_blob_sha": None,
+                "remote_commit_sha": None,
+                "remote_branch": None,
+                "remote_file_hashes": {},
+                "last_verified_utc": None,
+                "last_push_method": None,
                 "local_hash": None,
                 "last_pull_utc": None,
                 "last_push_utc": None,
             }
         data = self._read_json_object(self.meta_path)
+        legacy_remote_sha = data.get("remote_sha")
+        remote_file_sha = data.get("remote_file_sha") or legacy_remote_sha
+        hashes = data.get("remote_file_hashes")
         return {
-            "remote_sha": data.get("remote_sha"),
+            "remote_sha": legacy_remote_sha or remote_file_sha,
+            "remote_file_sha": remote_file_sha,
+            "remote_blob_sha": data.get("remote_blob_sha"),
+            "remote_commit_sha": data.get("remote_commit_sha"),
+            "remote_branch": data.get("remote_branch"),
+            "remote_file_hashes": hashes if isinstance(hashes, dict) else {},
+            "last_verified_utc": data.get("last_verified_utc"),
+            "last_push_method": data.get("last_push_method"),
             "local_hash": data.get("local_hash"),
             "last_pull_utc": data.get("last_pull_utc"),
             "last_push_utc": data.get("last_push_utc"),

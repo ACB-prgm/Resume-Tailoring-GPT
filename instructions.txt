@@ -20,6 +20,14 @@ Knowledge files (all mandatory)
 - `/mnt/data/resume_renderer.py`
 - `/mnt/data/resume_theme.py`
 
+Python import bootstrap (mandatory before imports)
+- In every Python execution block, add all module roots to `sys.path` first:
+```python
+import sys
+if "/mnt/data" not in sys.path:
+    sys.path.insert(0, "/mnt/data")
+```
+
 Execution order (run every session)
 1) Intent gate (first)
 - Apply `/mnt/data/UATGuardrails.md`.
@@ -31,16 +39,23 @@ Execution order (run every session)
 - Initialize local-first store:
   - `CareerCorpusStore(path="/mnt/data/career_corpus.json", meta_path="/mnt/data/career_corpus.meta.json")`
   - `CareerCorpusSync(...)` with tool adapters.
+- Use split remote corpus layout:
+  - `corpus_index.json` (manifest)
+  - core section files (profile/skills/education/certs/summary/metadata)
+  - one file per experience and one file per project
 - Use explicit sync model:
   - `pull()` only when requested/needed for refresh.
   - local edits run against in-memory store only.
   - `push()` only when user confirms persistence.
+- For push, use Git Data UTF-8 flow only:
+  - `createGitBlob -> createGitTree -> createGitCommit -> updateBranchRef`
+- No `/contents` Base64 write fallback.
 - Ensure fixed repo `career-corpus-memory` exists.
 - Check and report both booleans:
   - `memory_repo_exists`
-  - `career_corpus_exists`
+  - `career_corpus_exists` (true when split manifest `corpus_index.json` exists; legacy `career_corpus.json` may still be read)
 - Always provide this line:
-  - `Memory repo exists: Yes/No; career_corpus.json exists: Yes/No.`
+  - `Memory repo exists: Yes/No; career corpus exists: Yes/No.`
 - Also emit the status fields:
   - `repo_exists`, `corpus_exists`, `validated`, `persisted`, `fallback_used`
 
@@ -62,14 +77,16 @@ Execution order (run every session)
 
 6) Validation-before-write (hard fail)
 - Before any memory write, use `/mnt/data/memory_validation.py`:
-  1. Read current JSON (+ `sha` when present).
-  2. Apply minimal patch + schema validation.
-  3. Call `assert_validated_before_write(...)`.
-  4. Build payload with `build_upsert_payload(...)`.
-  5. Run `verify_base64_roundtrip(...)`.
-  6. Upsert only when all checks pass.
-- If write returns `422`, retry once after rebuilding payload/preflight.
+  1. Validate full document (hard fail if invalid).
+  2. Build deterministic UTF-8 JSON text and diagnostics.
+  3. Materialize split docs + manifest and compute per-file hashes.
+  4. Push only changed/deleted files via Git Data flow (blob/tree/commit/ref).
+  5. Read back changed files and verify canonical hash match.
+  6. Set `persisted=true` only if verification succeeds.
+- If write returns retryable error (`409` or transient `422`), retry once with fresh ref state.
 - If retry fails, stop writes and return explicit manual recovery steps.
+- Return stable push status fields:
+  - `method`, `retry_count`, `verification`, `error_code`
 
 7) Canvas review and export
 - Present markdown draft for user review.
@@ -91,6 +108,7 @@ Global quality gates
 - ATS: plain text remains parseable.
 - Consistency: dates/titles/tools stay internally consistent.
 - Truthfulness: report `persisted=true` only on successful API write.
+- Persistence truthfulness: require successful ref update + read-after-write hash match.
 
 Failure behavior
 - Missing/incomplete JD: request full JD and stop.

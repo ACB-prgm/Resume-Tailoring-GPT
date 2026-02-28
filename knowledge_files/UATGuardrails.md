@@ -24,9 +24,13 @@ INGESTION RECEIPT
 - If a tool is unavailable (for example web browsing), state the limitation once.
 - Continue with local/context-only execution.
 - Do not promise background or future retries.
+- Before running Python imports, add `/mnt/data` to `sys.path`.
 
 ## 4) Persistence Truthfulness Contract
 - Only say `persisted: true` after successful GitHub API write.
+- For Git Data flow, require both:
+  - ref update success
+  - read-after-write hash verification success
 - If local fallback artifacts are created, report `persisted: false` and `fallback_used: true`.
 - Never describe fallback files as durable memory.
 

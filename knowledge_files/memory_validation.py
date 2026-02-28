@@ -9,6 +9,7 @@ before any GitHub upsert call is made.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -137,6 +138,63 @@ def validate_preferences_patch(
     return apply_patch_and_validate(
         existing_preferences, patch, PREFERENCES_SCHEMA_PATH
     )
+
+
+def canonical_json_text(json_obj: Dict[str, Any]) -> str:
+    """Return deterministic JSON text for hashing/comparison."""
+    return json.dumps(
+        json_obj,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+
+
+def canonical_json_sha256(json_obj: Dict[str, Any]) -> str:
+    """Return SHA-256 hex digest of deterministic JSON text."""
+    return hashlib.sha256(canonical_json_text(json_obj).encode("utf-8")).hexdigest()
+
+
+def diagnose_payload_integrity(text: str) -> Dict[str, Any]:
+    """
+    Provide quick integrity diagnostics for UTF-8 payloads.
+
+    This is useful before transport calls to detect truncation/mutation.
+    """
+    encoded = text.encode("utf-8")
+    return {
+        "char_len": len(text),
+        "byte_len": len(encoded),
+        "sha256": hashlib.sha256(encoded).hexdigest(),
+        "contains_non_ascii": any(ord(c) > 127 for c in text),
+        "newline_count": text.count("\n"),
+    }
+
+
+def verify_remote_matches_local(
+    local_text: str,
+    remote_text: str,
+) -> Tuple[bool, Optional[str]]:
+    """
+    Verify remote JSON text matches local JSON text after canonicalization.
+
+    Returns:
+        (ok, error)
+    """
+    try:
+        local_obj = json.loads(local_text)
+        remote_obj = json.loads(remote_text)
+    except Exception as exc:
+        return False, f"JSON parse failed during verification: {exc}"
+
+    local_canonical = canonical_json_text(local_obj)
+    remote_canonical = canonical_json_text(remote_obj)
+    if local_canonical == remote_canonical:
+        return True, None
+
+    local_hash = hashlib.sha256(local_canonical.encode("utf-8")).hexdigest()
+    remote_hash = hashlib.sha256(remote_canonical.encode("utf-8")).hexdigest()
+    return False, f"Canonical mismatch: local={local_hash} remote={remote_hash}"
 
 
 def encode_base64_utf8(text: str) -> str:

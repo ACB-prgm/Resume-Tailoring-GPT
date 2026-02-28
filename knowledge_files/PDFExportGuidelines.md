@@ -11,7 +11,8 @@ Generate the final PDF from approved markdown without changing approved content.
 ## Required export pipeline
 ```python
 import sys
-sys.path.append("/mnt/data")
+if "/mnt/data" not in sys.path:
+    sys.path.insert(0, "/mnt/data")
 from resume_renderer import ResumeRenderer
 from resume_theme import ResumeTheme
 

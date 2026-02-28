@@ -5,7 +5,7 @@ Make memory bootstrap and persistence decisions explicit and auditable.
 
 ## Required booleans
 - `memory_repo_exists`
-- `career_corpus_exists`
+- `career_corpus_exists` (manifest `corpus_index.json` for split model, or legacy corpus file)
 
 ## States
 - `NO_REPO`: `memory_repo_exists=false`, `career_corpus_exists=false`
@@ -22,6 +22,9 @@ MEMORY STATUS
 - validated: <true|false>
 - persisted: <true|false>
 - fallback_used: <true|false>
+- method: <git_blob_utf8|...>
+- retry_count: <0|1>
+- verification: <ok|failed|not_run>
 ```
 
 ## Transition rules
@@ -32,4 +35,4 @@ MEMORY STATUS
 - `PERSIST_FAILED -> CORPUS_READY`: only after successful corrected upsert.
 
 ## Canonical user-facing check response
-`Memory repo exists: Yes/No; career_corpus.json exists: Yes/No.`
+`Memory repo exists: Yes/No; career corpus exists: Yes/No.`

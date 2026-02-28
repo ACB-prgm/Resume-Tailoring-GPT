@@ -1,0 +1,622 @@
+"""
+Explicit GitHub sync adapter for local-first career corpus storage.
+
+Writes use Git Data UTF-8 flow:
+blob -> tree -> commit -> ref update
+"""
+
+from __future__ import annotations
+
+import base64
+import json
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional
+
+try:
+    from career_corpus_store import CareerCorpusStore
+except ImportError:
+    from knowledge_files.career_corpus_store import CareerCorpusStore  # type: ignore
+
+try:
+    from memory_validation import (
+        canonical_json_sha256,
+        canonical_json_text,
+        decode_base64_utf8,
+        diagnose_payload_integrity,
+        verify_remote_matches_local,
+    )
+except ImportError:
+    from knowledge_files.memory_validation import (  # type: ignore
+        canonical_json_sha256,
+        canonical_json_text,
+        decode_base64_utf8,
+        diagnose_payload_integrity,
+        verify_remote_matches_local,
+    )
+
+
+ReadRemoteFileFn = Callable[[], Dict[str, Any]]
+GetMemoryRepoFn = Callable[[], Dict[str, Any]]
+GetBranchRefFn = Callable[[str], Dict[str, Any]]
+GetGitCommitFn = Callable[[str], Dict[str, Any]]
+GetGitTreeFn = Callable[[str, bool], Dict[str, Any]]
+GetGitBlobFn = Callable[[str], Dict[str, Any]]
+CreateGitBlobFn = Callable[[Dict[str, Any]], Dict[str, Any]]
+CreateGitTreeFn = Callable[[Dict[str, Any]], Dict[str, Any]]
+CreateGitCommitFn = Callable[[Dict[str, Any]], Dict[str, Any]]
+UpdateBranchRefFn = Callable[[str, Dict[str, Any]], Dict[str, Any]]
+
+
+@dataclass
+class PushAttemptResult:
+    ok: bool
+    error_code: Optional[str] = None
+    reason: Optional[str] = None
+    retryable: bool = False
+    remote_blob_shas: Optional[Dict[str, str]] = None
+    remote_commit_sha: Optional[str] = None
+    remote_branch: Optional[str] = None
+    new_tree_sha: Optional[str] = None
+
+
+class CareerCorpusSync:
+    """Sync local corpus state with GitHub via injected tool-call adapters."""
+
+    METHOD = "git_blob_utf8_split"
+
+    def __init__(
+        self,
+        store: CareerCorpusStore,
+        read_remote_file: Optional[ReadRemoteFileFn] = None,
+        get_memory_repo: Optional[GetMemoryRepoFn] = None,
+        get_branch_ref: Optional[GetBranchRefFn] = None,
+        get_git_commit: Optional[GetGitCommitFn] = None,
+        get_git_tree: Optional[GetGitTreeFn] = None,
+        get_git_blob: Optional[GetGitBlobFn] = None,
+        create_git_blob: Optional[CreateGitBlobFn] = None,
+        create_git_tree: Optional[CreateGitTreeFn] = None,
+        create_git_commit: Optional[CreateGitCommitFn] = None,
+        update_branch_ref: Optional[UpdateBranchRefFn] = None,
+        max_retries: int = 1,
+    ) -> None:
+        self.store = store
+        self._read_remote_file = read_remote_file
+        self._get_memory_repo = get_memory_repo
+        self._get_branch_ref = get_branch_ref
+        self._get_git_commit = get_git_commit
+        self._get_git_tree = get_git_tree
+        self._get_git_blob = get_git_blob
+        self._create_git_blob = create_git_blob
+        self._create_git_tree = create_git_tree
+        self._create_git_commit = create_git_commit
+        self._update_branch_ref = update_branch_ref
+        self._max_retries = max_retries
+
+    def pull(self, force: bool = False) -> Dict[str, Any]:
+        if self._has_split_pull_adapters():
+            return self._pull_split(force=force)
+        return self._pull_legacy_single_file(force=force)
+
+    def persist_memory_changes(self, message: str = "Update career corpus memory") -> Dict[str, Any]:
+        return self.push(message=message)
+
+    def push(self, message: str = "Update career corpus memory") -> Dict[str, Any]:
+        result = self._base_result()
+        if not self.store.is_loaded:
+            self.store.load()
+
+        if not self.store.dirty:
+            result.update(
+                {
+                    "ok": True,
+                    "pushed": False,
+                    "persisted": True,
+                    "reason": "not_dirty",
+                }
+            )
+            return result
+
+        missing = self._missing_push_adapters()
+        if missing:
+            result.update(
+                {
+                    "ok": False,
+                    "reason": f"missing_adapters:{','.join(missing)}",
+                    "error_code": "api_unknown",
+                }
+            )
+            return result
+
+        try:
+            self.store.validate()
+            result["validated"] = True
+        except Exception as exc:
+            result.update(
+                {
+                    "ok": False,
+                    "reason": str(exc),
+                    "error_code": "validation_failed",
+                }
+            )
+            return result
+
+        # Local-first invariant.
+        self.store.save()
+        result["local_saved"] = True
+
+        docs = self.store.build_split_documents()
+        docs_text = {path: canonical_json_text(doc) for path, doc in docs.items()}
+        local_hashes = {path: canonical_json_sha256(doc) for path, doc in docs.items()}
+        result["payload_integrity"] = {
+            path: diagnose_payload_integrity(text)
+            for path, text in docs_text.items()
+            if path in (CareerCorpusStore.INDEX_FILE,)
+        }
+
+        status = self.store.status()
+        previous_hashes = status.get("remote_file_hashes") or {}
+        changed_paths = sorted(
+            [path for path, file_hash in local_hashes.items() if previous_hashes.get(path) != file_hash]
+        )
+        deleted_paths = sorted(
+            [path for path in previous_hashes.keys() if path not in local_hashes]
+        )
+
+        if not changed_paths and not deleted_paths:
+            result.update(
+                {
+                    "ok": True,
+                    "pushed": False,
+                    "persisted": True,
+                    "reason": "hashes_unchanged",
+                }
+            )
+            return result
+
+        attempt = 0
+        attempt_result: Optional[PushAttemptResult] = None
+        while attempt <= self._max_retries:
+            attempt_result = self._attempt_git_push(
+                message=message,
+                docs_text=docs_text,
+                changed_paths=changed_paths,
+                deleted_paths=deleted_paths,
+            )
+            result["retry_count"] = attempt
+            if attempt_result.ok:
+                break
+            if not attempt_result.retryable:
+                break
+            attempt += 1
+
+        if attempt_result is None or not attempt_result.ok:
+            result.update(
+                {
+                    "ok": False,
+                    "pushed": False,
+                    "persisted": False,
+                    "reason": attempt_result.reason if attempt_result else "push_attempt_missing",
+                    "error_code": attempt_result.error_code if attempt_result else "api_unknown",
+                }
+            )
+            return result
+
+        result["remote_written"] = True
+        result["remote_blob_sha"] = attempt_result.remote_blob_shas.get(CareerCorpusStore.INDEX_FILE)
+        result["remote_commit_sha"] = attempt_result.remote_commit_sha
+        result["remote_branch"] = attempt_result.remote_branch
+
+        verification = self._verify_push_result(
+            commit_sha=attempt_result.remote_commit_sha,
+            expected_docs_text=docs_text,
+            changed_paths=changed_paths,
+            deleted_paths=deleted_paths,
+        )
+        result["verification"] = verification
+        if not verification["ok"]:
+            result.update(
+                {
+                    "ok": False,
+                    "pushed": True,
+                    "persisted": False,
+                    "reason": verification["error"],
+                    "error_code": "transport_corruption",
+                }
+            )
+            return result
+
+        self.store.mark_push_success(
+            remote_file_sha=verification.get("remote_index_sha"),
+            remote_blob_sha=attempt_result.remote_blob_shas.get(CareerCorpusStore.INDEX_FILE),
+            remote_commit_sha=attempt_result.remote_commit_sha,
+            remote_branch=attempt_result.remote_branch,
+            remote_file_hashes=local_hashes,
+            method=self.METHOD,
+            verified=True,
+        )
+        result.update(
+            {
+                "ok": True,
+                "pushed": True,
+                "persisted": True,
+                "reason": "push_verified",
+                "error_code": None,
+            }
+        )
+        return result
+
+    def _pull_split(self, force: bool = False) -> Dict[str, Any]:
+        repo_response = self._get_memory_repo()
+        if self._status_code(repo_response) == 404:
+            return {"ok": False, "changed": False, "reason": "memory_repo_not_found", "error_code": "api_404"}
+        branch = repo_response.get("default_branch")
+        if not isinstance(branch, str) or not branch:
+            return {"ok": False, "changed": False, "reason": "default_branch_missing", "error_code": "api_unknown"}
+
+        ref_response = self._get_branch_ref(branch)
+        if self._status_code(ref_response) == 404:
+            return {"ok": False, "changed": False, "reason": "branch_ref_not_found", "error_code": "api_404"}
+        commit_sha = self._extract_nested(ref_response, ("object", "sha"))
+        if not commit_sha:
+            return {"ok": False, "changed": False, "reason": "parent_commit_sha_missing", "error_code": "api_unknown"}
+
+        commit_response = self._get_git_commit(commit_sha)
+        if self._status_code(commit_response) == 404:
+            return {"ok": False, "changed": False, "reason": "parent_commit_not_found", "error_code": "api_404"}
+        tree_sha = self._extract_nested(commit_response, ("tree", "sha"))
+        if not tree_sha:
+            return {"ok": False, "changed": False, "reason": "base_tree_sha_missing", "error_code": "api_unknown"}
+
+        tree_response = self._get_git_tree(tree_sha, True)
+        path_to_blob = self._tree_path_to_blob_sha(tree_response)
+        index_sha = path_to_blob.get(CareerCorpusStore.INDEX_FILE)
+        if not index_sha:
+            return {"ok": True, "changed": False, "reason": "remote_missing", "error_code": "api_404"}
+
+        status = self.store.status()
+        if not force and status.get("remote_file_sha") == index_sha:
+            return {"ok": True, "changed": False, "reason": "sha_unchanged", "remote_file_sha": index_sha}
+
+        index_doc = self._read_blob_json(index_sha)
+        referenced_paths = CareerCorpusStore.index_referenced_paths(index_doc)
+        split_docs: Dict[str, Dict[str, Any]] = {}
+        for path in referenced_paths:
+            blob_sha = path_to_blob.get(path)
+            if not blob_sha:
+                return {
+                    "ok": False,
+                    "changed": False,
+                    "reason": f"split_file_missing:{path}",
+                    "error_code": "transport_corruption",
+                }
+            split_docs[path] = self._read_blob_json(blob_sha)
+
+        corpus = CareerCorpusStore.assemble_from_split_documents(index_doc, split_docs)
+        file_hashes = index_doc.get("file_hashes")
+        remote_hashes = file_hashes if isinstance(file_hashes, dict) else {}
+        self.store.replace_corpus(
+            corpus,
+            remote_file_sha=index_sha,
+            remote_branch=branch,
+            remote_file_hashes=remote_hashes,
+        )
+        return {
+            "ok": True,
+            "changed": True,
+            "reason": "pulled",
+            "remote_file_sha": index_sha,
+            "dirty": self.store.status()["dirty"],
+        }
+
+    def _pull_legacy_single_file(self, force: bool = False) -> Dict[str, Any]:
+        if self._read_remote_file is None:
+            return {
+                "ok": False,
+                "changed": False,
+                "reason": "missing_read_adapter",
+                "error_code": "api_unknown",
+            }
+        response = self._read_remote_file()
+        normalized = self._normalize_read_response(response)
+        if not normalized["exists"]:
+            return {
+                "ok": True,
+                "changed": False,
+                "reason": "remote_missing",
+                "error_code": "api_404",
+            }
+        status = self.store.status()
+        remote_file_sha = normalized["sha"]
+        if (
+            not force
+            and remote_file_sha
+            and status.get("remote_file_sha")
+            and remote_file_sha == status["remote_file_sha"]
+        ):
+            return {"ok": True, "changed": False, "reason": "sha_unchanged", "remote_file_sha": remote_file_sha}
+
+        decoded_text = decode_base64_utf8(normalized["content_b64"])
+        document = json.loads(decoded_text)
+        if not isinstance(document, dict):
+            raise ValueError("Remote career_corpus.json is not a JSON object.")
+        self.store.replace_corpus(document, remote_file_sha=remote_file_sha)
+        return {"ok": True, "changed": True, "reason": "pulled", "remote_file_sha": remote_file_sha}
+
+    def _attempt_git_push(
+        self,
+        message: str,
+        docs_text: Dict[str, str],
+        changed_paths: List[str],
+        deleted_paths: List[str],
+    ) -> PushAttemptResult:
+        repo_response = self._get_memory_repo()
+        if self._status_code(repo_response) == 404:
+            return PushAttemptResult(ok=False, error_code="api_404", reason="memory_repo_not_found")
+        branch = repo_response.get("default_branch")
+        if not isinstance(branch, str) or not branch:
+            return PushAttemptResult(ok=False, error_code="api_unknown", reason="default_branch_missing")
+
+        ref_response = self._get_branch_ref(branch)
+        status = self._status_code(ref_response)
+        if status == 409:
+            return PushAttemptResult(ok=False, error_code="ref_conflict", reason="branch_ref_conflict", retryable=True)
+        if status == 404:
+            return PushAttemptResult(ok=False, error_code="api_404", reason="branch_ref_not_found")
+        parent_commit_sha = self._extract_nested(ref_response, ("object", "sha"))
+        if not parent_commit_sha:
+            return PushAttemptResult(ok=False, error_code="api_unknown", reason="parent_commit_sha_missing")
+
+        commit_response = self._get_git_commit(parent_commit_sha)
+        if self._status_code(commit_response) == 404:
+            return PushAttemptResult(ok=False, error_code="api_404", reason="parent_commit_not_found")
+        base_tree_sha = self._extract_nested(commit_response, ("tree", "sha"))
+        if not base_tree_sha:
+            return PushAttemptResult(ok=False, error_code="api_unknown", reason="base_tree_sha_missing")
+
+        blob_shas: Dict[str, str] = {}
+        for path in changed_paths:
+            blob_response = self._create_git_blob({"content": docs_text[path], "encoding": "utf-8"})
+            status = self._status_code(blob_response)
+            if status == 422:
+                return PushAttemptResult(ok=False, error_code="api_422", reason=f"blob_rejected:{path}", retryable=True)
+            blob_sha = blob_response.get("sha")
+            if not isinstance(blob_sha, str) or not blob_sha:
+                return PushAttemptResult(ok=False, error_code="api_unknown", reason=f"blob_sha_missing:{path}")
+            blob_shas[path] = blob_sha
+
+        tree_entries: List[Dict[str, Any]] = []
+        for path in changed_paths:
+            tree_entries.append(
+                {
+                    "path": path,
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": blob_shas[path],
+                }
+            )
+        for path in deleted_paths:
+            tree_entries.append(
+                {
+                    "path": path,
+                    "mode": "100644",
+                    "type": "blob",
+                    "sha": None,
+                }
+            )
+
+        tree_response = self._create_git_tree({"base_tree": base_tree_sha, "tree": tree_entries})
+        status = self._status_code(tree_response)
+        if status == 422:
+            return PushAttemptResult(ok=False, error_code="api_422", reason="tree_rejected", retryable=True)
+        new_tree_sha = tree_response.get("sha")
+        if not isinstance(new_tree_sha, str) or not new_tree_sha:
+            return PushAttemptResult(ok=False, error_code="api_unknown", reason="new_tree_sha_missing")
+
+        commit_create_response = self._create_git_commit(
+            {
+                "message": message,
+                "tree": new_tree_sha,
+                "parents": [parent_commit_sha],
+            }
+        )
+        status = self._status_code(commit_create_response)
+        if status == 422:
+            return PushAttemptResult(ok=False, error_code="api_422", reason="commit_rejected", retryable=True)
+        new_commit_sha = commit_create_response.get("sha")
+        if not isinstance(new_commit_sha, str) or not new_commit_sha:
+            return PushAttemptResult(ok=False, error_code="api_unknown", reason="new_commit_sha_missing")
+
+        ref_update_response = self._update_branch_ref(branch, {"sha": new_commit_sha, "force": False})
+        status = self._status_code(ref_update_response)
+        if status == 409:
+            return PushAttemptResult(ok=False, error_code="ref_conflict", reason="ref_update_conflict", retryable=True)
+        if status == 422:
+            return PushAttemptResult(ok=False, error_code="api_422", reason="ref_update_rejected", retryable=True)
+        if status == 404:
+            return PushAttemptResult(ok=False, error_code="api_404", reason="ref_update_not_found")
+
+        return PushAttemptResult(
+            ok=True,
+            remote_blob_shas=blob_shas,
+            remote_commit_sha=new_commit_sha,
+            remote_branch=branch,
+            new_tree_sha=new_tree_sha,
+        )
+
+    def _verify_push_result(
+        self,
+        commit_sha: str,
+        expected_docs_text: Dict[str, str],
+        changed_paths: List[str],
+        deleted_paths: List[str],
+    ) -> Dict[str, Any]:
+        commit_response = self._get_git_commit(commit_sha)
+        tree_sha = self._extract_nested(commit_response, ("tree", "sha"))
+        if not tree_sha:
+            return {"ok": False, "error": "verification_tree_missing", "remote_index_sha": None}
+        tree_response = self._get_git_tree(tree_sha, True)
+        path_to_blob = self._tree_path_to_blob_sha(tree_response)
+
+        for path in deleted_paths:
+            if path in path_to_blob:
+                return {"ok": False, "error": f"deleted_path_still_present:{path}", "remote_index_sha": None}
+
+        for path in changed_paths:
+            blob_sha = path_to_blob.get(path)
+            if not blob_sha:
+                return {"ok": False, "error": f"changed_path_missing:{path}", "remote_index_sha": None}
+            remote_text = self._read_blob_text(blob_sha)
+            ok, error = verify_remote_matches_local(expected_docs_text[path], remote_text)
+            if not ok:
+                return {"ok": False, "error": f"{path}:{error}", "remote_index_sha": None}
+
+        return {
+            "ok": True,
+            "error": None,
+            "remote_index_sha": path_to_blob.get(CareerCorpusStore.INDEX_FILE),
+        }
+
+    def _read_blob_json(self, blob_sha: str) -> Dict[str, Any]:
+        text = self._read_blob_text(blob_sha)
+        obj = json.loads(text)
+        if not isinstance(obj, dict):
+            raise ValueError("Expected blob JSON object.")
+        return obj
+
+    def _read_blob_text(self, blob_sha: str) -> str:
+        blob_response = self._get_git_blob(blob_sha)
+        if self._status_code(blob_response) == 404:
+            raise ValueError(f"Blob not found: {blob_sha}")
+        encoding = blob_response.get("encoding")
+        content = blob_response.get("content")
+        if not isinstance(content, str):
+            raise ValueError("Blob response missing content.")
+        if encoding == "utf-8":
+            return content
+        if encoding == "base64" or not encoding:
+            # GitHub blob content may include line breaks.
+            compact = "".join(content.split())
+            raw = base64.b64decode(compact.encode("ascii"))
+            return raw.decode("utf-8")
+        raise ValueError(f"Unsupported blob encoding: {encoding}")
+
+    @staticmethod
+    def _tree_path_to_blob_sha(tree_response: Dict[str, Any]) -> Dict[str, str]:
+        entries = tree_response.get("tree")
+        if not isinstance(entries, list):
+            raise ValueError("Tree response missing 'tree' list.")
+        mapping: Dict[str, str] = {}
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            if entry.get("type") != "blob":
+                continue
+            path = entry.get("path")
+            sha = entry.get("sha")
+            if isinstance(path, str) and isinstance(sha, str):
+                mapping[path] = sha
+        return mapping
+
+    def _missing_push_adapters(self) -> List[str]:
+        missing = []
+        if self._get_memory_repo is None:
+            missing.append("get_memory_repo")
+        if self._get_branch_ref is None:
+            missing.append("get_branch_ref")
+        if self._get_git_commit is None:
+            missing.append("get_git_commit")
+        if self._get_git_tree is None:
+            missing.append("get_git_tree")
+        if self._get_git_blob is None:
+            missing.append("get_git_blob")
+        if self._create_git_blob is None:
+            missing.append("create_git_blob")
+        if self._create_git_tree is None:
+            missing.append("create_git_tree")
+        if self._create_git_commit is None:
+            missing.append("create_git_commit")
+        if self._update_branch_ref is None:
+            missing.append("update_branch_ref")
+        return missing
+
+    def _has_split_pull_adapters(self) -> bool:
+        return all(
+            fn is not None
+            for fn in (
+                self._get_memory_repo,
+                self._get_branch_ref,
+                self._get_git_commit,
+                self._get_git_tree,
+                self._get_git_blob,
+            )
+        )
+
+    @staticmethod
+    def _status_code(response: Dict[str, Any]) -> Optional[int]:
+        status = response.get("status_code")
+        return status if isinstance(status, int) else None
+
+    @staticmethod
+    def _extract_nested(response: Dict[str, Any], path: tuple[str, ...]) -> Optional[str]:
+        node: Any = response
+        for key in path:
+            if not isinstance(node, dict):
+                return None
+            node = node.get(key)
+        return node if isinstance(node, str) and node else None
+
+    @staticmethod
+    def _normalize_read_response(response: Dict[str, Any]) -> Dict[str, Any]:
+        if response is None:
+            return {"exists": False, "sha": None, "content_b64": None}
+
+        status_code = response.get("status_code")
+        if status_code == 404 or response.get("exists") is False:
+            return {"exists": False, "sha": None, "content_b64": None}
+
+        message = str(response.get("message", "")).lower()
+        if "not found" in message and "content" not in response:
+            return {"exists": False, "sha": None, "content_b64": None}
+
+        if "content_b64" in response:
+            return {
+                "exists": True,
+                "sha": response.get("sha"),
+                "content_b64": str(response["content_b64"]).strip(),
+            }
+
+        if isinstance(response.get("content"), str):
+            return {
+                "exists": True,
+                "sha": response.get("sha"),
+                "content_b64": response["content"].strip(),
+            }
+
+        nested = response.get("content")
+        if isinstance(nested, dict) and isinstance(nested.get("content"), str):
+            return {
+                "exists": True,
+                "sha": nested.get("sha") or response.get("sha"),
+                "content_b64": nested["content"].strip(),
+            }
+
+        raise ValueError("Unsupported read response shape for career corpus pull.")
+
+    def _base_result(self) -> Dict[str, Any]:
+        return {
+            "ok": False,
+            "pushed": False,
+            "persisted": False,
+            "retry_count": 0,
+            "method": self.METHOD,
+            "remote_blob_sha": None,
+            "remote_commit_sha": None,
+            "remote_file_sha": None,
+            "remote_branch": None,
+            "verification": {"ok": False, "error": "not_run"},
+            "reason": None,
+            "error_code": None,
+            "validated": False,
+            "local_saved": False,
+            "remote_written": False,
+        }

@@ -8,7 +8,12 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 - Do not create or read any alternative memory repository.
 
 ## Canonical memory files
-- `career_corpus.json`
+- Split corpus files (remote canonical):
+  - `corpus_index.json` (manifest)
+  - `corpus_profile.json`, `corpus_summary_facts.json`, `corpus_skills.json`,
+    `corpus_certifications.json`, `corpus_education.json`, `corpus_metadata.json`
+  - `corpus_experience_<id>.json` (one file per experience)
+  - `corpus_project_<id>.json` (one file per project)
 - `preferences.json`
 - Local corpus cache path: `/mnt/data/career_corpus.json`
 - Local sync metadata path: `/mnt/data/career_corpus.meta.json`
@@ -20,6 +25,8 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
   - `pull()` (refresh local cache from GitHub)
   - `push()` (persist approved changes to GitHub)
 - Do not fetch/decode/parse the full corpus through tools for every edit.
+- Before Python imports, bootstrap:
+  - add `/mnt/data` to `sys.path`.
 
 ## Startup bootstrap (required)
 1. Resolve `{owner}` via `getAuthenticatedUser`.
@@ -29,48 +36,57 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 - `private=true`
 - `auto_init=true`
 4. Optionally call `setMemoryRepoTopics` with `["career-corpus-memory"]`; continue if topic call fails.
-5. Check `career_corpus.json` and `preferences.json` existence via read endpoints.
+5. Check split corpus presence via manifest `corpus_index.json` (legacy `career_corpus.json` may still be read).
 6. Report the canonical check line:
-- `Memory repo exists: Yes/No; career_corpus.json exists: Yes/No.`
+- `Memory repo exists: Yes/No; career corpus exists: Yes/No.`
 7. Emit the required status block from `MemoryStateModel.md`.
 
 ## Explicit sync behavior
 - `pull(force=False)`:
-  - Call `readCareerCorpusJson`.
-  - If remote `sha` matches `meta.remote_sha` and `force` is false, no-op.
-  - Else decode base64 content, replace local `/mnt/data/career_corpus.json`, update meta timestamps and sha.
+  - Resolve branch head and load `corpus_index.json` from Git tree/blob APIs.
+  - If manifest sha matches `meta.remote_file_sha` and `force` is false, no-op.
+  - Else read referenced split files, assemble local `/mnt/data/career_corpus.json`, update meta.
 - `push(message)`:
-  - Run schema validation and preflight.
+  - Run schema validation and UTF-8 payload diagnostics.
   - Upload only when local store is dirty.
-  - Include `sha` for updates.
-  - On success, update `meta.remote_sha` and `last_push_utc`.
+  - Materialize split docs + manifest and per-file hashes.
+  - Determine changed/deleted paths vs `meta.remote_file_hashes`.
+  - Use Git Data flow only:
+    - `createGitBlob` -> `createGitTree` -> `createGitCommit` -> `updateBranchRef`
+  - On success, read changed files back and verify canonical hash match.
+  - Persisted success requires successful write and verification.
+  - Update meta fields:
+    - `remote_blob_sha`, `remote_commit_sha`, `remote_branch`, `remote_file_sha`,
+      `remote_file_hashes`, `last_verified_utc`, `last_push_method`.
 
 ## Validation + preflight sequence (hard fail)
 Before **any** write:
 1. Import helpers from `/mnt/data/memory_validation.py`.
-2. Read existing JSON (and `sha`) from the target file when present.
-3. Apply minimal patch + validate:
-- `validate_career_patch(existing, patch)` or `validate_preferences_patch(existing, patch)`
+2. Validate full target document:
+- `validate_career_corpus(...)` / `validate_preferences(...)`
+3. Run diagnostics:
+- `diagnose_payload_integrity(canonical_json_text(...))`
 4. Enforce write guard:
 - `assert_validated_before_write(validated, context)`
-5. Build transport payload:
-- `build_upsert_payload(message, merged_json, sha=sha_if_present)`
-6. Run preflight:
-- `verify_base64_roundtrip(merged_json)` must pass.
-7. Only then call upsert endpoint.
+5. Execute Git Data write flow.
+6. Verify by reading remote file and calling:
+- `verify_remote_matches_local(local_text, remote_text)`
 
 ## Retry and failure handling
-- If GitHub upsert returns `422`, perform exactly one retry after rebuilding payload/preflight.
+- Retryable errors: `409`, transient `422`, and transient tool transport failures.
+- Perform exactly one retry using fresh ref/commit state.
 - If retry fails, stop writes and set state to `PERSIST_FAILED`.
 - Provide explicit manual next steps; no async/background promises.
 
 ## Persistence outcome contract
-- `persisted=true` only when API returns success (`200` or `201`).
+- `persisted=true` only when ref update succeeds AND post-write verification hash matches.
 - Local fallback files are allowed only as temporary recovery aids and must be labeled:
 - `persisted=false`, `fallback_used=true`, `status=NOT PERSISTED`
+- Push status must include:
+  - `method`, `retry_count`, `verification`, `error_code`
 
 ## Onboarding and repair triggers
-- If `career_corpus.json` is missing or schema-invalid, route to onboarding/repair before tailoring.
+- If assembled corpus is missing/invalid or split manifest/files are missing/invalid, route to onboarding/repair before tailoring.
 - Onboarding behavior is defined in `/mnt/data/OnboardingGuidelines.md`.
 
 ## Guardrails
