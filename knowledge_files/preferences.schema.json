@@ -74,6 +74,22 @@
             true
           ]
         },
+        "memory_status_visibility": {
+          "type": "string",
+          "enum": [
+            "on_change",
+            "on_request",
+            "always"
+          ]
+        },
+        "user_git_fluency": {
+          "type": "string",
+          "enum": [
+            "unknown",
+            "non_technical",
+            "technical"
+          ]
+        },
         "onboarding_complete": {
           "type": "boolean"
         }
