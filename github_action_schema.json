@@ -25,17 +25,6 @@
                 }
             }
         },
-        "parameters": {
-            "GitHubJsonAccept": {
-                "name": "Accept",
-                "in": "header",
-                "required": true,
-                "schema": {
-                    "type": "string",
-                    "const": "application/vnd.github+json"
-                }
-            }
-        },
         "schemas": {
             "CreateRepoRequest": {
                 "type": "object",
@@ -419,7 +408,13 @@
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/GitHubJsonAccept"
+                        "name": "Accept",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "const": "application/vnd.github+json"
+                        }
                     }
                 ],
                 "responses": {
@@ -463,7 +458,13 @@
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/GitHubJsonAccept"
+                        "name": "Accept",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "const": "application/vnd.github+json"
+                        }
                     }
                 ],
                 "responses": {
@@ -504,7 +505,13 @@
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/GitHubJsonAccept"
+                        "name": "Accept",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "const": "application/vnd.github+json"
+                        }
                     }
                 ],
                 "responses": {
@@ -606,7 +613,13 @@
                         }
                     },
                     {
-                        "$ref": "#/components/parameters/GitHubJsonAccept"
+                        "name": "Accept",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "const": "application/vnd.github+json"
+                        }
                     }
                 ],
                 "responses": {
