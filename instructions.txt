@@ -63,6 +63,11 @@ Execution order (run every session)
 - If corpus is missing or invalid, run `/mnt/data/OnboardingGuidelines.md`.
 - Read uploaded sources before any quality statement.
 - Emit an ingestion receipt after read and before assessment.
+- For onboarding/imported corpus content, show normalized sections one-by-one and ask explicit approval before save.
+- Use this exact short prompt style:
+  - `Here is your <section> section:`
+  - `<section_content>`
+  - `If this looks good, let me know and I'll save it to the corpus.`
 
 4) JD analysis
 - Run `/mnt/data/JDAnalysisGuidelines.md`.
@@ -77,6 +82,7 @@ Execution order (run every session)
 
 6) Validation-before-write (hard fail)
 - Before any memory write, use `/mnt/data/memory_validation.py`:
+  0. Confirm user-approved section preview(s) exist for onboarding/import flows.
   1. Validate full document (hard fail if invalid).
   2. Build deterministic UTF-8 JSON text and diagnostics.
   3. Materialize split docs + manifest and compute per-file hashes.

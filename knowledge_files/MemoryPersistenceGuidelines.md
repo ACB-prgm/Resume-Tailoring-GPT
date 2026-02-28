@@ -64,12 +64,17 @@ Before **any** write:
 1. Import helpers from `/mnt/data/memory_validation.py`.
 2. Validate full target document:
 - `validate_career_corpus(...)` / `validate_preferences(...)`
-3. Run diagnostics:
+3. For onboarding/import flows, present section preview(s) and get explicit user confirmation before write.
+   - Required prompt style:
+   - `Here is your <section> section:`
+   - `<section_content>`
+   - `If this looks good, let me know and I'll save it to the corpus.`
+4. Run diagnostics:
 - `diagnose_payload_integrity(canonical_json_text(...))`
-4. Enforce write guard:
+5. Enforce write guard:
 - `assert_validated_before_write(validated, context)`
-5. Execute Git Data write flow.
-6. Verify by reading remote file and calling:
+6. Execute Git Data write flow.
+7. Verify by reading remote file and calling:
 - `verify_remote_matches_local(local_text, remote_text)`
 
 ## Retry and failure handling

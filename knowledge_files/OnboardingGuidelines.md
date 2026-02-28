@@ -31,6 +31,28 @@ INGESTION RECEIPT
 - gaps_detected: [missing dates, missing metrics, unknown employer/location, ...]
 ```
 
+## Section-by-section confirmation gate (required)
+- Even when a full LinkedIn PDF or large CV is uploaded, do not persist in one bulk write.
+- Present normalized content one section at a time and ask for explicit confirmation.
+- Use short wording only:
+
+```text
+Here is your <section> section:
+<section_content>
+If this looks good, let me know and I'll save it to the corpus.
+```
+
+- Apply this gate at minimum to:
+  - profile
+  - summary_facts
+  - experience
+  - projects
+  - skills
+  - certifications
+  - education
+  - metadata
+- Only persist after user confirmation for the shown section(s).
+
 ## Guided interview sections (required)
 Collect structured data in this order if upload is missing or incomplete:
 1. Profile and contact basics
