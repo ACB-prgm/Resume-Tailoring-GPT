@@ -11,6 +11,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import re
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -373,3 +374,73 @@ def assert_scaffolding_confirmation_allowed(
     """Require explicit confirmation before creating empty scaffold sections."""
     if create_scaffold and not user_confirmed:
         raise RuntimeError("Scaffold creation requires explicit user confirmation.")
+
+
+def assert_notes_content_only(document: Dict[str, Any]) -> None:
+    """
+    Enforce that `notes` fields contain only content context.
+
+    Reject operational/provenance/process metadata phrases such as upload
+    source tracking and Git transport details.
+    """
+    prohibited = re.compile(
+        r"\b(source|uploaded?|upload|onboarding|current chat|from chat|manual import|"
+        r"persisted|committed|branch|commit|sha|blob|tree|ref)\b",
+        re.IGNORECASE,
+    )
+
+    def _walk(node: Any, path: str) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                child_path = f"{path}.{key}" if path else key
+                if key == "notes":
+                    if value is None:
+                        continue
+                    if not isinstance(value, str):
+                        raise RuntimeError(f"Invalid notes type at {child_path}: expected string or null.")
+                    text = value.strip()
+                    if not text:
+                        return
+                    if prohibited.search(text):
+                        raise RuntimeError(
+                            f"Notes at {child_path} contains process/provenance text; keep notes content-only."
+                        )
+                    continue
+                _walk(value, child_path)
+            return
+        if isinstance(node, list):
+            for idx, value in enumerate(node):
+                _walk(value, f"{path}[{idx}]")
+
+    _walk(document, "")
+
+
+def should_emit_memory_status(
+    previous_state: Optional[Dict[str, Any]],
+    current_state: Optional[Dict[str, Any]],
+    requested: bool,
+    failed: bool,
+    policy: Optional[str] = "on_change",
+) -> bool:
+    """
+    Determine whether memory status should be shown to the user.
+
+    Policies:
+    - on_change (default): emit when state differs, or when requested/failed.
+    - on_request: emit only when requested/failed.
+    - always: emit every time.
+    """
+    if requested or failed:
+        return True
+
+    effective_policy = policy or "on_change"
+    if effective_policy == "always":
+        return True
+    if effective_policy == "on_request":
+        return False
+    if effective_policy != "on_change":
+        effective_policy = "on_change"
+
+    if previous_state is None:
+        return True
+    return previous_state != current_state
