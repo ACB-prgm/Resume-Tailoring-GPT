@@ -51,7 +51,6 @@ class CareerCorpusStore:
 
     INDEX_FILE = "corpus_index.json"
     PROFILE_FILE = "corpus_profile.json"
-    SUMMARY_FILE = "corpus_summary_facts.json"
     SKILLS_FILE = "corpus_skills.json"
     CERTIFICATIONS_FILE = "corpus_certifications.json"
     EDUCATION_FILE = "corpus_education.json"
@@ -90,6 +89,7 @@ class CareerCorpusStore:
 
         data = self._read_json_object(self.path)
         self._corpus = data
+        summary_migrated = self._migrate_legacy_summary_facts()
         ids_added = self._ensure_ids_for_known_lists()
 
         if self.validate_on_load:
@@ -97,7 +97,7 @@ class CareerCorpusStore:
 
         self._local_hash = self._compute_hash(self._corpus)
         self._meta["local_hash"] = self._local_hash
-        self.dirty = ids_added
+        self.dirty = ids_added or summary_migrated
         self._write_meta()
         return deepcopy(self._corpus)
 
@@ -173,7 +173,6 @@ class CareerCorpusStore:
         docs: Dict[str, Dict[str, Any]] = {}
 
         docs[self.PROFILE_FILE] = {"profile": deepcopy(corpus["profile"])}
-        docs[self.SUMMARY_FILE] = {"summary_facts": deepcopy(corpus["summary_facts"])}
         docs[self.SKILLS_FILE] = {"skills": deepcopy(corpus["skills"])}
         docs[self.CERTIFICATIONS_FILE] = {"certifications": deepcopy(corpus["certifications"])}
         docs[self.EDUCATION_FILE] = {"education": deepcopy(corpus["education"])}
@@ -203,7 +202,6 @@ class CareerCorpusStore:
             "generated_at_utc": _utc_now(),
             "core_files": {
                 "profile": self.PROFILE_FILE,
-                "summary_facts": self.SUMMARY_FILE,
                 "skills": self.SKILLS_FILE,
                 "certifications": self.CERTIFICATIONS_FILE,
                 "education": self.EDUCATION_FILE,
@@ -220,10 +218,14 @@ class CareerCorpusStore:
     def index_referenced_paths(cls, index_doc: Dict[str, Any]) -> List[str]:
         core_files = index_doc.get("core_files", {})
         paths: List[str] = []
-        for key in ("profile", "summary_facts", "skills", "certifications", "education", "metadata"):
+        for key in ("profile", "skills", "certifications", "education", "metadata"):
             path = core_files.get(key)
             if isinstance(path, str) and path:
                 paths.append(path)
+        # Legacy support: older manifests may still reference summary_facts.
+        summary_path = core_files.get("summary_facts")
+        if isinstance(summary_path, str) and summary_path:
+            paths.append(summary_path)
         for item in index_doc.get("experience_files", []):
             path = item.get("path")
             if isinstance(path, str) and path:
@@ -249,11 +251,15 @@ class CareerCorpusStore:
             return documents_by_path[path]
 
         profile_doc = _require("profile")
-        summary_doc = _require("summary_facts")
         skills_doc = _require("skills")
         certs_doc = _require("certifications")
         edu_doc = _require("education")
         metadata_doc = _require("metadata")
+
+        summary_doc = None
+        summary_path = core_files.get("summary_facts")
+        if isinstance(summary_path, str) and summary_path in documents_by_path:
+            summary_doc = documents_by_path[summary_path]
 
         experience = []
         for item in index_doc.get("experience_files", []):
@@ -278,7 +284,6 @@ class CareerCorpusStore:
         corpus = {
             "schema_version": index_doc.get("schema_version", "1.0.0"),
             "profile": deepcopy(profile_doc.get("profile", {})),
-            "summary_facts": deepcopy(summary_doc.get("summary_facts", [])),
             "experience": experience,
             "projects": projects,
             "skills": deepcopy(skills_doc.get("skills", {})),
@@ -286,6 +291,17 @@ class CareerCorpusStore:
             "education": deepcopy(edu_doc.get("education", [])),
             "metadata": deepcopy(metadata_doc.get("metadata", {})),
         }
+        # Legacy support: absorb summary_facts into profile.notes.
+        if isinstance(summary_doc, dict):
+            legacy_facts = summary_doc.get("summary_facts")
+            if isinstance(legacy_facts, list):
+                facts = [str(item).strip() for item in legacy_facts if str(item).strip()]
+                if facts:
+                    profile = corpus.get("profile", {})
+                    existing_raw = profile.get("notes", "")
+                    existing_notes = existing_raw.strip() if isinstance(existing_raw, str) else ""
+                    joined = " | ".join(facts)
+                    profile["notes"] = f"{existing_notes} | {joined}" if existing_notes else joined
         return corpus
 
     def list_experiences(self) -> List[Dict[str, Any]]:
@@ -403,6 +419,7 @@ class CareerCorpusStore:
         if not isinstance(corpus, dict):
             raise TypeError("Corpus document must be an object.")
         self._corpus = deepcopy(corpus)
+        summary_migrated = self._migrate_legacy_summary_facts()
         ids_added = self._ensure_ids_for_known_lists()
         self.validate()
         self._atomic_write_json(self.path, self._corpus)
@@ -416,7 +433,7 @@ class CareerCorpusStore:
         if remote_file_hashes is not None:
             self._meta["remote_file_hashes"] = deepcopy(remote_file_hashes)
         self._meta["last_pull_utc"] = _utc_now()
-        self.dirty = ids_added
+        self.dirty = ids_added or summary_migrated
         self._write_meta()
 
     def mark_push_success(
@@ -498,6 +515,27 @@ class CareerCorpusStore:
                     after = self._ensure_item_id(record, section)
                     changed = changed or before != after
         return changed
+
+    def _migrate_legacy_summary_facts(self) -> bool:
+        """
+        Backward compatibility: move legacy `summary_facts` into `profile.notes`.
+        """
+        if not isinstance(self._corpus, dict):
+            return False
+        legacy = self._corpus.get("summary_facts")
+        if not isinstance(legacy, list):
+            return False
+        facts = [str(item).strip() for item in legacy if str(item).strip()]
+        profile = self._corpus.setdefault("profile", {})
+        if not isinstance(profile, dict):
+            return False
+        if facts:
+            joined = " | ".join(facts)
+            existing_raw = profile.get("notes", "")
+            existing_notes = existing_raw.strip() if isinstance(existing_raw, str) else ""
+            profile["notes"] = f"{existing_notes} | {joined}" if existing_notes else joined
+        del self._corpus["summary_facts"]
+        return True
 
     def _ensure_item_id(self, item: Dict[str, Any], section: str) -> str:
         item_id = item.get("id")

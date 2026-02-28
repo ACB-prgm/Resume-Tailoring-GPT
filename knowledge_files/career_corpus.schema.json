@@ -7,7 +7,6 @@
   "required": [
     "schema_version",
     "profile",
-    "summary_facts",
     "experience",
     "projects",
     "skills",
@@ -52,12 +51,6 @@
         "notes": {
           "type": "string"
         }
-      }
-    },
-    "summary_facts": {
-      "type": "array",
-      "items": {
-        "type": "string"
       }
     },
     "experience": {

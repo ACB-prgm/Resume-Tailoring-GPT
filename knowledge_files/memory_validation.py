@@ -349,7 +349,6 @@ def compute_onboarding_complete(
         return False
     needed = required_sections or [
         "profile",
-        "summary_facts",
         "experience",
         "projects",
         "skills",

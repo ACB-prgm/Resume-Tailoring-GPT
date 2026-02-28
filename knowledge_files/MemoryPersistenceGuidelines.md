@@ -10,7 +10,7 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 ## Canonical memory files
 - Split corpus files (remote canonical):
   - `corpus_index.json` (manifest)
-  - `corpus_profile.json`, `corpus_summary_facts.json`, `corpus_skills.json`,
+  - `corpus_profile.json`, `corpus_skills.json`,
     `corpus_certifications.json`, `corpus_education.json`, `corpus_metadata.json`
   - `corpus_experience_<id>.json` (one file per experience)
   - `corpus_project_<id>.json` (one file per project)

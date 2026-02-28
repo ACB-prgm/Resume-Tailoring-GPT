@@ -79,13 +79,11 @@ class MemoryWorkflowContractsTests(unittest.TestCase):
     def test_onboarding_completion_state(self) -> None:
         partial = {
             "profile": {"approved": True},
-            "summary_facts": {"approved": True},
         }
         self.assertFalse(compute_onboarding_complete(partial, validated=True, persisted=True))
 
         full = {
             "profile": {"approved": True},
-            "summary_facts": {"approved": True},
             "experience": {"approved": True},
             "projects": {"approved": True},
             "skills": {"approved": True},

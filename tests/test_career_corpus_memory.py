@@ -53,7 +53,6 @@ def make_corpus(with_ids: bool = True) -> Dict[str, Any]:
     return {
         "schema_version": "1.0.0",
         "profile": {"full_name": "Test User"},
-        "summary_facts": ["Fact 1"],
         "experience": [exp],
         "projects": [proj],
         "skills": {

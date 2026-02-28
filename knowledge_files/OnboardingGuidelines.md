@@ -36,7 +36,7 @@ Emit a compact normalization summary before section previews:
 
 ```text
 NORMALIZATION SUMMARY
-- detected_sections: [profile, summary_facts, experience, projects, skills, certifications, education, metadata]
+- detected_sections: [profile, experience, projects, skills, certifications, education, metadata]
 - counts:
   - experience: <n>
   - projects: <n>
@@ -59,7 +59,6 @@ If this looks good, let me know and I'll save it to the corpus.
 
 - Apply this gate at minimum to:
   - profile
-  - summary_facts
   - experience
   - projects
   - skills

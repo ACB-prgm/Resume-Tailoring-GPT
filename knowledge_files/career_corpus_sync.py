@@ -70,7 +70,6 @@ class CareerCorpusSync:
     METHOD = "git_blob_utf8_split"
     REQUIRED_ONBOARDING_SECTIONS = {
         "profile",
-        "summary_facts",
         "experience",
         "projects",
         "skills",
@@ -816,7 +815,6 @@ class CareerCorpusSync:
     def _allowed_paths_for_sections(cls, target_sections: Set[str]) -> Set[str]:
         mapping = {
             "profile": "corpus_profile.json",
-            "summary_facts": "corpus_summary_facts.json",
             "skills": "corpus_skills.json",
             "certifications": "corpus_certifications.json",
             "education": "corpus_education.json",
