@@ -3,6 +3,13 @@
 ## Objective
 Provide deterministic behavior for first-contact, ingestion, validation, and persistence steps.
 
+## Reference Trigger
+- When referenced:
+  - Always at routing gate before deeper workflow execution.
+  - When recovery is needed after validation/persistence/API failure.
+- Role: primary for `intent_conversation_only` and `intent_failure_recovery`; secondary for other intents as needed.
+- Required preconditions: none.
+
 ## 1) Conversation Intent Gate (run first)
 - If user intent is greeting/chitchat, reply briefly and stop.
 - Do not enter corpus/JD workflow unless user asks a resume/memory task.

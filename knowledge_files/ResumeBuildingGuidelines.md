@@ -3,6 +3,15 @@
 ## Objective
 Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe resume draft using the canvas tool in the provided markdown template.
 
+## Reference Trigger
+- When referenced:
+  - User requests resume drafting, tailoring, or content revision.
+  - User asks for role-specific rewrite based on JD requirements.
+- Role: primary for `intent_resume_drafting`; secondary after JD analysis where needed.
+- Required preconditions:
+  - JD analysis output exists (or run JD analysis first).
+  - Corpus is available and valid, or route to onboarding/repair.
+
 ## Inputs required
 - JD Analysis Output (from `JDAnalysisGuidelines.md`)
 - Canonical memory files from persistent memory repo:

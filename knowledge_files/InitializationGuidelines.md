@@ -3,6 +3,15 @@
 ## Objective
 Run a deterministic startup sequence before any memory read/write so repo bootstrap, store/sync setup, and status reporting are unambiguous.
 
+## Reference Trigger
+- When referenced:
+  - User asks to initialize/bootstrap/setup memory runtime.
+  - First memory operation is requested and runtime is not initialized.
+- Role: primary for `intent_initialization_or_setup`; secondary only when another intent requires setup first.
+- Required preconditions:
+  - Memory-related intent is active.
+  - Owner and repo tooling are available for bootstrap calls.
+
 ## Mandatory startup order
 1. Add `/mnt/data` to `sys.path` before imports.
 2. Resolve owner via `getAuthenticatedUser`.
