@@ -49,9 +49,7 @@ class SurfaceContractTests(unittest.TestCase):
     def test_validation_surface_exports(self) -> None:
         expected = [
             "validate_career_corpus",
-            "validate_preferences",
             "validate_career_patch",
-            "validate_preferences_patch",
             "assert_validated_before_write",
             "assert_sections_explicitly_approved",
             "assert_validation_claim_allowed",

@@ -17,8 +17,6 @@ try:
         should_emit_memory_status as _should_emit_memory_status,
         validate_career_corpus as _validate_career_corpus,
         validate_career_patch as _validate_career_patch,
-        validate_preferences as _validate_preferences,
-        validate_preferences_patch as _validate_preferences_patch,
     )
 except ImportError:
     from knowledge_files.memory_validation_core import (  # type: ignore
@@ -33,16 +31,12 @@ except ImportError:
         should_emit_memory_status as _should_emit_memory_status,
         validate_career_corpus as _validate_career_corpus,
         validate_career_patch as _validate_career_patch,
-        validate_preferences as _validate_preferences,
-        validate_preferences_patch as _validate_preferences_patch,
     )
 
 
 __all__ = [
     "validate_career_corpus",
-    "validate_preferences",
     "validate_career_patch",
-    "validate_preferences_patch",
     "assert_validated_before_write",
     "assert_sections_explicitly_approved",
     "assert_validation_claim_allowed",
@@ -76,25 +70,11 @@ def validate_career_corpus(corpus: Dict[str, Any]) -> Tuple[bool, List[str]]:
 
 
 @gpt_surface
-def validate_preferences(preferences: Dict[str, Any]) -> Tuple[bool, List[str]]:
-    """When to use: validate full preferences doc before write/use. Inputs: preferences object. Outputs: (is_valid, errors)."""
-    return _validate_preferences(preferences)
-
-
-@gpt_surface
 def validate_career_patch(
     existing_corpus: Dict[str, Any], patch: Dict[str, Any]
 ) -> Tuple[bool, Dict[str, Any], List[str]]:
     """When to use: validate a partial corpus change against schema. Inputs: existing corpus + patch. Outputs: (is_valid, merged_doc, errors)."""
     return _validate_career_patch(existing_corpus, patch)
-
-
-@gpt_surface
-def validate_preferences_patch(
-    existing_preferences: Dict[str, Any], patch: Dict[str, Any]
-) -> Tuple[bool, Dict[str, Any], List[str]]:
-    """When to use: validate a partial preferences change against schema. Inputs: existing preferences + patch. Outputs: (is_valid, merged_doc, errors)."""
-    return _validate_preferences_patch(existing_preferences, patch)
 
 
 @gpt_surface

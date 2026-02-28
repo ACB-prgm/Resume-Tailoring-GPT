@@ -2,7 +2,7 @@
 Utilities for strict JSON-schema validation of persistent memory files.
 
 This module is designed for the GPT export/memory pipeline so writes to
-`career_corpus.json` and `preferences.json` can be validated deterministically
+`career_corpus.json` can be validated deterministically
 before any GitHub upsert call is made.
 """
 
@@ -20,7 +20,6 @@ from jsonschema import Draft202012Validator
 
 REPO_ROOT = Path(__file__).resolve().parent
 CAREER_CORPUS_SCHEMA_PATH = REPO_ROOT / "career_corpus.schema.json"
-PREFERENCES_SCHEMA_PATH = REPO_ROOT / "preferences.schema.json"
 
 
 def gpt_core(obj: Any) -> Any:
@@ -81,16 +80,6 @@ def validate_career_corpus(corpus: Dict[str, Any]) -> Tuple[bool, List[str]]:
     return validate_json_document(corpus, CAREER_CORPUS_SCHEMA_PATH)
 
 
-@gpt_core
-def validate_preferences(preferences: Dict[str, Any]) -> Tuple[bool, List[str]]:
-    """
-    Validate `preferences.json` payloads.
-
-    Use before any persistence write attempt.
-    """
-    return validate_json_document(preferences, PREFERENCES_SCHEMA_PATH)
-
-
 def merge_minimal_patch(
     existing: Dict[str, Any], patch: Dict[str, Any]
 ) -> Dict[str, Any]:
@@ -138,16 +127,6 @@ def validate_career_patch(
 ) -> Tuple[bool, Dict[str, Any], List[str]]:
     """Patch and validate a career corpus update in one call."""
     return apply_patch_and_validate(existing_corpus, patch, CAREER_CORPUS_SCHEMA_PATH)
-
-
-@gpt_core
-def validate_preferences_patch(
-    existing_preferences: Dict[str, Any], patch: Dict[str, Any]
-) -> Tuple[bool, Dict[str, Any], List[str]]:
-    """Patch and validate a preferences update in one call."""
-    return apply_patch_and_validate(
-        existing_preferences, patch, PREFERENCES_SCHEMA_PATH
-    )
 
 
 @gpt_core

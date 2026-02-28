@@ -23,7 +23,6 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
     `corpus_certifications.json`, `corpus_education.json`, `corpus_metadata.json`
   - `corpus_experience_<id>.json` (one file per experience)
   - `corpus_project_<id>.json` (one file per project)
-- `preferences.json`
 - Local corpus cache path: `/mnt/data/career_corpus.json`
 - Local sync metadata path: `/mnt/data/career_corpus.meta.json`
 
@@ -92,7 +91,7 @@ Before **any** write:
 0. Confirm initialization completed (owner resolved, repo checked/created, store/sync initialized).
 1. Import helpers from `/mnt/data/memory_validation_surface.py`.
 2. Validate full target document:
-- `validate_career_corpus(...)` / `validate_preferences(...)`
+- `validate_career_corpus(...)`
 3. For onboarding/import flows, present section preview(s) and get explicit user confirmation before write.
    - Required prompt style:
    - `Here is your <section> section:`

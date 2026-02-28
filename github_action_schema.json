@@ -73,28 +73,6 @@
                     "names"
                 ]
             },
-            "UpsertFileRequest": {
-                "type": "object",
-                "properties": {
-                    "message": {
-                        "type": "string"
-                    },
-                    "content": {
-                        "type": "string",
-                        "description": "Base64-encoded file content",
-                        "minLength": 1,
-                        "contentEncoding": "base64"
-                    },
-                    "sha": {
-                        "type": "string",
-                        "description": "Required when updating an existing file"
-                    }
-                },
-                "required": [
-                    "message",
-                    "content"
-                ]
-            },
             "CreateGitBlobRequest": {
                 "type": "object",
                 "properties": {
@@ -525,11 +503,6 @@
                                             "$ref": "#/components/schemas/GitBlobResponse"
                                         },
                                         {
-                                            "type": "object",
-                                            "properties": {},
-                                            "additionalProperties": true
-                                        },
-                                        {
                                             "type": "string"
                                         }
                                     ]
@@ -766,117 +739,6 @@
                     },
                     "422": {
                         "description": "Validation failed"
-                    }
-                }
-            }
-        },
-        "/repos/{owner}/career-corpus-memory/contents/preferences.json": {
-            "get": {
-                "operationId": "readPreferencesJson",
-                "parameters": [
-                    {
-                        "name": "owner",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "404": {
-                        "description": "Not found"
-                    }
-                }
-            },
-            "put": {
-                "operationId": "upsertPreferencesJson",
-                "parameters": [
-                    {
-                        "name": "owner",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpsertFileRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Updated"
-                    },
-                    "201": {
-                        "description": "Created"
-                    }
-                }
-            }
-        },
-        "/repos/{owner}/career-corpus-memory/contents/career_corpus.json": {
-            "get": {
-                "operationId": "readCareerCorpusJson",
-                "parameters": [
-                    {
-                        "name": "owner",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK"
-                    },
-                    "404": {
-                        "description": "Not found"
-                    }
-                }
-            },
-            "put": {
-                "operationId": "upsertCareerCorpusJson",
-                "parameters": [
-                    {
-                        "name": "owner",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpsertFileRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Updated"
-                    },
-                    "201": {
-                        "description": "Created"
-                    },
-                    "422": {
-                        "description": "Validation failed (often malformed base64 or invalid request payload)"
                     }
                 }
             }

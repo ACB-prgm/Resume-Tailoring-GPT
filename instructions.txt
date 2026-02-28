@@ -96,7 +96,6 @@ Intent: `intent_memory_persist_update`
     - Reference: `/mnt/data/career_corpus_store_surface.py`
     - Reference: `/mnt/data/career_corpus_sync_surface.py`
     - Reference: `/mnt/data/career_corpus.schema.json`
-    - Reference: `/mnt/data/preferences.schema.json`
     - Reference: `/mnt/data/github_action_schema.json`
 - Action: validate -> split docs -> Git Data push -> verify -> report persisted status truthfully.
 

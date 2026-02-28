@@ -16,7 +16,6 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - JD Analysis Output (from `JDAnalysisGuidelines.md`)
 - Canonical memory files from persistent memory repo:
   - `career_corpus.json`
-  - `preferences.json`
 - Current chat facts provided by user
 - Resume template markdown
 
@@ -29,7 +28,7 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - Use provenance tags per claim: `corpus`, `current_chat`, or `user_confirmed_update`.
 - If the user shares relevant new facts that are not in corpus, ask whether to persist them to corpus memory before the session ends.
 - If `career_corpus.json` is missing, invalid, or schema-noncompliant, route to onboarding/repair before resume drafting.
-- Validate corpus/preferences with `/mnt/data/memory_validation_surface.py` before using them for drafting.
+- Validate corpus with `/mnt/data/memory_validation_surface.py` before using it for drafting.
 - Block unsupported factual inserts unless user explicitly confirms and approves persistence path.
 - Resume title/header lines are generated per JD and are not persisted as dedicated corpus fields.
 
