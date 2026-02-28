@@ -14,6 +14,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
+from urllib.parse import urlparse
 from uuid import uuid4
 
 from jsonschema import Draft202012Validator
@@ -90,6 +91,8 @@ class CareerCorpusStore:
         data = self._read_json_object(self.path)
         self._corpus = data
         summary_migrated = self._migrate_legacy_summary_facts()
+        links_normalized = self._normalize_profile_links()
+        notes_normalized = self._normalize_notes_fields()
         ids_added = self._ensure_ids_for_known_lists()
 
         if self.validate_on_load:
@@ -97,7 +100,7 @@ class CareerCorpusStore:
 
         self._local_hash = self._compute_hash(self._corpus)
         self._meta["local_hash"] = self._local_hash
-        self.dirty = ids_added or summary_migrated
+        self.dirty = ids_added or summary_migrated or links_normalized or notes_normalized
         self._write_meta()
         return deepcopy(self._corpus)
 
@@ -106,6 +109,8 @@ class CareerCorpusStore:
         if not self.dirty:
             return
 
+        self._normalize_profile_links()
+        self._normalize_notes_fields()
         if self.validate_on_save:
             self.validate()
 
@@ -415,13 +420,17 @@ class CareerCorpusStore:
         remote_file_sha: Optional[str] = None,
         remote_branch: Optional[str] = None,
         remote_file_hashes: Optional[Dict[str, str]] = None,
+        validate: bool = True,
     ) -> None:
         if not isinstance(corpus, dict):
             raise TypeError("Corpus document must be an object.")
         self._corpus = deepcopy(corpus)
         summary_migrated = self._migrate_legacy_summary_facts()
+        links_normalized = self._normalize_profile_links()
+        notes_normalized = self._normalize_notes_fields()
         ids_added = self._ensure_ids_for_known_lists()
-        self.validate()
+        if validate:
+            self.validate()
         self._atomic_write_json(self.path, self._corpus)
         self._local_hash = self._compute_hash(self._corpus)
         self._meta["local_hash"] = self._local_hash
@@ -433,7 +442,7 @@ class CareerCorpusStore:
         if remote_file_hashes is not None:
             self._meta["remote_file_hashes"] = deepcopy(remote_file_hashes)
         self._meta["last_pull_utc"] = _utc_now()
-        self.dirty = ids_added or summary_migrated
+        self.dirty = ids_added or summary_migrated or links_normalized or notes_normalized
         self._write_meta()
 
     def mark_push_success(
@@ -536,6 +545,164 @@ class CareerCorpusStore:
             profile["notes"] = f"{existing_notes} | {joined}" if existing_notes else joined
         del self._corpus["summary_facts"]
         return True
+
+    def _normalize_profile_links(self) -> bool:
+        """
+        Normalize legacy profile links into object form:
+        [{"name": "<label>", "url": "<value>"}]
+        """
+        if not isinstance(self._corpus, dict):
+            return False
+        profile = self._corpus.get("profile")
+        if not isinstance(profile, dict):
+            return False
+        links = profile.get("links")
+        if links is None:
+            return False
+        if not isinstance(links, list):
+            profile["links"] = []
+            return True
+
+        normalized: List[Dict[str, str]] = []
+        changed = False
+        for item in links:
+            entry = self._normalize_single_link(item)
+            if entry is None:
+                changed = True
+                continue
+            normalized.append(entry)
+            if not isinstance(item, dict):
+                changed = True
+                continue
+            if set(item.keys()) != {"name", "url"}:
+                changed = True
+                continue
+            if item.get("name") != entry["name"] or item.get("url") != entry["url"]:
+                changed = True
+
+        if changed or normalized != links:
+            profile["links"] = normalized
+            return True
+        return False
+
+    @staticmethod
+    def _normalize_single_link(item: Any) -> Optional[Dict[str, str]]:
+        name = ""
+        url = ""
+        if isinstance(item, dict):
+            raw_name = item.get("name")
+            raw_url = item.get("url")
+            if not isinstance(raw_url, str):
+                raw_url = item.get("link")
+            if isinstance(raw_name, str):
+                name = raw_name.strip()
+            if isinstance(raw_url, str):
+                url = raw_url.strip()
+        elif isinstance(item, str):
+            raw = item.strip()
+            if not raw:
+                return None
+            parsed = CareerCorpusStore._parse_named_link_string(raw)
+            if parsed:
+                name, url = parsed
+            else:
+                name, url = CareerCorpusStore._infer_link_name(raw), raw
+        else:
+            return None
+
+        if not url:
+            return None
+        if not name:
+            name = CareerCorpusStore._infer_link_name(url)
+        return {"name": name, "url": url}
+
+    @staticmethod
+    def _parse_named_link_string(value: str) -> Optional[tuple[str, str]]:
+        if ":" not in value:
+            return None
+        if value.lower().startswith(("http://", "https://")):
+            return None
+        label, remainder = value.split(":", 1)
+        label = label.strip()
+        remainder = remainder.strip()
+        if not label or not remainder:
+            return None
+        return label, remainder
+
+    @staticmethod
+    def _infer_link_name(url_or_text: str) -> str:
+        candidate = url_or_text.strip()
+        parsed = urlparse(candidate if "://" in candidate else f"https://{candidate}")
+        host = parsed.netloc.lower()
+        if "github.com" in host:
+            return "GitHub"
+        if "linkedin.com" in host:
+            return "LinkedIn"
+        if "stackoverflow.com" in host:
+            return "Stack Overflow"
+        return "Website"
+
+    def _normalize_notes_fields(self) -> bool:
+        """
+        Normalize notes fields for current schema:
+        - remove top-level notes
+        - remove metadata.notes
+        - empty/whitespace notes -> null
+        """
+        if not isinstance(self._corpus, dict):
+            return False
+        changed = False
+
+        # Legacy top-level notes are merged into profile notes then removed.
+        top_level_notes = self._corpus.get("notes")
+        if "notes" in self._corpus:
+            if isinstance(top_level_notes, str) and top_level_notes.strip():
+                profile = self._corpus.setdefault("profile", {})
+                if isinstance(profile, dict):
+                    existing_raw = profile.get("notes")
+                    existing = existing_raw.strip() if isinstance(existing_raw, str) else ""
+                    incoming = top_level_notes.strip()
+                    profile["notes"] = f"{existing} | {incoming}" if existing else incoming
+            del self._corpus["notes"]
+            changed = True
+
+        metadata = self._corpus.get("metadata")
+        if isinstance(metadata, dict) and "notes" in metadata:
+            del metadata["notes"]
+            changed = True
+
+        def _normalize_note_value(container: Dict[str, Any], key: str) -> bool:
+            value = container.get(key)
+            if value is None:
+                return False
+            if isinstance(value, str):
+                stripped = value.strip()
+                normalized: Optional[str] = stripped if stripped else None
+            else:
+                stripped = str(value).strip()
+                normalized = stripped if stripped else None
+            if container.get(key) != normalized:
+                container[key] = normalized
+                return True
+            return False
+
+        profile = self._corpus.get("profile")
+        if isinstance(profile, dict) and "notes" in profile:
+            changed = _normalize_note_value(profile, "notes") or changed
+
+        skills = self._corpus.get("skills")
+        if isinstance(skills, dict) and "notes" in skills:
+            changed = _normalize_note_value(skills, "notes") or changed
+
+        for section in ("experience", "projects", "certifications", "education"):
+            rows = self._corpus.get(section)
+            if not isinstance(rows, list):
+                continue
+            for row in rows:
+                if isinstance(row, dict) and "notes" in row:
+                    changed = _normalize_note_value(row, "notes") or changed
+
+        return changed
 
     def _ensure_item_id(self, item: Dict[str, Any], section: str) -> str:
         item_id = item.get("id")
