@@ -13,35 +13,32 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Set
 
 try:
-    from career_corpus_store import CareerCorpusStore
+    from career_corpus_store_core import CareerCorpusStore
 except ImportError:
-    from knowledge_files.career_corpus_store import CareerCorpusStore  # type: ignore
+    from knowledge_files.career_corpus_store_core import CareerCorpusStore  # type: ignore
 
 try:
-    from memory_validation import (
+    from memory_validation_core import (
         assert_notes_content_only,
         assert_persist_claim_allowed,
         assert_sections_explicitly_approved,
         assert_validation_claim_allowed,
         canonical_json_sha256,
         canonical_json_text,
-        decode_base64_utf8,
         diagnose_payload_integrity,
     )
 except ImportError:
-    from knowledge_files.memory_validation import (  # type: ignore
+    from knowledge_files.memory_validation_core import (  # type: ignore
         assert_notes_content_only,
         assert_persist_claim_allowed,
         assert_sections_explicitly_approved,
         assert_validation_claim_allowed,
         canonical_json_sha256,
         canonical_json_text,
-        decode_base64_utf8,
         diagnose_payload_integrity,
     )
 
 
-ReadRemoteFileFn = Callable[[], Dict[str, Any]]
 GetMemoryRepoFn = Callable[[], Dict[str, Any]]
 GetBranchRefFn = Callable[[str], Dict[str, Any]]
 GetGitCommitFn = Callable[[str], Dict[str, Any]]
@@ -52,6 +49,12 @@ CreateGitTreeFn = Callable[[Dict[str, Any]], Dict[str, Any]]
 CreateGitCommitFn = Callable[[Dict[str, Any]], Dict[str, Any]]
 UpdateBranchRefFn = Callable[[str, Dict[str, Any]], Dict[str, Any]]
 CreateMemoryRepoFn = Callable[[Dict[str, Any]], Dict[str, Any]]
+
+
+def gpt_core(obj: Any) -> Any:
+    obj.__gpt_layer__ = "core"
+    obj.__gpt_core__ = True
+    return obj
 
 
 @dataclass
@@ -66,6 +69,7 @@ class PushAttemptResult:
     new_tree_sha: Optional[str] = None
 
 
+@gpt_core
 class CareerCorpusSync:
     """Sync local corpus state with GitHub via injected tool-call adapters."""
 
@@ -83,7 +87,6 @@ class CareerCorpusSync:
     def __init__(
         self,
         store: CareerCorpusStore,
-        read_remote_file: Optional[ReadRemoteFileFn] = None,
         get_memory_repo: Optional[GetMemoryRepoFn] = None,
         get_branch_ref: Optional[GetBranchRefFn] = None,
         get_git_commit: Optional[GetGitCommitFn] = None,
@@ -96,7 +99,6 @@ class CareerCorpusSync:
         max_retries: int = 1,
     ) -> None:
         self.store = store
-        self._read_remote_file = read_remote_file
         self._get_memory_repo = get_memory_repo
         self._get_branch_ref = get_branch_ref
         self._get_git_commit = get_git_commit
@@ -109,9 +111,15 @@ class CareerCorpusSync:
         self._max_retries = max_retries
 
     def pull(self, force: bool = False) -> Dict[str, Any]:
-        if self._has_split_pull_adapters():
-            return self._pull_split(force=force)
-        return self._pull_legacy_single_file(force=force)
+        missing = self._missing_pull_adapters()
+        if missing:
+            return {
+                "ok": False,
+                "changed": False,
+                "reason": f"missing_pull_adapters:{','.join(missing)}",
+                "error_code": "api_unknown",
+            }
+        return self._pull_split(force=force)
 
     def pull_if_stale_before_write(self, force: bool = False) -> Dict[str, Any]:
         """
@@ -487,40 +495,6 @@ class CareerCorpusSync:
             "dirty": self.store.status()["dirty"],
         }
 
-    def _pull_legacy_single_file(self, force: bool = False) -> Dict[str, Any]:
-        if self._read_remote_file is None:
-            return {
-                "ok": False,
-                "changed": False,
-                "reason": "missing_read_adapter",
-                "error_code": "api_unknown",
-            }
-        response = self._read_remote_file()
-        normalized = self._normalize_read_response(response)
-        if not normalized["exists"]:
-            return {
-                "ok": True,
-                "changed": False,
-                "reason": "remote_missing",
-                "error_code": "api_404",
-            }
-        status = self.store.status()
-        remote_file_sha = normalized["sha"]
-        if (
-            not force
-            and remote_file_sha
-            and status.get("remote_file_sha")
-            and remote_file_sha == status["remote_file_sha"]
-        ):
-            return {"ok": True, "changed": False, "reason": "sha_unchanged", "remote_file_sha": remote_file_sha}
-
-        decoded_text = decode_base64_utf8(normalized["content_b64"])
-        document = json.loads(decoded_text)
-        if not isinstance(document, dict):
-            raise ValueError("Remote career_corpus.json is not a JSON object.")
-        self.store.replace_corpus(document, remote_file_sha=remote_file_sha, validate=False)
-        return {"ok": True, "changed": True, "reason": "pulled", "remote_file_sha": remote_file_sha}
-
     def _attempt_git_push(
         self,
         message: str,
@@ -750,17 +724,19 @@ class CareerCorpusSync:
             missing.append("update_branch_ref")
         return missing
 
-    def _has_split_pull_adapters(self) -> bool:
-        return all(
-            fn is not None
-            for fn in (
-                self._get_memory_repo,
-                self._get_branch_ref,
-                self._get_git_commit,
-                self._get_git_tree,
-                self._get_git_blob,
-            )
-        )
+    def _missing_pull_adapters(self) -> List[str]:
+        missing = []
+        if self._get_memory_repo is None:
+            missing.append("get_memory_repo")
+        if self._get_branch_ref is None:
+            missing.append("get_branch_ref")
+        if self._get_git_commit is None:
+            missing.append("get_git_commit")
+        if self._get_git_tree is None:
+            missing.append("get_git_tree")
+        if self._get_git_blob is None:
+            missing.append("get_git_blob")
+        return missing
 
     @staticmethod
     def _status_code(response: Any) -> Optional[int]:
@@ -777,43 +753,6 @@ class CareerCorpusSync:
                 return None
             node = node.get(key)
         return node if isinstance(node, str) and node else None
-
-    @staticmethod
-    def _normalize_read_response(response: Dict[str, Any]) -> Dict[str, Any]:
-        if response is None:
-            return {"exists": False, "sha": None, "content_b64": None}
-
-        status_code = response.get("status_code")
-        if status_code == 404 or response.get("exists") is False:
-            return {"exists": False, "sha": None, "content_b64": None}
-
-        message = str(response.get("message", "")).lower()
-        if "not found" in message and "content" not in response:
-            return {"exists": False, "sha": None, "content_b64": None}
-
-        if "content_b64" in response:
-            return {
-                "exists": True,
-                "sha": response.get("sha"),
-                "content_b64": str(response["content_b64"]).strip(),
-            }
-
-        if isinstance(response.get("content"), str):
-            return {
-                "exists": True,
-                "sha": response.get("sha"),
-                "content_b64": response["content"].strip(),
-            }
-
-        nested = response.get("content")
-        if isinstance(nested, dict) and isinstance(nested.get("content"), str):
-            return {
-                "exists": True,
-                "sha": nested.get("sha") or response.get("sha"),
-                "content_b64": nested["content"].strip(),
-            }
-
-        raise ValueError("Unsupported read response shape for career corpus pull.")
 
     def _base_result(self) -> Dict[str, Any]:
         return {

@@ -3,17 +3,19 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+import base64
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict
 
-from knowledge_files.career_corpus_store import CareerCorpusStore
-from knowledge_files.career_corpus_sync import CareerCorpusSync
+from knowledge_files.career_corpus_store_surface import CareerCorpusStore
+from knowledge_files.career_corpus_sync_surface import CareerCorpusSync
 
-try:
-    from memory_validation import canonical_json_text, encode_base64_utf8
-except ImportError:
-    from knowledge_files.memory_validation import canonical_json_text, encode_base64_utf8  # type: ignore
+from knowledge_files.memory_validation_surface import canonical_json_text
+
+
+def _encode_base64_utf8(text: str) -> str:
+    return base64.b64encode(text.encode("utf-8")).decode("ascii")
 
 
 def make_corpus(with_ids: bool = True) -> Dict[str, Any]:
@@ -158,7 +160,7 @@ class FakeGitRepo:
         return {
             "sha": blob_sha,
             "encoding": "base64",
-            "content": encode_base64_utf8(text),
+            "content": _encode_base64_utf8(text),
         }
 
     def create_git_blob(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -336,10 +338,11 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         store.load()
         split_docs = store.build_split_documents()
         repo = FakeGitRepo(split_docs)
-        current_index_sha = repo.head_path_map()[CareerCorpusStore.INDEX_FILE]
-        store.mark_push_success(remote_file_sha=current_index_sha, remote_file_hashes=split_docs[CareerCorpusStore.INDEX_FILE]["file_hashes"])
 
         sync = self._sync_with_repo(store, repo)
+        first = sync.pull(force=True)
+        self.assertTrue(first["ok"])
+        self.assertTrue(first["changed"])
         result = sync.pull()
         self.assertTrue(result["ok"])
         self.assertFalse(result["changed"])
@@ -428,19 +431,19 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertTrue(result["validation_ran"])
         self.assertFalse(result["verify_ok"])
 
-    def test_meta_migration_old_remote_sha_fields_supported(self) -> None:
+    def test_status_uses_remote_file_sha_only(self) -> None:
         self._write_corpus(with_ids=True)
-        legacy_meta = {
-            "remote_sha": "legacy_sha_only",
+        current_meta = {
+            "remote_file_sha": "index_sha_only",
             "local_hash": "abc",
             "last_pull_utc": "2026-01-01T00:00:00Z",
             "last_push_utc": "2026-01-01T00:00:00Z",
         }
-        self.meta_path.write_text(json.dumps(legacy_meta), encoding="utf-8")
+        self.meta_path.write_text(json.dumps(current_meta), encoding="utf-8")
         store = self._store()
         status = store.status()
-        self.assertEqual(status["remote_file_sha"], "legacy_sha_only")
-        self.assertEqual(status["remote_sha"], "legacy_sha_only")
+        self.assertEqual(status["remote_file_sha"], "index_sha_only")
+        self.assertNotIn("remote_sha", status)
 
     def test_pull_split_handles_raw_blob_text(self) -> None:
         self._write_corpus(with_ids=True)
@@ -472,14 +475,11 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         store.load()
         split_docs = store.build_split_documents()
         repo = FakeGitRepo(split_docs)
-        current_index_sha = repo.head_path_map()[CareerCorpusStore.INDEX_FILE]
-        store.mark_push_success(
-            remote_file_sha=current_index_sha,
-            remote_file_hashes=split_docs[CareerCorpusStore.INDEX_FILE]["file_hashes"],
-        )
-        store.set(["education", 0, "degree"], "MS")
 
         sync = self._sync_with_repo(store, repo)
+        baseline = sync.pull(force=True)
+        self.assertTrue(baseline["ok"])
+        store.set(["education", 0, "degree"], "MS")
         result = sync.push(
             "Guarded section update",
             target_sections=["education"],
@@ -494,15 +494,12 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         store.load()
         split_docs = store.build_split_documents()
         repo = FakeGitRepo(split_docs)
-        current_index_sha = repo.head_path_map()[CareerCorpusStore.INDEX_FILE]
-        store.mark_push_success(
-            remote_file_sha=current_index_sha,
-            remote_file_hashes=split_docs[CareerCorpusStore.INDEX_FILE]["file_hashes"],
-        )
-        # Change outside target section intentionally.
-        store.set(["skills", "technical"], ["Python", "SQL"])
 
         sync = self._sync_with_repo(store, repo)
+        baseline = sync.pull(force=True)
+        self.assertTrue(baseline["ok"])
+        # Change outside target section intentionally.
+        store.set(["skills", "technical"], ["Python", "SQL"])
         result = sync.push(
             "Bad scoped update",
             target_sections=["education"],
@@ -551,12 +548,12 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         repo = FakeGitRepo(store.build_split_documents())
         sync = self._sync_with_repo(store, repo)
 
-        original_validate = store.validate
+        original_validate = store._core_store.validate
 
         def fail_validate() -> None:
             raise AssertionError("validate called")
 
-        store.validate = fail_validate  # type: ignore[assignment]
+        store._core_store.validate = fail_validate  # type: ignore[assignment]
 
         pull_result = sync.pull(force=True)
         self.assertTrue(pull_result["ok"])
@@ -567,7 +564,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertFalse(push_result["ok"])
         self.assertEqual(push_result["error_code"], "validation_failed")
 
-        store.validate = original_validate  # type: ignore[assignment]
+        store._core_store.validate = original_validate  # type: ignore[assignment]
 
     def test_notes_empty_strings_normalize_to_null(self) -> None:
         corpus = self._write_corpus(with_ids=True)

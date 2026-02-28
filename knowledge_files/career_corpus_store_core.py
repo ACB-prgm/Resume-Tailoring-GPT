@@ -23,6 +23,12 @@ from jsonschema import Draft202012Validator
 PathPart = Union[str, int]
 
 
+def gpt_core(obj: Any) -> Any:
+    obj.__gpt_layer__ = "core"
+    obj.__gpt_core__ = True
+    return obj
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -47,6 +53,7 @@ def _default_schema_path() -> Path:
     return Path("/mnt/data/career_corpus.schema.json")
 
 
+@gpt_core
 class CareerCorpusStore:
     """In-memory editor + atomic persistence for `career_corpus.json`."""
 
@@ -90,7 +97,6 @@ class CareerCorpusStore:
 
         data = self._read_json_object(self.path)
         self._corpus = data
-        summary_migrated = self._migrate_legacy_summary_facts()
         links_normalized = self._normalize_profile_links()
         notes_normalized = self._normalize_notes_fields()
         ids_added = self._ensure_ids_for_known_lists()
@@ -100,7 +106,7 @@ class CareerCorpusStore:
 
         self._local_hash = self._compute_hash(self._corpus)
         self._meta["local_hash"] = self._local_hash
-        self.dirty = ids_added or summary_migrated or links_normalized or notes_normalized
+        self.dirty = ids_added or links_normalized or notes_normalized
         self._write_meta()
         return deepcopy(self._corpus)
 
@@ -124,7 +130,6 @@ class CareerCorpusStore:
         return {
             "dirty": self.dirty,
             "local_hash": self._local_hash,
-            "remote_sha": self._meta.get("remote_sha"),  # legacy compatibility
             "remote_file_sha": self._meta.get("remote_file_sha"),
             "remote_blob_sha": self._meta.get("remote_blob_sha"),
             "remote_commit_sha": self._meta.get("remote_commit_sha"),
@@ -144,10 +149,10 @@ class CareerCorpusStore:
         self._ensure_loaded()
 
         try:
-            from memory_validation import validate_career_corpus  # type: ignore
+            from memory_validation_core import validate_career_corpus  # type: ignore
         except ImportError:
             try:
-                from knowledge_files.memory_validation import validate_career_corpus  # type: ignore
+                from knowledge_files.memory_validation_core import validate_career_corpus  # type: ignore
             except ImportError:
                 validate_career_corpus = None  # type: ignore
 
@@ -227,10 +232,6 @@ class CareerCorpusStore:
             path = core_files.get(key)
             if isinstance(path, str) and path:
                 paths.append(path)
-        # Legacy support: older manifests may still reference summary_facts.
-        summary_path = core_files.get("summary_facts")
-        if isinstance(summary_path, str) and summary_path:
-            paths.append(summary_path)
         for item in index_doc.get("experience_files", []):
             path = item.get("path")
             if isinstance(path, str) and path:
@@ -260,11 +261,6 @@ class CareerCorpusStore:
         certs_doc = _require("certifications")
         edu_doc = _require("education")
         metadata_doc = _require("metadata")
-
-        summary_doc = None
-        summary_path = core_files.get("summary_facts")
-        if isinstance(summary_path, str) and summary_path in documents_by_path:
-            summary_doc = documents_by_path[summary_path]
 
         experience = []
         for item in index_doc.get("experience_files", []):
@@ -296,17 +292,6 @@ class CareerCorpusStore:
             "education": deepcopy(edu_doc.get("education", [])),
             "metadata": deepcopy(metadata_doc.get("metadata", {})),
         }
-        # Legacy support: absorb summary_facts into profile.notes.
-        if isinstance(summary_doc, dict):
-            legacy_facts = summary_doc.get("summary_facts")
-            if isinstance(legacy_facts, list):
-                facts = [str(item).strip() for item in legacy_facts if str(item).strip()]
-                if facts:
-                    profile = corpus.get("profile", {})
-                    existing_raw = profile.get("notes", "")
-                    existing_notes = existing_raw.strip() if isinstance(existing_raw, str) else ""
-                    joined = " | ".join(facts)
-                    profile["notes"] = f"{existing_notes} | {joined}" if existing_notes else joined
         return corpus
 
     def list_experiences(self) -> List[Dict[str, Any]]:
@@ -425,7 +410,6 @@ class CareerCorpusStore:
         if not isinstance(corpus, dict):
             raise TypeError("Corpus document must be an object.")
         self._corpus = deepcopy(corpus)
-        summary_migrated = self._migrate_legacy_summary_facts()
         links_normalized = self._normalize_profile_links()
         notes_normalized = self._normalize_notes_fields()
         ids_added = self._ensure_ids_for_known_lists()
@@ -436,13 +420,12 @@ class CareerCorpusStore:
         self._meta["local_hash"] = self._local_hash
         if remote_file_sha is not None:
             self._meta["remote_file_sha"] = remote_file_sha
-            self._meta["remote_sha"] = remote_file_sha
         if remote_branch is not None:
             self._meta["remote_branch"] = remote_branch
         if remote_file_hashes is not None:
             self._meta["remote_file_hashes"] = deepcopy(remote_file_hashes)
         self._meta["last_pull_utc"] = _utc_now()
-        self.dirty = ids_added or summary_migrated or links_normalized or notes_normalized
+        self.dirty = ids_added or links_normalized or notes_normalized
         self._write_meta()
 
     def mark_push_success(
@@ -457,7 +440,6 @@ class CareerCorpusStore:
     ) -> None:
         if remote_file_sha is not None:
             self._meta["remote_file_sha"] = remote_file_sha
-            self._meta["remote_sha"] = remote_file_sha
         if remote_blob_sha is not None:
             self._meta["remote_blob_sha"] = remote_blob_sha
         if remote_commit_sha is not None:
@@ -524,27 +506,6 @@ class CareerCorpusStore:
                     after = self._ensure_item_id(record, section)
                     changed = changed or before != after
         return changed
-
-    def _migrate_legacy_summary_facts(self) -> bool:
-        """
-        Backward compatibility: move legacy `summary_facts` into `profile.notes`.
-        """
-        if not isinstance(self._corpus, dict):
-            return False
-        legacy = self._corpus.get("summary_facts")
-        if not isinstance(legacy, list):
-            return False
-        facts = [str(item).strip() for item in legacy if str(item).strip()]
-        profile = self._corpus.setdefault("profile", {})
-        if not isinstance(profile, dict):
-            return False
-        if facts:
-            joined = " | ".join(facts)
-            existing_raw = profile.get("notes", "")
-            existing_notes = existing_raw.strip() if isinstance(existing_raw, str) else ""
-            profile["notes"] = f"{existing_notes} | {joined}" if existing_notes else joined
-        del self._corpus["summary_facts"]
-        return True
 
     def _normalize_profile_links(self) -> bool:
         """
@@ -727,7 +688,6 @@ class CareerCorpusStore:
     def _read_meta(self) -> Dict[str, Any]:
         if not self.meta_path.exists():
             return {
-                "remote_sha": None,
                 "remote_file_sha": None,
                 "remote_blob_sha": None,
                 "remote_commit_sha": None,
@@ -740,11 +700,9 @@ class CareerCorpusStore:
                 "last_push_utc": None,
             }
         data = self._read_json_object(self.meta_path)
-        legacy_remote_sha = data.get("remote_sha")
-        remote_file_sha = data.get("remote_file_sha") or legacy_remote_sha
+        remote_file_sha = data.get("remote_file_sha")
         hashes = data.get("remote_file_hashes")
         return {
-            "remote_sha": legacy_remote_sha or remote_file_sha,
             "remote_file_sha": remote_file_sha,
             "remote_blob_sha": data.get("remote_blob_sha"),
             "remote_commit_sha": data.get("remote_commit_sha"),

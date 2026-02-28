@@ -8,7 +8,6 @@ before any GitHub upsert call is made.
 
 from __future__ import annotations
 
-import base64
 import hashlib
 import json
 import re
@@ -22,6 +21,12 @@ from jsonschema import Draft202012Validator
 REPO_ROOT = Path(__file__).resolve().parent
 CAREER_CORPUS_SCHEMA_PATH = REPO_ROOT / "career_corpus.schema.json"
 PREFERENCES_SCHEMA_PATH = REPO_ROOT / "preferences.schema.json"
+
+
+def gpt_core(obj: Any) -> Any:
+    obj.__gpt_layer__ = "core"
+    obj.__gpt_core__ = True
+    return obj
 
 
 def _load_json_file(path: Path) -> Dict[str, Any]:
@@ -66,6 +71,7 @@ def validate_json_document(
     return True, []
 
 
+@gpt_core
 def validate_career_corpus(corpus: Dict[str, Any]) -> Tuple[bool, List[str]]:
     """
     Validate `career_corpus.json` payloads.
@@ -75,6 +81,7 @@ def validate_career_corpus(corpus: Dict[str, Any]) -> Tuple[bool, List[str]]:
     return validate_json_document(corpus, CAREER_CORPUS_SCHEMA_PATH)
 
 
+@gpt_core
 def validate_preferences(preferences: Dict[str, Any]) -> Tuple[bool, List[str]]:
     """
     Validate `preferences.json` payloads.
@@ -125,6 +132,7 @@ def apply_patch_and_validate(
     return valid, merged, errors
 
 
+@gpt_core
 def validate_career_patch(
     existing_corpus: Dict[str, Any], patch: Dict[str, Any]
 ) -> Tuple[bool, Dict[str, Any], List[str]]:
@@ -132,6 +140,7 @@ def validate_career_patch(
     return apply_patch_and_validate(existing_corpus, patch, CAREER_CORPUS_SCHEMA_PATH)
 
 
+@gpt_core
 def validate_preferences_patch(
     existing_preferences: Dict[str, Any], patch: Dict[str, Any]
 ) -> Tuple[bool, Dict[str, Any], List[str]]:
@@ -141,6 +150,7 @@ def validate_preferences_patch(
     )
 
 
+@gpt_core
 def canonical_json_text(json_obj: Dict[str, Any]) -> str:
     """Return deterministic JSON text for hashing/comparison."""
     return json.dumps(
@@ -151,11 +161,13 @@ def canonical_json_text(json_obj: Dict[str, Any]) -> str:
     )
 
 
+@gpt_core
 def canonical_json_sha256(json_obj: Dict[str, Any]) -> str:
     """Return SHA-256 hex digest of deterministic JSON text."""
     return hashlib.sha256(canonical_json_text(json_obj).encode("utf-8")).hexdigest()
 
 
+@gpt_core
 def diagnose_payload_integrity(text: str) -> Dict[str, Any]:
     """
     Provide quick integrity diagnostics for UTF-8 payloads.
@@ -198,73 +210,7 @@ def verify_remote_matches_local(
     return False, f"Canonical mismatch: local={local_hash} remote={remote_hash}"
 
 
-def encode_base64_utf8(text: str) -> str:
-    """
-    Encode UTF-8 text as a base64 ASCII string.
-
-    Use this for GitHub contents API `content` fields.
-    """
-    return base64.b64encode(text.encode("utf-8")).decode("ascii")
-
-
-def decode_base64_utf8(content_b64: str) -> str:
-    """
-    Decode a base64 ASCII string back to UTF-8 text.
-
-    Raises:
-        ValueError: when the payload is not valid base64/UTF-8.
-    """
-    try:
-        raw = base64.b64decode(content_b64.encode("ascii"), validate=True)
-        return raw.decode("utf-8")
-    except Exception as exc:  # pragma: no cover - precise exception type not required here.
-        raise ValueError(f"Invalid base64 UTF-8 payload: {exc}") from exc
-
-
-def build_upsert_payload(
-    message: str,
-    json_obj: Dict[str, Any],
-    sha: Optional[str] = None,
-) -> Dict[str, Any]:
-    """
-    Build a GitHub contents API upsert payload from a JSON object.
-
-    The JSON is canonicalized (sorted keys + compact separators) before base64
-    encoding so repeated writes are deterministic.
-    """
-    json_text = json.dumps(json_obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    payload: Dict[str, Any] = {
-        "message": message,
-        "content": encode_base64_utf8(json_text),
-    }
-    if sha:
-        payload["sha"] = sha
-    return payload
-
-
-def verify_base64_roundtrip(json_obj: Dict[str, Any]) -> Tuple[bool, Optional[str]]:
-    """
-    Verify JSON -> base64 -> JSON roundtrip consistency.
-
-    Returns:
-        (ok, error)
-        - ok: True when the object survives roundtrip exactly.
-        - error: human-readable reason when verification fails.
-    """
-    try:
-        canonical = json.dumps(
-            json_obj, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-        )
-        encoded = encode_base64_utf8(canonical)
-        decoded = decode_base64_utf8(encoded)
-        decoded_obj = json.loads(decoded)
-        if decoded_obj != json_obj:
-            return False, "Roundtrip mismatch after base64 encode/decode."
-        return True, None
-    except Exception as exc:  # pragma: no cover - surfaced to caller as string
-        return False, str(exc)
-
-
+@gpt_core
 def assert_validated_before_write(validated: bool, context: str = "") -> None:
     """
     Raise a hard error if a write is attempted without a successful validation gate.
@@ -276,6 +222,7 @@ def assert_validated_before_write(validated: bool, context: str = "") -> None:
         raise RuntimeError(f"Validation gate failed before write{suffix}.")
 
 
+@gpt_core
 def assert_sections_explicitly_approved(
     approved_sections: Dict[str, Any],
     target_sections: List[str],
@@ -304,6 +251,7 @@ def assert_sections_explicitly_approved(
         raise RuntimeError(f"Missing explicit approvals for sections: {', '.join(sorted(missing))}.")
 
 
+@gpt_core
 def assert_validation_claim_allowed(validated_ran: bool, validation_ok: bool) -> None:
     """Block invalid `validated=true` claims."""
     if not validated_ran:
@@ -312,6 +260,7 @@ def assert_validation_claim_allowed(validated_ran: bool, validation_ok: bool) ->
         raise RuntimeError("Cannot claim validated=true because validation did not pass.")
 
 
+@gpt_core
 def assert_persist_claim_allowed(push_ok: bool, verify_ok: bool) -> None:
     """Block invalid `persisted=true` claims."""
     if not push_ok:
@@ -376,6 +325,7 @@ def assert_scaffolding_confirmation_allowed(
         raise RuntimeError("Scaffold creation requires explicit user confirmation.")
 
 
+@gpt_core
 def assert_notes_content_only(document: Dict[str, Any]) -> None:
     """
     Enforce that `notes` fields contain only content context.
@@ -415,6 +365,7 @@ def assert_notes_content_only(document: Dict[str, Any]) -> None:
     _walk(document, "")
 
 
+@gpt_core
 def should_emit_memory_status(
     previous_state: Optional[Dict[str, Any]],
     current_state: Optional[Dict[str, Any]],

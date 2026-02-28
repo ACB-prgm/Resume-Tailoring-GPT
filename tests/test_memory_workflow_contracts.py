@@ -2,15 +2,13 @@ from __future__ import annotations
 
 import unittest
 
-from knowledge_files.career_corpus_sync import CareerCorpusSync
-from knowledge_files.memory_validation import (
+from knowledge_files.career_corpus_sync_surface import CareerCorpusSync
+from knowledge_files.memory_validation_surface import (
     assert_notes_content_only,
-    assert_citations_from_current_turn,
     assert_persist_claim_allowed,
-    assert_scaffolding_confirmation_allowed,
     assert_sections_explicitly_approved,
+    assert_validated_before_write,
     assert_validation_claim_allowed,
-    compute_onboarding_complete,
     should_emit_memory_status,
 )
 
@@ -59,10 +57,10 @@ class MemoryWorkflowContractsTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             assert_sections_explicitly_approved(approved, ["education", "skills"])
 
-    def test_scaffolding_prompt_gate(self) -> None:
+    def test_validation_gate_enforcement(self) -> None:
+        assert_validated_before_write(True)
         with self.assertRaises(RuntimeError):
-            assert_scaffolding_confirmation_allowed(create_scaffold=True, user_confirmed=False)
-        assert_scaffolding_confirmation_allowed(create_scaffold=False, user_confirmed=False)
+            assert_validated_before_write(False, context="push")
 
     def test_validation_claim_integrity(self) -> None:
         with self.assertRaises(RuntimeError):
@@ -77,28 +75,6 @@ class MemoryWorkflowContractsTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             assert_persist_claim_allowed(push_ok=True, verify_ok=False)
         assert_persist_claim_allowed(push_ok=True, verify_ok=True)
-
-    def test_onboarding_completion_state(self) -> None:
-        partial = {
-            "profile": {"approved": True},
-        }
-        self.assertFalse(compute_onboarding_complete(partial, validated=True, persisted=True))
-
-        full = {
-            "profile": {"approved": True},
-            "experience": {"approved": True},
-            "projects": {"approved": True},
-            "skills": {"approved": True},
-            "certifications": {"approved": True},
-            "education": {"approved": True},
-            "metadata": {"approved": True},
-        }
-        self.assertTrue(compute_onboarding_complete(full, validated=True, persisted=True))
-
-    def test_citation_contract(self) -> None:
-        assert_citations_from_current_turn(["marker_a"], ["marker_a", "marker_b"])
-        with self.assertRaises(RuntimeError):
-            assert_citations_from_current_turn(["marker_old"], ["marker_new"])
 
     def test_status_emission_policy(self) -> None:
         prev = {"repo_exists": True, "corpus_exists": True}

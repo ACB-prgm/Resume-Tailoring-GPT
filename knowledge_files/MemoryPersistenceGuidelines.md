@@ -28,6 +28,11 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 - Before Python imports, bootstrap:
   - add `/mnt/data` to `sys.path`.
 - Do not run direct Git writes before store/sync bootstrap completes.
+- Use only surface modules for GPT workflow imports:
+  - `/mnt/data/career_corpus_store_surface.py`
+  - `/mnt/data/career_corpus_sync_surface.py`
+  - `/mnt/data/memory_validation_surface.py`
+- Do not call `*_core.py` modules directly from GPT workflow code.
 
 ## Startup bootstrap (required)
 1. Resolve `{owner}` via `getAuthenticatedUser`.
@@ -35,7 +40,7 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 3. Enforce `repo_create_attempted_this_turn` guard (no double create in same turn).
 4. Optionally call `setMemoryRepoTopics` with `["career-corpus-memory"]`; continue if topic call fails.
 5. Initialize store/sync objects.
-6. Check split corpus presence via manifest `corpus_index.json` (legacy `career_corpus.json` may still be read).
+6. Check split corpus presence via manifest `corpus_index.json`.
 7. Emit memory status only when policy requires it:
 - user asks, state changes, or a memory operation fails.
 - Use the `MEMORY STATUS` code block from `MemoryStateModel.md`.
@@ -72,7 +77,7 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 ## Validation + preflight sequence (hard fail)
 Before **any** write:
 0. Confirm initialization completed (owner resolved, repo checked/created, store/sync initialized).
-1. Import helpers from `/mnt/data/memory_validation.py`.
+1. Import helpers from `/mnt/data/memory_validation_surface.py`.
 2. Validate full target document:
 - `validate_career_corpus(...)` / `validate_preferences(...)`
 3. For onboarding/import flows, present section preview(s) and get explicit user confirmation before write.

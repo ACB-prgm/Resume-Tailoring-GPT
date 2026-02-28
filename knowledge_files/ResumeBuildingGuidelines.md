@@ -1,7 +1,7 @@
 # Resume Building Guide
 
 ## Objective
-Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe resume draft in the provided markdown template.
+Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe resume draft using the canvas tool in the provided markdown template.
 
 ## Inputs required
 - JD Analysis Output (from `JDAnalysisGuidelines.md`)
@@ -20,7 +20,7 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - Use provenance tags per claim: `corpus`, `current_chat`, or `user_confirmed_update`.
 - If the user shares relevant new facts that are not in corpus, ask whether to persist them to corpus memory before the session ends.
 - If `career_corpus.json` is missing, invalid, or schema-noncompliant, route to onboarding/repair before resume drafting.
-- Validate corpus/preferences with `/mnt/data/memory_validation.py` before using them for drafting.
+- Validate corpus/preferences with `/mnt/data/memory_validation_surface.py` before using them for drafting.
 - Block unsupported factual inserts unless user explicitly confirms and approves persistence path.
 - Resume title/header lines are generated per JD and are not persisted as dedicated corpus fields.
 
@@ -74,6 +74,5 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - Remove weaker/redundant bullets before removing high-signal evidence.
 
 ## Output format before export
-- Prepare markdown in the template for user review in canvas.
-- Preserve expected structural markers (including `---` rule lines).
+- Prepare markdown in the template for user review in the canvas tool.
 - Do not export PDF until user confirms the draft.

@@ -14,6 +14,13 @@ Run a deterministic startup sequence before any memory read/write so repo bootst
    - `CareerCorpusSync(...)`
 7. Emit `INITIALIZATION STATUS` and continue only if `repo_exists=true`.
 
+## Surface-only import rule
+- Import memory runtime APIs from:
+  - `/mnt/data/career_corpus_store_surface.py`
+  - `/mnt/data/career_corpus_sync_surface.py`
+  - `/mnt/data/memory_validation_surface.py`
+- Treat `*_core.py` modules as internal implementation; do not call them directly from GPT workflow steps.
+
 ## Deterministic repo bootstrap rule
 - Required sequence: `get -> (optional create) -> get_confirm`.
 - Use turn guard `repo_create_attempted_this_turn`.
