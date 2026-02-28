@@ -62,6 +62,7 @@ INGESTION RECEIPT
 - Do not show memory status on every message.
 - Show status only when user requests it, state changes, or an operation fails.
 - Use compact `MEMORY STATUS` code-block output when shown.
+- Always include baseline fields (`repo_exists`, `corpus_exists`, `onboarding_complete`, `last_written`); include other fields only when relevant.
 
 ## 5) Deterministic Failure Recovery
 - Path A: fix payload/preflight issue and retry once.

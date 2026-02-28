@@ -30,13 +30,16 @@ MEMORY STATUS
 - repo_exists: <true|false>
 - corpus_exists: <true|false>
 - onboarding_complete: <true|false>
-- validated: <true|false>
-- persisted: <true|false>
-- fallback_used: <true|false>
-- method: <git_blob_utf8|...>
-- retry_count: <0|1>
-- verification: <ok|failed|not_run>
+- last_written: <friendly timestamp | Never>
 ```
+
+## Optional status fields (show only when relevant)
+- `validated`: include when a validation gate ran in this flow.
+- `persisted`: include when a write attempt occurred this flow.
+- `fallback_used`: include only when fallback path was used.
+- `method`: include for persistence/status-debug contexts.
+- `retry_count`: include when retries were attempted.
+- `verification`: include when verification ran or failed.
 
 ## Status display policy
 - Do not show memory status on every turn.
@@ -45,6 +48,13 @@ MEMORY STATUS
   - status has changed since last shown state
   - a memory operation fails
 - When shown, render as a compact plain-text code block.
+- Always include the four baseline lines:
+  - `repo_exists`
+  - `corpus_exists`
+  - `onboarding_complete`
+  - `last_written`
+- `last_written` should represent the most recent successful corpus write (use `last_push_utc`/equivalent) formatted for humans, e.g. `Feb 28, 2026 10:42 AM UTC`.
+- If no successful write has occurred yet, set `last_written: Never`.
 
 ## Transition rules
 - `NO_REPO -> REPO_NO_CORPUS`: create fixed repo `career-corpus-memory`.

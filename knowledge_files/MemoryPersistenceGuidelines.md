@@ -53,6 +53,9 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 7. Emit memory status only when policy requires it:
 - user asks, state changes, or a memory operation fails.
 - Use the `MEMORY STATUS` code block from `MemoryStateModel.md`.
+  - Always include baseline fields: `repo_exists`, `corpus_exists`, `onboarding_complete`, `last_written`.
+  - Include other fields only when relevant to the current operation.
+  - Format `last_written` as a friendly UTC timestamp (or `Never` if no successful write yet).
 
 ## Explicit sync behavior
 - `pull(force=False)`:
