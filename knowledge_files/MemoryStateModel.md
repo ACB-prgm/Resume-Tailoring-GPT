@@ -14,7 +14,7 @@ Make memory bootstrap and persistence decisions explicit and auditable.
 ## Required booleans
 - `memory_repo_exists`
 - `career_corpus_exists` (manifest `corpus_index.json` for split model, or legacy corpus file)
-- `onboarding_complete` (required sections approved + validated + persisted)
+- `onboarding_complete` (persisted in `career_corpus.json` -> `metadata.onboarding_complete`)
 
 ## States
 - `NO_REPO`: `memory_repo_exists=false`, `career_corpus_exists=false`

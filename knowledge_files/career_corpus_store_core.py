@@ -454,6 +454,41 @@ class CareerCorpusStore:
             self._meta["last_verified_utc"] = _utc_now()
         self._write_meta()
 
+    def set_onboarding_completion(
+        self,
+        completed: bool,
+        completed_utc: Optional[str] = None,
+    ) -> bool:
+        """
+        Persist onboarding-complete state in corpus metadata.
+
+        Returns True when corpus content was changed.
+        """
+        self._ensure_loaded()
+        metadata = self._corpus.get("metadata")
+        if not isinstance(metadata, dict):
+            metadata = {}
+            self._corpus["metadata"] = metadata
+
+        changed = False
+        if metadata.get("onboarding_complete") is not completed:
+            metadata["onboarding_complete"] = completed
+            changed = True
+
+        if completed:
+            stamp = completed_utc or _utc_now()
+            if metadata.get("onboarding_completed_utc") != stamp:
+                metadata["onboarding_completed_utc"] = stamp
+                changed = True
+        else:
+            if "onboarding_completed_utc" in metadata:
+                del metadata["onboarding_completed_utc"]
+                changed = True
+
+        if changed:
+            self._mark_dirty()
+        return changed
+
     def _ensure_loaded(self) -> None:
         if self._corpus is None:
             self.load()

@@ -10,6 +10,7 @@ from __future__ import annotations
 import base64
 import json
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Set
 
 try:
@@ -25,6 +26,7 @@ try:
         assert_validation_claim_allowed,
         canonical_json_sha256,
         canonical_json_text,
+        compute_onboarding_complete,
         diagnose_payload_integrity,
     )
 except ImportError:
@@ -35,6 +37,7 @@ except ImportError:
         assert_validation_claim_allowed,
         canonical_json_sha256,
         canonical_json_text,
+        compute_onboarding_complete,
         diagnose_payload_integrity,
     )
 
@@ -284,6 +287,8 @@ class CareerCorpusSync:
                 result, before_snapshot, user_git_fluency, technical_details_requested
             )
 
+        self._persist_onboarding_completion_metadata(approved_sections)
+
         # Local-first invariant.
         self.store.save()
         result["local_saved"] = True
@@ -430,6 +435,29 @@ class CareerCorpusSync:
         return self._finalize_push_result(
             result, before_snapshot, user_git_fluency, technical_details_requested
         )
+
+    def _persist_onboarding_completion_metadata(
+        self,
+        approved_sections: Optional[Dict[str, Any]],
+    ) -> None:
+        """
+        Persist onboarding completion in corpus metadata when full onboarding
+        approvals are available in this turn.
+        """
+        if not isinstance(approved_sections, dict):
+            return
+
+        if not self.REQUIRED_ONBOARDING_SECTIONS.issubset(set(approved_sections.keys())):
+            return
+
+        completed = compute_onboarding_complete(
+            approved_sections=approved_sections,
+            validated=True,
+            persisted=True,
+            required_sections=sorted(self.REQUIRED_ONBOARDING_SECTIONS),
+        )
+        completed_utc = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        self.store.set_onboarding_completion(completed, completed_utc=completed_utc)
 
     def _pull_split(self, force: bool = False) -> Dict[str, Any]:
         repo_response = self._get_memory_repo()

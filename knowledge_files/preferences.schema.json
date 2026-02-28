@@ -89,9 +89,6 @@
             "non_technical",
             "technical"
           ]
-        },
-        "onboarding_complete": {
-          "type": "boolean"
         }
       }
     },
@@ -140,10 +137,6 @@
       ],
       "properties": {
         "last_updated_utc": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "onboarding_completed_utc": {
           "type": "string",
           "format": "date-time"
         }

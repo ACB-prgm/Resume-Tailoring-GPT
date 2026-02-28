@@ -488,6 +488,39 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertTrue(result["ok"])
         self.assertTrue(result["persisted"])
 
+    def test_onboarding_completion_persists_in_corpus_metadata(self) -> None:
+        self._write_corpus(with_ids=True)
+        store = self._store()
+        store.load()
+        repo = FakeGitRepo(store.build_split_documents())
+        sync = self._sync_with_repo(store, repo)
+
+        baseline = sync.pull(force=True)
+        self.assertTrue(baseline["ok"])
+        store.set(["profile", "full_name"], "Onboarding Complete User")
+
+        target_sections = [
+            "profile",
+            "experience",
+            "projects",
+            "skills",
+            "certifications",
+            "education",
+            "metadata",
+        ]
+        approved_sections = {section: {"approved": True} for section in target_sections}
+        result = sync.push(
+            "Finalize onboarding",
+            target_sections=target_sections,
+            approved_sections=approved_sections,
+        )
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["persisted"])
+
+        metadata = store.snapshot()["metadata"]
+        self.assertTrue(metadata["onboarding_complete"])
+        self.assertIsInstance(metadata["onboarding_completed_utc"], str)
+
     def test_push_rejects_unapproved_or_cross_section_changes(self) -> None:
         self._write_corpus(with_ids=True)
         store = self._store()

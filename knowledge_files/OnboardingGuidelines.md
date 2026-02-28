@@ -126,6 +126,9 @@ Collect structured data in this order if upload is missing or incomplete:
    - Do not place provenance/process metadata in notes (source/upload/onboarding/commit details).
    - Do not persist a dedicated resume title/header field in corpus.
    - If user wants a headline remembered, store it as confirmed `profile.notes` content.
+   - Persist onboarding completion in corpus metadata (not preferences):
+     - `metadata.onboarding_complete` (boolean)
+     - `metadata.onboarding_completed_utc` (date-time when completed)
 2. Initialize `preferences.json` with defaults if missing.
 3. Build a provenance ledger for each major section:
 - source basis is `uploaded_file`, `current_chat`, or `user_confirmed_correction`.

@@ -322,6 +322,13 @@
             "user_update",
             "manual_import"
           ]
+        },
+        "onboarding_complete": {
+          "type": "boolean"
+        },
+        "onboarding_completed_utc": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     }
