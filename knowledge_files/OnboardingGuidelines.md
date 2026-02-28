@@ -81,6 +81,8 @@ Collect structured data in this order if upload is missing or incomplete:
 
 ## Normalization and persistence
 1. Normalize all collected content into `career_corpus.json` schema shape.
+   - Use optional `notes` fields for context that does not fit existing properties
+     (for example incomplete degrees, honors, awards, special circumstances).
 2. Initialize `preferences.json` with defaults if missing.
 3. Build a provenance ledger for each major section:
 - source basis is `uploaded_file`, `current_chat`, or `user_confirmed_correction`.
