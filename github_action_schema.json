@@ -362,7 +362,7 @@
                 }
             }
         },
-        "/repos/{owner}/career-corpus-memory/git/blobs": {
+        "/repos/{owner}/career-corpus-memory/git/blobs/{blob_sha}": {
             "get": {
                 "operationId": "getGitBlob",
                 "parameters": [
@@ -375,8 +375,8 @@
                         }
                     },
                     {
-                        "name": "sha",
-                        "in": "query",
+                        "name": "blob_sha",
+                        "in": "path",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -391,7 +391,9 @@
                         "description": "Not found"
                     }
                 }
-            },
+            }
+        },
+        "/repos/{owner}/career-corpus-memory/git/blobs": {
             "post": {
                 "operationId": "createGitBlob",
                 "parameters": [
@@ -427,7 +429,7 @@
                 }
             }
         },
-        "/repos/{owner}/career-corpus-memory/git/trees": {
+        "/repos/{owner}/career-corpus-memory/git/trees/{tree_sha}": {
             "get": {
                 "operationId": "getGitTree",
                 "parameters": [
@@ -441,7 +443,7 @@
                     },
                     {
                         "name": "tree_sha",
-                        "in": "query",
+                        "in": "path",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -452,10 +454,23 @@
                         "in": "query",
                         "required": false,
                         "schema": {
-                            "type": "integer",
-                            "enum": [
-                                0,
-                                1
+                            "oneOf": [
+                                {
+                                    "type": "integer",
+                                    "enum": [
+                                        0,
+                                        1
+                                    ]
+                                },
+                                {
+                                    "type": "string",
+                                    "enum": [
+                                        "0",
+                                        "1",
+                                        "true",
+                                        "false"
+                                    ]
+                                }
                             ]
                         }
                     }
@@ -468,7 +483,9 @@
                         "description": "Not found"
                     }
                 }
-            },
+            }
+        },
+        "/repos/{owner}/career-corpus-memory/git/trees": {
             "post": {
                 "operationId": "createGitTree",
                 "parameters": [

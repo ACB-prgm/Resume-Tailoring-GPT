@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://career-corpus-memory/knowledge_files/career_corpus.schema.json",
+  "$id": "https://career-corpus-memory/career_corpus.schema.json",
   "title": "Career Corpus",
   "type": "object",
   "additionalProperties": false,

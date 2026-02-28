@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://career-corpus-memory/knowledge_files/preferences.schema.json",
+  "$id": "https://career-corpus-memory/preferences.schema.json",
   "title": "User Preferences",
   "type": "object",
   "additionalProperties": false,

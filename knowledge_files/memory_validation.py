@@ -69,7 +69,7 @@ def validate_career_corpus(corpus: Dict[str, Any]) -> Tuple[bool, List[str]]:
     """
     Validate `career_corpus.json` payloads.
 
-    Use before any `upsertCareerCorpusJson` write.
+    Use before any persistence write attempt.
     """
     return validate_json_document(corpus, CAREER_CORPUS_SCHEMA_PATH)
 
@@ -78,7 +78,7 @@ def validate_preferences(preferences: Dict[str, Any]) -> Tuple[bool, List[str]]:
     """
     Validate `preferences.json` payloads.
 
-    Use before any `upsertPreferencesJson` write.
+    Use before any persistence write attempt.
     """
     return validate_json_document(preferences, PREFERENCES_SCHEMA_PATH)
 
