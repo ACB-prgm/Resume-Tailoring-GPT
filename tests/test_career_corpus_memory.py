@@ -87,6 +87,7 @@ class FakeGitRepo:
         }
         self.ref_conflicts_remaining = 0
         self.corrupt_paths: set[str] = set()
+        self.tamper_tree_paths: set[str] = set()
 
         self._blob_counter = 0
         self._tree_counter = 0
@@ -180,7 +181,11 @@ class FakeGitRepo:
             if sha is None:
                 base_map.pop(path, None)
             elif isinstance(sha, str):
-                base_map[path] = sha
+                if path in self.tamper_tree_paths:
+                    # Simulate transport/tree corruption: tree references a different blob.
+                    base_map[path] = self._new_blob('{"_tampered":true}')
+                else:
+                    base_map[path] = sha
             else:
                 return {"status_code": 422}
         new_tree_sha = self._new_tree(base_map)
@@ -403,7 +408,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         store.load()
         repo = FakeGitRepo(store.build_split_documents())
         store.set(["profile", "full_name"], "Dirty User")
-        repo.corrupt_paths.add(CareerCorpusStore.INDEX_FILE)
+        repo.tamper_tree_paths.add(CareerCorpusStore.INDEX_FILE)
 
         sync = self._sync_with_repo(store, repo)
         result = sync.push("Mismatch")

@@ -45,6 +45,7 @@ Execution order (run every session)
   - one file per experience and one file per project
 - Use explicit sync model:
   - `pull()` only when requested/needed for refresh.
+  - For section-update flows, use `pull_if_stale_before_write()` to skip redundant pre-write pulls.
   - local edits run against in-memory store only.
   - `push()` only when user confirms persistence.
 - For push, use Git Data UTF-8 flow only:
@@ -89,7 +90,7 @@ Execution order (run every session)
   2. Build deterministic UTF-8 JSON text and diagnostics.
   3. Materialize split docs + manifest and compute per-file hashes.
   4. Push only changed/deleted files via Git Data flow (blob/tree/commit/ref).
-  5. Read back changed files and verify canonical hash match.
+  5. Verify changed/deleted paths by committed tree/blob SHA match.
   6. Set `persisted=true` only if verification succeeds.
 - If write returns retryable error (`409` or transient `422`), retry once with fresh ref state.
 - If retry fails, stop writes and return explicit manual recovery steps.

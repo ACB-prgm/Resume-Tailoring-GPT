@@ -48,6 +48,10 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
     - `Accept: application/vnd.github+json`
   - If manifest sha matches `meta.remote_file_sha` and `force` is false, no-op.
   - Else read referenced split files, assemble local `/mnt/data/career_corpus.json`, update meta.
+- `pull_if_stale_before_write(force=False)`:
+  - Use before a section commit flow.
+  - If local store is already loaded and has `remote_file_sha`, skip pre-write pull.
+  - This reduces redundant `getGitBlob` calls before write.
 - `push(message)`:
   - Run schema validation and UTF-8 payload diagnostics.
   - Upload only when local store is dirty.
@@ -55,7 +59,7 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
   - Determine changed/deleted paths vs `meta.remote_file_hashes`.
   - Use Git Data flow only:
     - `createGitBlob` -> `createGitTree` -> `createGitCommit` -> `updateBranchRef`
-  - On success, read changed files back and verify canonical hash match.
+  - On success, verify changed/deleted paths by tree/blob SHA match from the committed tree.
   - Persisted success requires successful write and verification.
   - Update meta fields:
     - `remote_blob_sha`, `remote_commit_sha`, `remote_branch`, `remote_file_sha`,
@@ -76,8 +80,7 @@ Before **any** write:
 5. Enforce write guard:
 - `assert_validated_before_write(validated, context)`
 6. Execute Git Data write flow.
-7. Verify by reading remote file and calling:
-- `verify_remote_matches_local(local_text, remote_text)`
+7. Verify committed tree/blob SHAs match expected changed paths.
 
 ## Retry and failure handling
 - Retryable errors: `409`, transient `422`, and transient tool transport failures.

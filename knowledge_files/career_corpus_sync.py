@@ -23,7 +23,6 @@ try:
         canonical_json_text,
         decode_base64_utf8,
         diagnose_payload_integrity,
-        verify_remote_matches_local,
     )
 except ImportError:
     from knowledge_files.memory_validation import (  # type: ignore
@@ -31,7 +30,6 @@ except ImportError:
         canonical_json_text,
         decode_base64_utf8,
         diagnose_payload_integrity,
-        verify_remote_matches_local,
     )
 
 
@@ -96,6 +94,20 @@ class CareerCorpusSync:
         if self._has_split_pull_adapters():
             return self._pull_split(force=force)
         return self._pull_legacy_single_file(force=force)
+
+    def pull_if_stale_before_write(self, force: bool = False) -> Dict[str, Any]:
+        """
+        Skip pre-write pull when local cache is already hydrated and tracked.
+
+        This avoids redundant blob reads immediately before push in the common
+        section-update flow.
+        """
+        if force:
+            return self.pull(force=True)
+        status = self.store.status()
+        if self.store.is_loaded and status.get("remote_file_sha"):
+            return {"ok": True, "changed": False, "reason": "skipped_prewrite_pull_local_fresh"}
+        return self.pull(force=False)
 
     def persist_memory_changes(self, message: str = "Update career corpus memory") -> Dict[str, Any]:
         return self.push(message=message)
@@ -208,7 +220,7 @@ class CareerCorpusSync:
 
         verification = self._verify_push_result(
             commit_sha=attempt_result.remote_commit_sha,
-            expected_docs_text=docs_text,
+            expected_blob_shas=attempt_result.remote_blob_shas or {},
             changed_paths=changed_paths,
             deleted_paths=deleted_paths,
         )
@@ -446,7 +458,7 @@ class CareerCorpusSync:
     def _verify_push_result(
         self,
         commit_sha: str,
-        expected_docs_text: Dict[str, str],
+        expected_blob_shas: Dict[str, str],
         changed_paths: List[str],
         deleted_paths: List[str],
     ) -> Dict[str, Any]:
@@ -465,10 +477,15 @@ class CareerCorpusSync:
             blob_sha = path_to_blob.get(path)
             if not blob_sha:
                 return {"ok": False, "error": f"changed_path_missing:{path}", "remote_index_sha": None}
-            remote_text = self._read_blob_text(blob_sha)
-            ok, error = verify_remote_matches_local(expected_docs_text[path], remote_text)
-            if not ok:
-                return {"ok": False, "error": f"{path}:{error}", "remote_index_sha": None}
+            expected = expected_blob_shas.get(path)
+            if not expected:
+                return {"ok": False, "error": f"expected_blob_sha_missing:{path}", "remote_index_sha": None}
+            if blob_sha != expected:
+                return {
+                    "ok": False,
+                    "error": f"blob_sha_mismatch:{path}:expected={expected}:actual={blob_sha}",
+                    "remote_index_sha": None,
+                }
 
         return {
             "ok": True,
