@@ -40,6 +40,15 @@ INGESTION RECEIPT
 - If local fallback artifacts are created, report `persisted: false` and `fallback_used: true`.
 - Never describe fallback files as durable memory.
 - Only say `validated: true` after validator execution and success.
+- Default user wording must be non-technical:
+  - success: `Saved to memory/corpus.`
+  - failure: `Couldn't save to memory.`
+- Avoid Git jargon (branch, commit SHA, blob/tree/ref) unless user asks for technical details.
+
+## 4.1) Status Visibility
+- Do not show memory status on every message.
+- Show status only when user requests it, state changes, or an operation fails.
+- Use compact `MEMORY STATUS` code-block output when shown.
 
 ## 5) Deterministic Failure Recovery
 - Path A: fix payload/preflight issue and retry once.

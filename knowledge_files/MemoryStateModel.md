@@ -30,6 +30,14 @@ MEMORY STATUS
 - verification: <ok|failed|not_run>
 ```
 
+## Status display policy
+- Do not show memory status on every turn.
+- Show `MEMORY STATUS` only when:
+  - user explicitly asks for memory status
+  - status has changed since last shown state
+  - a memory operation fails
+- When shown, render as a compact plain-text code block.
+
 ## Transition rules
 - `NO_REPO -> REPO_NO_CORPUS`: create fixed repo `career-corpus-memory`.
 - `REPO_NO_CORPUS -> CORPUS_PARTIAL`: onboarding started with partial section approvals.
@@ -37,6 +45,3 @@ MEMORY STATUS
 - `CORPUS_READY -> PERSIST_FAILED`: write fails after preflight + one retry.
 - `CORPUS_INVALID -> REPO_NO_CORPUS`: treat as unavailable corpus and route to repair/onboarding.
 - `PERSIST_FAILED -> CORPUS_READY`: only after successful corrected upsert.
-
-## Canonical user-facing check response
-`Memory repo exists: Yes/No; career corpus exists: Yes/No.`

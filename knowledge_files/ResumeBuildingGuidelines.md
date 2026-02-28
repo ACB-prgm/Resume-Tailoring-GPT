@@ -22,6 +22,7 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - If `career_corpus.json` is missing, invalid, or schema-noncompliant, route to onboarding/repair before resume drafting.
 - Validate corpus/preferences with `/mnt/data/memory_validation.py` before using them for drafting.
 - Block unsupported factual inserts unless user explicitly confirms and approves persistence path.
+- Resume title/header lines are generated per JD and are not persisted as dedicated corpus fields.
 
 ## Build workflow
 1) Evidence retrieval

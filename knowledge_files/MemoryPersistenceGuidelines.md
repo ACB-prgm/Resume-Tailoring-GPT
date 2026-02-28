@@ -36,9 +36,9 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 4. Optionally call `setMemoryRepoTopics` with `["career-corpus-memory"]`; continue if topic call fails.
 5. Initialize store/sync objects.
 6. Check split corpus presence via manifest `corpus_index.json` (legacy `career_corpus.json` may still be read).
-7. Report the canonical check line:
-- `Memory repo exists: Yes/No; career corpus exists: Yes/No.`
-8. Emit the required status block from `MemoryStateModel.md`.
+7. Emit memory status only when policy requires it:
+- user asks, state changes, or a memory operation fails.
+- Use the `MEMORY STATUS` code block from `MemoryStateModel.md`.
 
 ## Explicit sync behavior
 - `pull(force=False)`:
@@ -48,6 +48,7 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
     - `getGitBlob`: `Accept: application/vnd.github.raw`
   - If manifest sha matches `meta.remote_file_sha` and `force` is false, no-op.
   - Else read referenced split files, assemble local `/mnt/data/career_corpus.json`, update meta.
+  - Pull/read flow may skip schema validation; schema validation remains mandatory for write and resume-use paths.
 - `pull_if_stale_before_write(force=False)`:
   - Use before a section commit flow.
   - If local store is already loaded and has `remote_file_sha`, skip pre-write pull.
@@ -97,6 +98,10 @@ Before **any** write:
 - `persisted=true` only when ref update succeeds AND post-write verification hash matches.
 - Local fallback files are allowed only as temporary recovery aids and must be labeled:
 - `persisted=false`, `fallback_used=true`, `status=NOT PERSISTED`
+- Default user-facing language:
+  - success: `Saved to memory/corpus.`
+  - failure: `Couldn't save to memory.`
+- Do not include branch/commit/SHA details unless user requests technical details (or preference is technical).
 - Push status must include:
   - `method`, `retry_count`, `verification`, `error_code`
 
