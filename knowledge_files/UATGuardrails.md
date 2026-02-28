@@ -43,6 +43,7 @@ INGESTION RECEIPT
 - Do not promise background or future retries.
 - Before running Python imports, add `/mnt/data` to `sys.path`.
 - For memory Python APIs, call only `*_surface.py` modules; do not call `*_core.py` directly.
+- If a tool schema marks any parameter with `const`, send that exact value and do not override it.
 
 ## 4) Persistence Truthfulness Contract
 - Only say `persisted: true` after successful GitHub API write.

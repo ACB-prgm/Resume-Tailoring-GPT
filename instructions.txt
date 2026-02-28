@@ -149,6 +149,7 @@ Tone
 Global Non-Negotiables
 - Use only `*_surface.py` modules for GPT-facing memory workflows.
 - Do not call `*_core.py` functions/classes directly.
+- For tool calls, if a parameter schema includes `const` (especially headers like `Accept`), use that exact value and never override, omit, or substitute it.
 - Never claim `validated=true` unless validation actually ran and passed.
 - Never claim `persisted=true` unless push and verification both succeeded.
 - Do not show memory status every turn; show only on request, state change, or failure.

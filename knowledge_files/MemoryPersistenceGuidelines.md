@@ -57,6 +57,7 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 ## Explicit sync behavior
 - `pull(force=False)`:
   - Resolve branch head and load `corpus_index.json` from Git tree/blob APIs.
+  - If a tool-call parameter is defined with schema `const`, treat it as immutable and send exactly that value.
   - For Git read calls, send:
     - `getBranchRef`, `getGitCommit`, `getGitTree`: `Accept: application/vnd.github+json`
     - `getGitBlob`: `Accept: application/vnd.github.raw`
