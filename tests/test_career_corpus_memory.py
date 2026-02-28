@@ -88,6 +88,7 @@ class FakeGitRepo:
         self.ref_conflicts_remaining = 0
         self.corrupt_paths: set[str] = set()
         self.tamper_tree_paths: set[str] = set()
+        self.raw_blob_mode: str = "base64"  # one of: base64, raw_text, raw_json_object
 
         self._blob_counter = 0
         self._tree_counter = 0
@@ -149,6 +150,11 @@ class FakeGitRepo:
             obj = json.loads(text)
             obj["_corrupt"] = True
             text = json.dumps(obj, ensure_ascii=False)
+
+        if self.raw_blob_mode == "raw_text":
+            return text  # type: ignore[return-value]
+        if self.raw_blob_mode == "raw_json_object":
+            return json.loads(text)  # type: ignore[return-value]
 
         return {
             "sha": blob_sha,
@@ -430,6 +436,30 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         status = store.status()
         self.assertEqual(status["remote_file_sha"], "legacy_sha_only")
         self.assertEqual(status["remote_sha"], "legacy_sha_only")
+
+    def test_pull_split_handles_raw_blob_text(self) -> None:
+        self._write_corpus(with_ids=True)
+        store = self._store()
+        store.load()
+        repo = FakeGitRepo(store.build_split_documents())
+        repo.raw_blob_mode = "raw_text"
+
+        sync = self._sync_with_repo(store, repo)
+        result = sync.pull(force=True)
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["changed"])
+
+    def test_pull_split_handles_raw_blob_json_object(self) -> None:
+        self._write_corpus(with_ids=True)
+        store = self._store()
+        store.load()
+        repo = FakeGitRepo(store.build_split_documents())
+        repo.raw_blob_mode = "raw_json_object"
+
+        sync = self._sync_with_repo(store, repo)
+        result = sync.pull(force=True)
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["changed"])
 
 
 if __name__ == "__main__":

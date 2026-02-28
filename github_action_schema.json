@@ -510,7 +510,7 @@
                         "required": true,
                         "schema": {
                             "type": "string",
-                            "const": "application/vnd.github+json"
+                            "const": "application/vnd.github.raw"
                         }
                     }
                 ],
@@ -520,7 +520,17 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/GitBlobResponse"
+                                    "oneOf": [
+                                        {
+                                            "$ref": "#/components/schemas/GitBlobResponse"
+                                        },
+                                        {
+                                            "type": "object"
+                                        },
+                                        {
+                                            "type": "string"
+                                        }
+                                    ]
                                 }
                             }
                         }

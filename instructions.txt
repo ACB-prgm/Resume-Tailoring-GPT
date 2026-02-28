@@ -50,8 +50,9 @@ Execution order (run every session)
   - `push()` only when user confirms persistence.
 - For push, use Git Data UTF-8 flow only:
   - `createGitBlob -> createGitTree -> createGitCommit -> updateBranchRef`
-- For Git read operations, use:
-  - `Accept: application/vnd.github+json`
+- For Git read operations:
+  - `getBranchRef`, `getGitCommit`, `getGitTree`: `Accept: application/vnd.github+json`
+  - `getGitBlob`: `Accept: application/vnd.github.raw`
 - No `/contents` Base64 write fallback.
 - Ensure fixed repo `career-corpus-memory` exists.
 - Check and report both booleans:

@@ -494,7 +494,18 @@ class CareerCorpusSync:
         }
 
     def _read_blob_json(self, blob_sha: str) -> Dict[str, Any]:
-        text = self._read_blob_text(blob_sha)
+        blob_response = self._get_git_blob(blob_sha)
+        status = self._status_code(blob_response)
+        if status == 404:
+            raise ValueError(f"Blob not found: {blob_sha}")
+
+        # Raw media type for JSON files may already be parsed to an object by tool wrappers.
+        if isinstance(blob_response, dict):
+            has_blob_wrapper = "content" in blob_response or "encoding" in blob_response
+            if not has_blob_wrapper and "status_code" not in blob_response:
+                return blob_response
+
+        text = self._blob_response_to_text(blob_response)
         obj = json.loads(text)
         if not isinstance(obj, dict):
             raise ValueError("Expected blob JSON object.")
@@ -502,20 +513,36 @@ class CareerCorpusSync:
 
     def _read_blob_text(self, blob_sha: str) -> str:
         blob_response = self._get_git_blob(blob_sha)
-        if self._status_code(blob_response) == 404:
+        status = self._status_code(blob_response)
+        if status == 404:
             raise ValueError(f"Blob not found: {blob_sha}")
-        encoding = blob_response.get("encoding")
+        return self._blob_response_to_text(blob_response)
+
+    @staticmethod
+    def _blob_response_to_text(blob_response: Any) -> str:
+        if isinstance(blob_response, str):
+            return blob_response
+        if isinstance(blob_response, (bytes, bytearray)):
+            return bytes(blob_response).decode("utf-8")
+        if not isinstance(blob_response, dict):
+            raise ValueError(f"Unsupported blob response type: {type(blob_response).__name__}")
+
         content = blob_response.get("content")
-        if not isinstance(content, str):
-            raise ValueError("Blob response missing content.")
-        if encoding == "utf-8":
-            return content
-        if encoding == "base64" or not encoding:
-            # GitHub blob content may include line breaks.
-            compact = "".join(content.split())
-            raw = base64.b64decode(compact.encode("ascii"))
-            return raw.decode("utf-8")
-        raise ValueError(f"Unsupported blob encoding: {encoding}")
+        encoding = blob_response.get("encoding")
+        if isinstance(content, str):
+            if encoding == "utf-8":
+                return content
+            if encoding == "base64" or not encoding:
+                # GitHub blob content may include line breaks.
+                compact = "".join(content.split())
+                raw = base64.b64decode(compact.encode("ascii"))
+                return raw.decode("utf-8")
+
+        # Raw JSON blob parsed as object by wrapper.
+        if "status_code" not in blob_response:
+            return json.dumps(blob_response, ensure_ascii=False)
+
+        raise ValueError("Blob response missing content.")
 
     @staticmethod
     def _tree_path_to_blob_sha(tree_response: Dict[str, Any]) -> Dict[str, str]:
@@ -569,7 +596,9 @@ class CareerCorpusSync:
         )
 
     @staticmethod
-    def _status_code(response: Dict[str, Any]) -> Optional[int]:
+    def _status_code(response: Any) -> Optional[int]:
+        if not isinstance(response, dict):
+            return None
         status = response.get("status_code")
         return status if isinstance(status, int) else None
 
