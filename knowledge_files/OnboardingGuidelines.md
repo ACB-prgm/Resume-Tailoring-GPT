@@ -21,6 +21,9 @@ Start onboarding with this optional suggestion:
 
 ## Uploaded-source ingestion receipt (required)
 - If user uploads corpus text, resume text, or LinkedIn PDF-derived text, read it before assessment.
+- Default intake mode for user uploads is context-first:
+  - read/analyze uploaded content directly in model context first.
+  - use Python/regex extraction only when needed for reliability or when user requests it.
 - Emit this receipt before any quality claim:
 
 ```text

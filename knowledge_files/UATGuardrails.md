@@ -18,6 +18,8 @@ Provide deterministic behavior for first-contact, ingestion, validation, and per
 
 ## 2) Read-Before-Claim Rule
 - Never assess corpus quality before reading the uploaded file contents.
+- User-upload handling default is context-first (direct file/context reading first).
+- Python/regex parsing is allowed as a fallback for extraction reliability; it is not the default.
 - After reading uploaded corpus/LinkedIn PDF text, emit an ingestion receipt:
 
 ```text
