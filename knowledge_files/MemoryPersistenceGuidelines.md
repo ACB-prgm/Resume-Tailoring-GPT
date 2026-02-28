@@ -44,6 +44,8 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 ## Explicit sync behavior
 - `pull(force=False)`:
   - Resolve branch head and load `corpus_index.json` from Git tree/blob APIs.
+  - For Git read calls (`getBranchRef`, `getGitCommit`, `getGitTree`, `getGitBlob`), send:
+    - `Accept: application/vnd.github+json`
   - If manifest sha matches `meta.remote_file_sha` and `force` is false, no-op.
   - Else read referenced split files, assemble local `/mnt/data/career_corpus.json`, update meta.
 - `push(message)`:

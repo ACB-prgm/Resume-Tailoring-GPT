@@ -25,6 +25,17 @@
                 }
             }
         },
+        "parameters": {
+            "GitHubJsonAccept": {
+                "name": "Accept",
+                "in": "header",
+                "required": true,
+                "schema": {
+                    "type": "string",
+                    "const": "application/vnd.github+json"
+                }
+            }
+        },
         "schemas": {
             "CreateRepoRequest": {
                 "type": "object",
@@ -199,6 +210,96 @@
                     "sha",
                     "force"
                 ]
+            },
+            "GitRefResponse": {
+                "type": "object",
+                "properties": {
+                    "object": {
+                        "type": "object",
+                        "properties": {
+                            "sha": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "sha"
+                        ]
+                    }
+                },
+                "required": [
+                    "object"
+                ]
+            },
+            "GitCommitResponse": {
+                "type": "object",
+                "properties": {
+                    "sha": {
+                        "type": "string"
+                    },
+                    "tree": {
+                        "type": "object",
+                        "properties": {
+                            "sha": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "sha"
+                        ]
+                    }
+                },
+                "required": [
+                    "tree"
+                ]
+            },
+            "GitTreeResponse": {
+                "type": "object",
+                "properties": {
+                    "sha": {
+                        "type": "string"
+                    },
+                    "tree": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "path": {
+                                    "type": "string"
+                                },
+                                "type": {
+                                    "type": "string"
+                                },
+                                "sha": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "tree"
+                ]
+            },
+            "GitBlobResponse": {
+                "type": "object",
+                "properties": {
+                    "sha": {
+                        "type": "string"
+                    },
+                    "encoding": {
+                        "type": "string",
+                        "enum": [
+                            "base64",
+                            "utf-8"
+                        ]
+                    },
+                    "content": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "content"
+                ]
             }
         }
     },
@@ -316,11 +417,21 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/GitHubJsonAccept"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GitRefResponse"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found"
@@ -350,11 +461,21 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/GitHubJsonAccept"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GitCommitResponse"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found"
@@ -381,11 +502,21 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/GitHubJsonAccept"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GitBlobResponse"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found"
@@ -473,11 +604,21 @@
                                 }
                             ]
                         }
+                    },
+                    {
+                        "$ref": "#/components/parameters/GitHubJsonAccept"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "OK",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/GitTreeResponse"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Not found"
