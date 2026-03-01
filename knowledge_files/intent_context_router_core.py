@@ -25,6 +25,7 @@ except ImportError:
 
 
 def gpt_core(obj: Any) -> Any:
+    """Gpt core."""
     obj.__gpt_layer__ = "core"
     obj.__gpt_core__ = True
     return obj
@@ -32,6 +33,7 @@ def gpt_core(obj: Any) -> Any:
 
 @gpt_core
 class Intent(str, Enum):
+    """Intent."""
     CONVERSATION_ONLY = "INTENT_CONVERSATION_ONLY"
     FAILURE_RECOVERY = "INTENT_FAILURE_RECOVERY"
     PDF_EXPORT = "INTENT_PDF_EXPORT"
@@ -46,6 +48,7 @@ class Intent(str, Enum):
 @gpt_core
 @dataclass(frozen=True)
 class RuntimeState:
+    """Runtime State."""
     repo_exists: bool = False
     runtime_initialized: bool = False
     corpus_exists: bool = False
@@ -73,6 +76,7 @@ class RuntimeState:
         overrides = overrides or {}
 
         def _bool(name: str, *sources: Dict[str, Any]) -> bool:
+            """Internal helper to bool."""
             for source in sources:
                 if name in source:
                     return bool(source.get(name))
@@ -106,6 +110,7 @@ class RuntimeState:
 @gpt_core
 @dataclass(frozen=True)
 class ContextAtom:
+    """Context Atom."""
     id: str
     title: str
     content: str
@@ -120,6 +125,7 @@ class ContextAtom:
 @gpt_core
 @dataclass(frozen=True)
 class ContextPack:
+    """Context Pack."""
     intent: Intent
     atoms: List[ContextAtom]
     rendered_context: str
@@ -134,6 +140,7 @@ _ALL_INTENT_VALUES = {intent.value: intent for intent in Intent}
 
 
 def _convert_atom(spec: AtomSpec) -> ContextAtom:
+    """Internal helper to convert atom."""
     intents: List[Intent] = []
     for intent_id in spec.intents:
         intent = _ALL_INTENT_VALUES.get(intent_id)
@@ -142,6 +149,7 @@ def _convert_atom(spec: AtomSpec) -> ContextAtom:
         intents.append(intent)
 
     def _predicate(state: RuntimeState, fn: Callable[[Any], bool] = spec.predicate) -> bool:
+        """Internal helper to predicate."""
         return bool(fn(state))
 
     return ContextAtom(
@@ -169,6 +177,7 @@ def _priority_level(priority: int) -> int:
 
 
 def _atom_sort_key(atom: ContextAtom) -> Tuple[int, int, int, str]:
+    """Internal helper to atom sort key."""
     return (
         0 if atom.restrictive else 1,
         _priority_level(atom.priority),
@@ -178,6 +187,7 @@ def _atom_sort_key(atom: ContextAtom) -> Tuple[int, int, int, str]:
 
 
 def _extract_conflict_keys(atom: ContextAtom) -> List[str]:
+    """Internal helper to extract conflict keys."""
     keys: List[str] = []
     for tag in atom.tags:
         if tag.startswith("conflict:"):
@@ -186,6 +196,7 @@ def _extract_conflict_keys(atom: ContextAtom) -> List[str]:
 
 
 def _resolve_conflicts(atoms: Sequence[ContextAtom]) -> Tuple[List[ContextAtom], List[str]]:
+    """Internal helper to resolve conflicts."""
     grouped: Dict[str, List[ContextAtom]] = {}
     for atom in atoms:
         for key in _extract_conflict_keys(atom):
@@ -209,6 +220,7 @@ def _resolve_conflicts(atoms: Sequence[ContextAtom]) -> Tuple[List[ContextAtom],
 
 
 def _ordered_unique(atom_ids: Iterable[str]) -> List[str]:
+    """Internal helper to ordered unique."""
     seen = set()
     ordered: List[str] = []
     for atom_id in atom_ids:
@@ -220,14 +232,17 @@ def _ordered_unique(atom_ids: Iterable[str]) -> List[str]:
 
 
 def _render_atom(atom: ContextAtom) -> str:
+    """Internal helper to render atom."""
     return f"{atom.title}\n{atom.content}"
 
 
 def _estimate_tokens(text: str) -> int:
+    """Internal helper to estimate tokens."""
     return max(1, len(text) // 4) if text else 0
 
 
 def _dedupe_intents(route_chain: Iterable[Intent], current_intent: Intent) -> List[Intent]:
+    """Internal helper to dedupe intents."""
     deduped: List[Intent] = []
     seen = set()
     for route in route_chain:
@@ -241,6 +256,7 @@ def _dedupe_intents(route_chain: Iterable[Intent], current_intent: Intent) -> Li
 
 
 def _memory_preflight_routes(state: RuntimeState) -> List[Intent]:
+    """Internal helper to memory preflight routes."""
     routes: List[Intent] = []
     if not state.runtime_initialized or not state.repo_exists:
         routes.append(Intent.INITIALIZATION_OR_SETUP)
@@ -252,6 +268,7 @@ def _memory_preflight_routes(state: RuntimeState) -> List[Intent]:
 
 
 def _derive_required_routes(intent: Intent, state: RuntimeState) -> Tuple[List[Intent], Optional[str], Optional[str]]:
+    """Internal helper to derive required routes."""
     required: List[Intent] = []
     reason: Optional[str] = None
 

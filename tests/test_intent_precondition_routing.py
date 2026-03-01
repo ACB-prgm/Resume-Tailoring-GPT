@@ -6,7 +6,9 @@ from knowledge_files.intent_context_router_core import Intent, RuntimeState, bui
 
 
 class IntentPreconditionRoutingTests(unittest.TestCase):
+    """Test suite for intent precondition routing."""
     def test_jd_first_without_corpus_routes_chain(self) -> None:
+        """Test that jd first without corpus routes chain."""
         state = RuntimeState(
             repo_exists=False,
             runtime_initialized=False,
@@ -26,6 +28,7 @@ class IntentPreconditionRoutingTests(unittest.TestCase):
         )
 
     def test_resume_without_jd_routes_to_jd(self) -> None:
+        """Test that resume without jd routes to jd."""
         state = RuntimeState(
             repo_exists=True,
             runtime_initialized=True,
@@ -38,6 +41,7 @@ class IntentPreconditionRoutingTests(unittest.TestCase):
         self.assertEqual(pack.required_routes, [Intent.JD_ANALYSIS])
 
     def test_export_without_approved_markdown_is_blocked(self) -> None:
+        """Test that export without approved markdown is blocked."""
         state = RuntimeState(
             repo_exists=True,
             runtime_initialized=True,
@@ -48,6 +52,7 @@ class IntentPreconditionRoutingTests(unittest.TestCase):
         self.assertEqual(pack.required_routes, [Intent.RESUME_DRAFTING])
 
     def test_persist_without_initialization_is_blocked(self) -> None:
+        """Test that persist without initialization is blocked."""
         state = RuntimeState(
             repo_exists=False,
             runtime_initialized=False,

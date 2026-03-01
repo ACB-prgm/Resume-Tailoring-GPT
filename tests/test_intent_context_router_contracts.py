@@ -8,7 +8,9 @@ from knowledge_files.intent_context_router_core import Intent, RuntimeState
 
 
 class IntentContextRouterContractsTests(unittest.TestCase):
+    """Test suite for intent context router contracts."""
     def test_surface_exports(self) -> None:
+        """Test that surface exports."""
         expected = [
             "Intent",
             "RuntimeState",
@@ -24,6 +26,7 @@ class IntentContextRouterContractsTests(unittest.TestCase):
         self.assertTrue(getattr(router_surface.build_context, "__gpt_surface__", False))
 
     def test_deterministic_ordering(self) -> None:
+        """Test that deterministic ordering."""
         state = RuntimeState(
             repo_exists=True,
             runtime_initialized=True,
@@ -38,6 +41,7 @@ class IntentContextRouterContractsTests(unittest.TestCase):
         self.assertEqual(first.rendered_context, second.rendered_context)
 
     def test_restrictive_conflict_resolution(self) -> None:
+        """Test that restrictive conflict resolution."""
         state = RuntimeState(
             repo_exists=True,
             runtime_initialized=True,
@@ -55,12 +59,14 @@ class IntentContextRouterContractsTests(unittest.TestCase):
         self.assertIn("persist.status_visibility", pack.diagnostics["filtered_ids"]["conflict"])
 
     def test_source_ref_diagnostics_present(self) -> None:
+        """Test that source ref diagnostics present."""
         state = RuntimeState()
         pack = router_surface.build_context(Intent.JD_ANALYSIS, state)
         self.assertIn("selected_source_refs", pack.diagnostics)
         self.assertIsInstance(pack.diagnostics["selected_source_refs"], list)
 
     def test_memory_status_format_contract_is_atom_driven(self) -> None:
+        """Test that memory status format contract is atom driven."""
         by_id = {atom.id: atom for atom in get_all_atoms()}
         baseline = by_id["memory_status.state_block"].content
         optional = by_id["memory_status.optional_fields"].content

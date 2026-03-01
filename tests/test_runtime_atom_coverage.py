@@ -6,7 +6,9 @@ from knowledge_files.context_atoms_core import get_all_atoms
 
 
 class RuntimeAtomCoverageTests(unittest.TestCase):
+    """Test suite for runtime atom coverage."""
     def test_required_policy_domains_present(self) -> None:
+        """Test that required policy domains present."""
         atoms = get_all_atoms()
         tags = {tag for atom in atoms for tag in atom.tags}
 
@@ -26,6 +28,7 @@ class RuntimeAtomCoverageTests(unittest.TestCase):
         self.assertEqual(missing, [])
 
     def test_registry_contains_all_intent_coverage(self) -> None:
+        """Test that registry contains all intent coverage."""
         atoms = get_all_atoms()
         intents = {intent for atom in atoms for intent in atom.intents}
         expected = {

@@ -23,6 +23,7 @@ CAREER_CORPUS_SCHEMA_PATH = REPO_ROOT / "career_corpus.schema.json"
 
 
 def gpt_core(obj: Any) -> Any:
+    """Gpt core."""
     obj.__gpt_layer__ = "core"
     obj.__gpt_core__ = True
     return obj
@@ -318,6 +319,7 @@ def assert_notes_content_only(document: Dict[str, Any]) -> None:
     )
 
     def _walk(node: Any, path: str) -> None:
+        """Internal helper to walk."""
         if isinstance(node, dict):
             for key, value in node.items():
                 child_path = f"{path}.{key}" if path else key

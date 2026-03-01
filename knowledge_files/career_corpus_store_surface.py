@@ -64,14 +64,17 @@ class CareerCorpusStore:
 
     @property
     def _core_store(self) -> _CareerCorpusStoreCore:
+        """Internal helper to core store."""
         return self._core
 
     @property
     def dirty(self) -> bool:
+        """Dirty."""
         return self._core.dirty
 
     @property
     def is_loaded(self) -> bool:
+        """Is loaded."""
         return self._core.is_loaded
 
     @gpt_surface

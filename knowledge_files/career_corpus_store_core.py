@@ -24,24 +24,29 @@ PathPart = Union[str, int]
 
 
 def gpt_core(obj: Any) -> Any:
+    """Gpt core."""
     obj.__gpt_layer__ = "core"
     obj.__gpt_core__ = True
     return obj
 
 
 def _utc_now() -> str:
+    """Internal helper to utc now."""
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def _canonical_json_text(obj: Dict[str, Any]) -> str:
+    """Internal helper to canonical json text."""
     return json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
 def _canonical_json_sha256(obj: Dict[str, Any]) -> str:
+    """Internal helper to canonical json sha256."""
     return hashlib.sha256(_canonical_json_text(obj).encode("utf-8")).hexdigest()
 
 
 def _default_schema_path() -> Path:
+    """Internal helper to default schema path."""
     candidates = [
         Path("/mnt/data/career_corpus.schema.json"),
         Path(__file__).resolve().parent / "career_corpus.schema.json",
@@ -82,6 +87,7 @@ class CareerCorpusStore:
         validate_on_load: bool = True,
         validate_on_save: bool = True,
     ) -> None:
+        """Internal helper to init."""
         self.path = Path(path)
         self.meta_path = Path(meta_path)
         self.schema_path = Path(schema_path) if schema_path else _default_schema_path()
@@ -94,6 +100,7 @@ class CareerCorpusStore:
         self._meta = self._read_meta()
 
     def load(self) -> Dict[str, Any]:
+        """Load."""
         if not self.path.exists():
             raise FileNotFoundError(f"Corpus file not found: {self.path}")
 
@@ -114,6 +121,7 @@ class CareerCorpusStore:
         return deepcopy(self._corpus)
 
     def save(self) -> None:
+        """Save."""
         self._ensure_loaded()
         if not self.dirty:
             return
@@ -130,6 +138,7 @@ class CareerCorpusStore:
         self._write_meta()
 
     def status(self) -> Dict[str, Any]:
+        """Status."""
         return {
             "dirty": self.dirty,
             "local_hash": self._local_hash,
@@ -146,9 +155,11 @@ class CareerCorpusStore:
 
     @property
     def is_loaded(self) -> bool:
+        """Is loaded."""
         return self._corpus is not None
 
     def validate(self) -> None:
+        """Validate."""
         self._ensure_loaded()
 
         try:
@@ -172,6 +183,7 @@ class CareerCorpusStore:
             raise ValueError("Career corpus schema validation failed: " + "; ".join(errors))
 
     def snapshot(self) -> Dict[str, Any]:
+        """Snapshot."""
         self._ensure_loaded()
         return deepcopy(self._corpus)
 
@@ -227,6 +239,7 @@ class CareerCorpusStore:
 
     @classmethod
     def index_referenced_paths(cls, index_doc: Dict[str, Any]) -> List[str]:
+        """Index referenced paths."""
         core_files = index_doc.get("core_files", {})
         paths: List[str] = []
         # Include legacy "skills" core file if present in older split indexes.
@@ -250,9 +263,11 @@ class CareerCorpusStore:
         index_doc: Dict[str, Any],
         documents_by_path: Dict[str, Dict[str, Any]],
     ) -> Dict[str, Any]:
+        """Assemble from split documents."""
         core_files = index_doc.get("core_files", {})
 
         def _require(path_key: str) -> Dict[str, Any]:
+            """Internal helper to require."""
             path = core_files.get(path_key)
             if not isinstance(path, str) or path not in documents_by_path:
                 raise ValueError(f"Missing required split file for '{path_key}'.")
@@ -308,6 +323,7 @@ class CareerCorpusStore:
         return corpus
 
     def list_experiences(self) -> List[Dict[str, Any]]:
+        """List experiences."""
         self._ensure_loaded()
         experiences = self._corpus.get("experience", [])
         if not isinstance(experiences, list):
@@ -315,6 +331,7 @@ class CareerCorpusStore:
         return deepcopy(experiences)
 
     def get_experience(self, key: Union[str, Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Get experience."""
         self._ensure_loaded()
         idx = self._find_experience_index(key)
         if idx is None:
@@ -322,6 +339,7 @@ class CareerCorpusStore:
         return deepcopy(self._corpus["experience"][idx])
 
     def append_experience(self, obj: Dict[str, Any]) -> str:
+        """Append experience."""
         self._ensure_loaded()
         if not isinstance(obj, dict):
             raise TypeError("Experience payload must be an object.")
@@ -339,6 +357,7 @@ class CareerCorpusStore:
         obj: Dict[str, Any],
         match: Optional[Union[Dict[str, Any], Callable[[Dict[str, Any]], bool]]] = None,
     ) -> str:
+        """Upsert experience."""
         self._ensure_loaded()
         if not isinstance(obj, dict):
             raise TypeError("Experience payload must be an object.")
@@ -376,6 +395,7 @@ class CareerCorpusStore:
         return str(merged["id"])
 
     def delete_experience(self, key: Union[str, Dict[str, Any]]) -> bool:
+        """Delete experience."""
         self._ensure_loaded()
         idx = self._find_experience_index(key)
         if idx is None:
@@ -385,6 +405,7 @@ class CareerCorpusStore:
         return True
 
     def get(self, path: List[PathPart]) -> Any:
+        """Get."""
         self._ensure_loaded()
         node: Any = self._corpus
         for part in path:
@@ -392,6 +413,7 @@ class CareerCorpusStore:
         return deepcopy(node)
 
     def set(self, path: List[PathPart], value: Any) -> None:
+        """Set."""
         self._ensure_loaded()
         if not path:
             raise ValueError("Path cannot be empty.")
@@ -400,6 +422,7 @@ class CareerCorpusStore:
         self._mark_dirty()
 
     def update(self, mutator_fn: Callable[[Dict[str, Any]], Optional[Dict[str, Any]]]) -> None:
+        """Update."""
         self._ensure_loaded()
         before = self._compute_hash(self._corpus)
         replacement = mutator_fn(self._corpus)
@@ -420,6 +443,7 @@ class CareerCorpusStore:
         remote_file_hashes: Optional[Dict[str, str]] = None,
         validate: bool = True,
     ) -> None:
+        """Replace corpus."""
         if not isinstance(corpus, dict):
             raise TypeError("Corpus document must be an object.")
         self._corpus = deepcopy(corpus)
@@ -451,6 +475,7 @@ class CareerCorpusStore:
         method: str = "git_blob_utf8",
         verified: bool = True,
     ) -> None:
+        """Mark push success."""
         if remote_file_sha is not None:
             self._meta["remote_file_sha"] = remote_file_sha
         if remote_blob_sha is not None:
@@ -503,15 +528,18 @@ class CareerCorpusStore:
         return changed
 
     def _ensure_loaded(self) -> None:
+        """Internal helper to ensure loaded."""
         if self._corpus is None:
             self.load()
 
     def _mark_dirty(self) -> None:
+        """Internal helper to mark dirty."""
         self.dirty = True
         self._local_hash = self._compute_hash(self._corpus)
         self._meta["local_hash"] = self._local_hash
 
     def _find_experience_index(self, key: Union[str, Dict[str, Any]]) -> Optional[int]:
+        """Internal helper to find experience index."""
         experiences = self._corpus.get("experience", [])
         if not isinstance(experiences, list):
             raise TypeError("Expected 'experience' to be a list.")
@@ -522,6 +550,7 @@ class CareerCorpusStore:
         items: List[Dict[str, Any]],
         matcher: Union[str, Dict[str, Any], Callable[[Dict[str, Any]], bool]],
     ) -> Optional[int]:
+        """Internal helper to find by match."""
         if callable(matcher):
             for idx, item in enumerate(items):
                 if matcher(item):
@@ -543,6 +572,7 @@ class CareerCorpusStore:
         raise TypeError("Matcher must be str, dict, or callable.")
 
     def _ensure_ids_for_known_lists(self) -> bool:
+        """Internal helper to ensure ids for known lists."""
         changed = False
         for section in ("experience", "projects", "certifications", "education"):
             records = self._corpus.get(section, [])
@@ -596,6 +626,7 @@ class CareerCorpusStore:
 
     @staticmethod
     def _normalize_single_link(item: Any) -> Optional[Dict[str, str]]:
+        """Internal helper to normalize single link."""
         name = ""
         url = ""
         if isinstance(item, dict):
@@ -627,6 +658,7 @@ class CareerCorpusStore:
 
     @staticmethod
     def _parse_named_link_string(value: str) -> Optional[tuple[str, str]]:
+        """Internal helper to parse named link string."""
         if ":" not in value:
             return None
         if value.lower().startswith(("http://", "https://")):
@@ -640,6 +672,7 @@ class CareerCorpusStore:
 
     @staticmethod
     def _infer_link_name(url_or_text: str) -> str:
+        """Internal helper to infer link name."""
         candidate = url_or_text.strip()
         parsed = urlparse(candidate if "://" in candidate else f"https://{candidate}")
         host = parsed.netloc.lower()
@@ -681,6 +714,7 @@ class CareerCorpusStore:
             changed = True
 
         def _normalize_note_value(container: Dict[str, Any], key: str) -> bool:
+            """Internal helper to normalize note value."""
             value = container.get(key)
             if value is None:
                 return False
@@ -738,6 +772,7 @@ class CareerCorpusStore:
         return True
 
     def _ensure_item_id(self, item: Dict[str, Any], section: str) -> str:
+        """Internal helper to ensure item id."""
         item_id = item.get("id")
         if isinstance(item_id, str) and item_id.strip():
             return item_id
@@ -748,16 +783,19 @@ class CareerCorpusStore:
 
     @staticmethod
     def _compute_hash(document: Dict[str, Any]) -> str:
+        """Internal helper to compute hash."""
         canonical = _canonical_json_text(document)
         return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
     def _resolve_parent(self, path: List[PathPart]) -> tuple[Any, PathPart]:
+        """Internal helper to resolve parent."""
         node: Any = self._corpus
         for part in path[:-1]:
             node = node[part]
         return node, path[-1]
 
     def _read_meta(self) -> Dict[str, Any]:
+        """Internal helper to read meta."""
         if not self.meta_path.exists():
             return {
                 "remote_file_sha": None,
@@ -788,10 +826,12 @@ class CareerCorpusStore:
         }
 
     def _write_meta(self) -> None:
+        """Internal helper to write meta."""
         self._atomic_write_json(self.meta_path, self._meta)
 
     @staticmethod
     def _read_json_object(path: Path) -> Dict[str, Any]:
+        """Internal helper to read json object."""
         with path.open("r", encoding="utf-8") as f:
             data = json.load(f)
         if not isinstance(data, dict):
@@ -800,6 +840,7 @@ class CareerCorpusStore:
 
     @staticmethod
     def _atomic_write_json(path: Path, payload: Dict[str, Any]) -> None:
+        """Internal helper to atomic write json."""
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp_path = path.with_name(f".{path.name}.tmp")
         with tmp_path.open("w", encoding="utf-8") as f:

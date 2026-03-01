@@ -8,7 +8,9 @@ from knowledge_files import memory_validation_surface as validation_surface
 
 
 class SurfaceContractTests(unittest.TestCase):
+    """Test suite for surface contract."""
     def test_store_surface_exports(self) -> None:
+        """Test that store surface exports."""
         self.assertEqual(store_surface.__all__, ["CareerCorpusStore"])
         cls = store_surface.CareerCorpusStore
         self.assertTrue(getattr(cls, "__gpt_surface__", False))
@@ -32,6 +34,7 @@ class SurfaceContractTests(unittest.TestCase):
             self.assertTrue(getattr(getattr(cls, name), "__gpt_surface__", False), name)
 
     def test_sync_surface_exports(self) -> None:
+        """Test that sync surface exports."""
         self.assertEqual(sync_surface.__all__, ["CareerCorpusSync"])
         cls = sync_surface.CareerCorpusSync
         self.assertTrue(getattr(cls, "__gpt_surface__", False))
@@ -47,6 +50,7 @@ class SurfaceContractTests(unittest.TestCase):
             self.assertTrue(getattr(getattr(cls, name), "__gpt_surface__", False), name)
 
     def test_validation_surface_exports(self) -> None:
+        """Test that validation surface exports."""
         expected = [
             "validate_career_corpus",
             "validate_career_patch",

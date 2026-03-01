@@ -15,10 +15,12 @@ from knowledge_files.memory_validation_surface import canonical_json_text
 
 
 def _encode_base64_utf8(text: str) -> str:
+    """Internal helper to encode base64 utf8."""
     return base64.b64encode(text.encode("utf-8")).decode("ascii")
 
 
 def make_corpus(with_ids: bool = True) -> Dict[str, Any]:
+    """Make corpus."""
     exp = {
         "employer": "Acme Corp",
         "title": "Systems Analyst",
@@ -75,7 +77,9 @@ def make_corpus(with_ids: bool = True) -> Dict[str, Any]:
 
 
 class FakeGitRepo:
+    """Fake Git Repo."""
     def __init__(self, split_docs: Dict[str, Dict[str, Any]]) -> None:
+        """Internal helper to init."""
         self.default_branch = "main"
         self.calls = {
             "get_memory_repo": 0,
@@ -109,20 +113,24 @@ class FakeGitRepo:
         self._head_commit = self._new_commit(tree_sha)
 
     def head_path_map(self) -> Dict[str, str]:
+        """Head path map."""
         tree_sha = self._commits[self._head_commit]
         return deepcopy(self._trees[tree_sha])
 
     def get_memory_repo(self) -> Dict[str, Any]:
+        """Get memory repo."""
         self.calls["get_memory_repo"] += 1
         return {"default_branch": self.default_branch}
 
     def get_branch_ref(self, branch: str) -> Dict[str, Any]:
+        """Get branch ref."""
         self.calls["get_branch_ref"] += 1
         if branch != self.default_branch:
             return {"status_code": 404}
         return {"object": {"sha": self._head_commit}}
 
     def get_git_commit(self, commit_sha: str) -> Dict[str, Any]:
+        """Get git commit."""
         self.calls["get_git_commit"] += 1
         tree_sha = self._commits.get(commit_sha)
         if not tree_sha:
@@ -130,6 +138,7 @@ class FakeGitRepo:
         return {"tree": {"sha": tree_sha}}
 
     def get_git_tree(self, tree_sha: str, recursive: bool) -> Dict[str, Any]:
+        """Get git tree."""
         self.calls["get_git_tree"] += 1
         path_map = self._trees.get(tree_sha)
         if path_map is None:
@@ -138,6 +147,7 @@ class FakeGitRepo:
         return {"sha": tree_sha, "tree": entries, "truncated": False, "recursive": recursive}
 
     def get_git_blob(self, blob_sha: str) -> Dict[str, Any]:
+        """Get git blob."""
         self.calls["get_git_blob"] += 1
         text = self._blobs.get(blob_sha)
         if text is None:
@@ -166,6 +176,7 @@ class FakeGitRepo:
         }
 
     def create_git_blob(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Create git blob."""
         self.calls["create_git_blob"] += 1
         if payload.get("encoding") != "utf-8":
             return {"status_code": 422}
@@ -176,6 +187,7 @@ class FakeGitRepo:
         return {"sha": sha}
 
     def create_git_tree(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Create git tree."""
         self.calls["create_git_tree"] += 1
         base_tree = payload.get("base_tree")
         tree_entries = payload.get("tree")
@@ -201,6 +213,7 @@ class FakeGitRepo:
         return {"sha": new_tree_sha}
 
     def create_git_commit(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Create git commit."""
         self.calls["create_git_commit"] += 1
         tree_sha = payload.get("tree")
         if not isinstance(tree_sha, str) or tree_sha not in self._trees:
@@ -209,6 +222,7 @@ class FakeGitRepo:
         return {"sha": new_commit_sha}
 
     def update_branch_ref(self, branch: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Update branch ref."""
         self.calls["update_branch_ref"] += 1
         if branch != self.default_branch:
             return {"status_code": 404}
@@ -222,18 +236,21 @@ class FakeGitRepo:
         return {"object": {"sha": commit_sha}}
 
     def _new_blob(self, content: str) -> str:
+        """Internal helper to new blob."""
         self._blob_counter += 1
         sha = f"blob_{self._blob_counter}"
         self._blobs[sha] = content
         return sha
 
     def _new_tree(self, path_map: Dict[str, str]) -> str:
+        """Internal helper to new tree."""
         self._tree_counter += 1
         sha = f"tree_{self._tree_counter}"
         self._trees[sha] = deepcopy(path_map)
         return sha
 
     def _new_commit(self, tree_sha: str) -> str:
+        """Internal helper to new commit."""
         self._commit_counter += 1
         sha = f"commit_{self._commit_counter}"
         self._commits[sha] = tree_sha
@@ -241,7 +258,9 @@ class FakeGitRepo:
 
 
 class CareerCorpusMemoryTests(unittest.TestCase):
+    """Test suite for career corpus memory."""
     def setUp(self) -> None:
+        """Set up test fixtures."""
         self.tempdir = tempfile.TemporaryDirectory()
         root = Path(self.tempdir.name)
         self.corpus_path = root / "career_corpus.json"
@@ -253,14 +272,17 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         )
 
     def tearDown(self) -> None:
+        """Teardown."""
         self.tempdir.cleanup()
 
     def _write_corpus(self, with_ids: bool = True) -> Dict[str, Any]:
+        """Internal helper to write corpus."""
         corpus = make_corpus(with_ids=with_ids)
         self.corpus_path.write_text(json.dumps(corpus), encoding="utf-8")
         return corpus
 
     def _store(self) -> CareerCorpusStore:
+        """Internal helper to store."""
         return CareerCorpusStore(
             path=self.corpus_path,
             meta_path=self.meta_path,
@@ -270,6 +292,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         )
 
     def _sync_with_repo(self, store: CareerCorpusStore, repo: FakeGitRepo) -> CareerCorpusSync:
+        """Internal helper to sync with repo."""
         return CareerCorpusSync(
             store=store,
             get_memory_repo=repo.get_memory_repo,
@@ -284,6 +307,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         )
 
     def test_load_save_atomicity(self) -> None:
+        """Test that load save atomicity."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -297,6 +321,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertFalse(tmp_path.exists())
 
     def test_id_assignment_on_load(self) -> None:
+        """Test that id assignment on load."""
         self._write_corpus(with_ids=False)
         store = self._store()
         loaded = store.load()
@@ -307,6 +332,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertIn("id", loaded["education"][0])
 
     def test_upsert_experience_semantics(self) -> None:
+        """Test that upsert experience semantics."""
         self._write_corpus(with_ids=True)
         store = self._store()
         corpus = store.load()
@@ -335,6 +361,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertEqual(store.list_experiences()[0]["bullets"], ["Changed by fallback"])
 
     def test_pull_noop_when_sha_unchanged(self) -> None:
+        """Test that pull noop when sha unchanged."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -351,6 +378,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertEqual(result["reason"], "sha_unchanged")
 
     def test_push_blob_utf8_success_with_verification(self) -> None:
+        """Test that push blob utf8 success with verification."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -371,6 +399,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertEqual(store.status()["remote_branch"], "main")
 
     def test_push_not_dirty_no_remote_calls(self) -> None:
+        """Test that push not dirty no remote calls."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -387,6 +416,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertEqual(repo.calls["create_git_blob"], 0)
 
     def test_push_ref_conflict_retries_once_then_succeeds(self) -> None:
+        """Test that push ref conflict retries once then succeeds."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -402,6 +432,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertGreaterEqual(repo.calls["update_branch_ref"], 2)
 
     def test_push_ref_conflict_retries_once_then_fails_not_persisted(self) -> None:
+        """Test that push ref conflict retries once then fails not persisted."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -417,6 +448,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertEqual(result["retry_count"], 1)
 
     def test_push_hash_mismatch_marks_transport_corruption(self) -> None:
+        """Test that push hash mismatch marks transport corruption."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -434,6 +466,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertFalse(result["verify_ok"])
 
     def test_status_uses_remote_file_sha_only(self) -> None:
+        """Test that status uses remote file sha only."""
         self._write_corpus(with_ids=True)
         current_meta = {
             "remote_file_sha": "index_sha_only",
@@ -448,6 +481,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertNotIn("remote_sha", status)
 
     def test_pull_split_handles_raw_blob_text(self) -> None:
+        """Test that pull split handles raw blob text."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -460,6 +494,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertTrue(result["changed"])
 
     def test_pull_split_handles_raw_blob_json_object(self) -> None:
+        """Test that pull split handles raw blob json object."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -472,6 +507,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertTrue(result["changed"])
 
     def test_push_requires_explicit_section_approval(self) -> None:
+        """Test that push requires explicit section approval."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -491,6 +527,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertTrue(result["persisted"])
 
     def test_onboarding_completion_persists_in_corpus_metadata(self) -> None:
+        """Test that onboarding completion persists in corpus metadata."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -523,6 +560,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertIsInstance(metadata["onboarding_completed_utc"], str)
 
     def test_push_rejects_unapproved_or_cross_section_changes(self) -> None:
+        """Test that push rejects unapproved or cross section changes."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -543,6 +581,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertEqual(result["error_code"], "unapproved_section_changes")
 
     def test_load_migrates_legacy_profile_links_strings_to_objects(self) -> None:
+        """Test that load migrates legacy profile links strings to objects."""
         corpus = self._write_corpus(with_ids=True)
         corpus["profile"]["links"] = [
             "GitHub: github.com/ACB-prgm",
@@ -563,6 +602,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         )
 
     def test_push_rejects_invalid_link_shape_via_validation(self) -> None:
+        """Test that push rejects invalid link shape via validation."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -576,6 +616,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertEqual(result["error_code"], "validation_failed")
 
     def test_pull_skips_validation_but_push_requires_validation(self) -> None:
+        """Test that pull skips validation but push requires validation."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -585,6 +626,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         original_validate = store._core_store.validate
 
         def fail_validate() -> None:
+            """Fail validate."""
             raise AssertionError("validate called")
 
         store._core_store.validate = fail_validate  # type: ignore[assignment]
@@ -601,6 +643,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         store._core_store.validate = original_validate  # type: ignore[assignment]
 
     def test_notes_empty_strings_normalize_to_null(self) -> None:
+        """Test that notes empty strings normalize to null."""
         corpus = self._write_corpus(with_ids=True)
         corpus["profile"]["notes"] = "   "
         corpus["experience"][0]["notes"] = ""
@@ -615,6 +658,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertIsNone(loaded["profile"]["skills"]["notes"])
 
     def test_push_user_message_plain_language_default(self) -> None:
+        """Test that push user message plain language default."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()
@@ -630,6 +674,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertNotIn("branch=", result["user_message"])
 
     def test_push_user_message_technical_when_requested(self) -> None:
+        """Test that push user message technical when requested."""
         self._write_corpus(with_ids=True)
         store = self._store()
         store.load()

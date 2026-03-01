@@ -14,10 +14,12 @@ from knowledge_files.memory_validation_surface import canonical_json_sha256, can
 
 
 def _encode_base64_utf8(text: str) -> str:
+    """Internal helper to encode base64 utf8."""
     return base64.b64encode(text.encode("utf-8")).decode("ascii")
 
 
 def make_corpus() -> Dict[str, Any]:
+    """Make corpus."""
     return {
         "schema_version": "1.0.0",
         "profile": {
@@ -76,7 +78,9 @@ def make_corpus() -> Dict[str, Any]:
 
 
 class FakeGitRepo:
+    """Fake Git Repo."""
     def __init__(self, split_docs: Dict[str, Dict[str, Any]]) -> None:
+        """Internal helper to init."""
         self.default_branch = "main"
         self.calls = {
             "get_memory_repo": 0,
@@ -105,20 +109,24 @@ class FakeGitRepo:
         self._head_commit = self._new_commit(tree_sha)
 
     def head_path_map(self) -> Dict[str, str]:
+        """Head path map."""
         tree_sha = self._commits[self._head_commit]
         return deepcopy(self._trees[tree_sha])
 
     def get_memory_repo(self) -> Dict[str, Any]:
+        """Get memory repo."""
         self.calls["get_memory_repo"] += 1
         return {"default_branch": self.default_branch}
 
     def get_branch_ref(self, branch: str) -> Dict[str, Any]:
+        """Get branch ref."""
         self.calls["get_branch_ref"] += 1
         if branch != self.default_branch:
             return {"status_code": 404}
         return {"object": {"sha": self._head_commit}}
 
     def get_git_commit(self, commit_sha: str) -> Dict[str, Any]:
+        """Get git commit."""
         self.calls["get_git_commit"] += 1
         tree_sha = self._commits.get(commit_sha)
         if not tree_sha:
@@ -126,6 +134,7 @@ class FakeGitRepo:
         return {"tree": {"sha": tree_sha}}
 
     def get_git_tree(self, tree_sha: str, recursive: bool) -> Dict[str, Any]:
+        """Get git tree."""
         self.calls["get_git_tree"] += 1
         path_map = self._trees.get(tree_sha)
         if path_map is None:
@@ -134,6 +143,7 @@ class FakeGitRepo:
         return {"sha": tree_sha, "tree": entries, "truncated": False, "recursive": recursive}
 
     def get_git_blob(self, blob_sha: str) -> Dict[str, Any]:
+        """Get git blob."""
         self.calls["get_git_blob"] += 1
         text = self._blobs.get(blob_sha)
         if text is None:
@@ -141,6 +151,7 @@ class FakeGitRepo:
         return {"sha": blob_sha, "encoding": "base64", "content": _encode_base64_utf8(text)}
 
     def create_git_blob(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Create git blob."""
         self.calls["create_git_blob"] += 1
         if payload.get("encoding") != "utf-8":
             return {"status_code": 422}
@@ -151,6 +162,7 @@ class FakeGitRepo:
         return {"sha": sha}
 
     def create_git_tree(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Create git tree."""
         self.calls["create_git_tree"] += 1
         base_tree = payload.get("base_tree")
         tree_entries = payload.get("tree")
@@ -172,6 +184,7 @@ class FakeGitRepo:
         return {"sha": new_tree_sha}
 
     def create_git_commit(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Create git commit."""
         self.calls["create_git_commit"] += 1
         tree_sha = payload.get("tree")
         if not isinstance(tree_sha, str) or tree_sha not in self._trees:
@@ -180,6 +193,7 @@ class FakeGitRepo:
         return {"sha": new_commit_sha}
 
     def update_branch_ref(self, branch: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        """Update branch ref."""
         self.calls["update_branch_ref"] += 1
         if branch != self.default_branch:
             return {"status_code": 404}
@@ -190,18 +204,21 @@ class FakeGitRepo:
         return {"object": {"sha": commit_sha}}
 
     def _new_blob(self, content: str) -> str:
+        """Internal helper to new blob."""
         self._blob_counter += 1
         sha = f"blob_{self._blob_counter}"
         self._blobs[sha] = content
         return sha
 
     def _new_tree(self, path_map: Dict[str, str]) -> str:
+        """Internal helper to new tree."""
         self._tree_counter += 1
         sha = f"tree_{self._tree_counter}"
         self._trees[sha] = deepcopy(path_map)
         return sha
 
     def _new_commit(self, tree_sha: str) -> str:
+        """Internal helper to new commit."""
         self._commit_counter += 1
         sha = f"commit_{self._commit_counter}"
         self._commits[sha] = tree_sha
@@ -209,7 +226,9 @@ class FakeGitRepo:
 
 
 class CanonicalLayoutContractsTests(unittest.TestCase):
+    """Test suite for canonical layout contracts."""
     def setUp(self) -> None:
+        """Set up test fixtures."""
         self.tempdir = tempfile.TemporaryDirectory()
         root = Path(self.tempdir.name)
         self.corpus_path = root / "career_corpus.json"
@@ -221,14 +240,17 @@ class CanonicalLayoutContractsTests(unittest.TestCase):
         )
 
     def tearDown(self) -> None:
+        """Teardown."""
         self.tempdir.cleanup()
 
     def _write_corpus(self) -> Dict[str, Any]:
+        """Internal helper to write corpus."""
         corpus = make_corpus()
         self.corpus_path.write_text(json.dumps(corpus), encoding="utf-8")
         return corpus
 
     def _store(self) -> CareerCorpusStore:
+        """Internal helper to store."""
         return CareerCorpusStore(
             path=self.corpus_path,
             meta_path=self.meta_path,
@@ -238,6 +260,7 @@ class CanonicalLayoutContractsTests(unittest.TestCase):
         )
 
     def _sync_with_repo(self, store: CareerCorpusStore, repo: FakeGitRepo) -> CareerCorpusSync:
+        """Internal helper to sync with repo."""
         return CareerCorpusSync(
             store=store,
             get_memory_repo=repo.get_memory_repo,
@@ -253,6 +276,7 @@ class CanonicalLayoutContractsTests(unittest.TestCase):
         )
 
     def _build_legacy_root_split_docs(self, corpus: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+        """Internal helper to build legacy root split docs."""
         docs: Dict[str, Dict[str, Any]] = {
             "corpus_profile.json": {"profile": deepcopy(corpus["profile"])},
             "corpus_certifications.json": {"certifications": deepcopy(corpus["certifications"])},
@@ -293,6 +317,7 @@ class CanonicalLayoutContractsTests(unittest.TestCase):
         return docs
 
     def test_store_builds_canonical_prefixed_split_paths(self) -> None:
+        """Test that store builds canonical prefixed split paths."""
         corpus = self._write_corpus()
         corpus["experience"].append(
             {
@@ -336,6 +361,7 @@ class CanonicalLayoutContractsTests(unittest.TestCase):
         self.assertEqual(len(project_paths), len(corpus["projects"]))
 
     def test_push_rejects_noncanonical_layout_preflight(self) -> None:
+        """Test that push rejects noncanonical layout preflight."""
         self._write_corpus()
         store = self._store()
         store.load()
@@ -358,6 +384,7 @@ class CanonicalLayoutContractsTests(unittest.TestCase):
         self.assertEqual(repo.calls["create_git_blob"], 0)
 
     def test_pull_fails_when_only_legacy_root_manifest_exists(self) -> None:
+        """Test that pull fails when only legacy root manifest exists."""
         corpus = self._write_corpus()
         store = self._store()
         store.load()
@@ -372,6 +399,7 @@ class CanonicalLayoutContractsTests(unittest.TestCase):
         self.assertIn(CareerCorpusStore.INDEX_FILE, result["reason"])
 
     def test_push_writes_only_canonical_directory_paths(self) -> None:
+        """Test that push writes only canonical directory paths."""
         self._write_corpus()
         store = self._store()
         store.load()
@@ -390,6 +418,7 @@ class CanonicalLayoutContractsTests(unittest.TestCase):
         self.assertTrue(all(path.startswith(f"{CareerCorpusStore.REMOTE_DIR}/") for path in remote_paths))
 
     def test_action_schema_restricts_git_tree_paths_to_canonical_dir(self) -> None:
+        """Test that action schema restricts git tree paths to canonical dir."""
         schema_path = Path(__file__).resolve().parents[1] / "github_action_schema.json"
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         path_schema = (

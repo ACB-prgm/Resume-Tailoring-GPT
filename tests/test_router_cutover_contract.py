@@ -5,7 +5,9 @@ from pathlib import Path
 
 
 class RouterCutoverContractTests(unittest.TestCase):
+    """Test suite for router cutover contract."""
     def test_instructions_are_router_first(self) -> None:
+        """Test that instructions are router first."""
         path = Path(__file__).resolve().parents[1] / "instructions.txt"
         text = path.read_text(encoding="utf-8")
 
