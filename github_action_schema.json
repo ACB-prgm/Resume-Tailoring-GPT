@@ -390,8 +390,7 @@
                         "in": "header",
                         "required": true,
                         "schema": {
-                            "type": "string",
-                            "const": "application/vnd.github+json"
+                            "type": "string"
                         }
                     }
                 ],
@@ -440,8 +439,7 @@
                         "in": "header",
                         "required": true,
                         "schema": {
-                            "type": "string",
-                            "const": "application/vnd.github+json"
+                            "type": "string"
                         }
                     }
                 ],
@@ -487,8 +485,7 @@
                         "in": "header",
                         "required": true,
                         "schema": {
-                            "type": "string",
-                            "const": "application/vnd.github.raw"
+                            "type": "string"
                         }
                     }
                 ],
@@ -602,8 +599,7 @@
                         "in": "header",
                         "required": true,
                         "schema": {
-                            "type": "string",
-                            "const": "application/vnd.github+json"
+                            "type": "string"
                         }
                     }
                 ],

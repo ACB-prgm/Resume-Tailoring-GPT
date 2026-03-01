@@ -60,6 +60,9 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 - `pull(force=False)`:
   - Resolve branch head and load `corpus_index.json` from Git tree/blob APIs.
   - If a tool-call parameter is defined with schema `const`, treat it as immutable and send exactly that value.
+  - For Git read calls, send:
+    - `getBranchRef`, `getGitCommit`, `getGitTree`: `Accept: application/vnd.github+json`
+    - `getGitBlob`: `Accept: application/vnd.github.raw`
   - If manifest sha matches `meta.remote_file_sha` and `force` is false, no-op.
   - Else read referenced split files, assemble local `/mnt/data/career_corpus.json`, update meta.
   - Pull/read flow may skip schema validation; schema validation remains mandatory for write and resume-use paths.
