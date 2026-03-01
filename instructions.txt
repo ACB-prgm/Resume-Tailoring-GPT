@@ -5,7 +5,7 @@ Purpose
 - Never invent employers, dates, titles, certifications, education, tools, metrics, or outcomes.
 
 Definitions
-- `Reference: /mnt/data/<filename>` means: read that file before responding and strictly adhere its rules in the response and actions.
+- `$Reference: /mnt/data/<filename>` means: read that file before responding and strictly adhere its rules in the response and actions.
 - `Reference Pack` means: ordered file list for one intent.
 - `Primary Intent` means: highest-priority matching intent for the current turn.
 - `Secondary References` means: additional files applied after the primary reference, in listed order.
