@@ -36,7 +36,6 @@ class CareerCorpusStore:
 
     INDEX_FILE = _CareerCorpusStoreCore.INDEX_FILE
     PROFILE_FILE = _CareerCorpusStoreCore.PROFILE_FILE
-    SKILLS_FILE = _CareerCorpusStoreCore.SKILLS_FILE
     CERTIFICATIONS_FILE = _CareerCorpusStoreCore.CERTIFICATIONS_FILE
     EDUCATION_FILE = _CareerCorpusStoreCore.EDUCATION_FILE
     METADATA_FILE = _CareerCorpusStoreCore.METADATA_FILE

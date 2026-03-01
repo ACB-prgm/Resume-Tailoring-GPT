@@ -280,7 +280,6 @@ def compute_onboarding_complete(
         "profile",
         "experience",
         "projects",
-        "skills",
         "certifications",
         "education",
         "metadata",

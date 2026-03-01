@@ -59,7 +59,6 @@ class CareerCorpusStore:
 
     INDEX_FILE = "corpus_index.json"
     PROFILE_FILE = "corpus_profile.json"
-    SKILLS_FILE = "corpus_skills.json"
     CERTIFICATIONS_FILE = "corpus_certifications.json"
     EDUCATION_FILE = "corpus_education.json"
     METADATA_FILE = "corpus_metadata.json"
@@ -97,6 +96,7 @@ class CareerCorpusStore:
 
         data = self._read_json_object(self.path)
         self._corpus = data
+        skills_migrated = self._migrate_top_level_skills_to_profile()
         links_normalized = self._normalize_profile_links()
         notes_normalized = self._normalize_notes_fields()
         ids_added = self._ensure_ids_for_known_lists()
@@ -106,7 +106,7 @@ class CareerCorpusStore:
 
         self._local_hash = self._compute_hash(self._corpus)
         self._meta["local_hash"] = self._local_hash
-        self.dirty = ids_added or links_normalized or notes_normalized
+        self.dirty = skills_migrated or ids_added or links_normalized or notes_normalized
         self._write_meta()
         return deepcopy(self._corpus)
 
@@ -183,7 +183,6 @@ class CareerCorpusStore:
         docs: Dict[str, Dict[str, Any]] = {}
 
         docs[self.PROFILE_FILE] = {"profile": deepcopy(corpus["profile"])}
-        docs[self.SKILLS_FILE] = {"skills": deepcopy(corpus["skills"])}
         docs[self.CERTIFICATIONS_FILE] = {"certifications": deepcopy(corpus["certifications"])}
         docs[self.EDUCATION_FILE] = {"education": deepcopy(corpus["education"])}
         docs[self.METADATA_FILE] = {"metadata": deepcopy(corpus["metadata"])}
@@ -212,7 +211,6 @@ class CareerCorpusStore:
             "generated_at_utc": _utc_now(),
             "core_files": {
                 "profile": self.PROFILE_FILE,
-                "skills": self.SKILLS_FILE,
                 "certifications": self.CERTIFICATIONS_FILE,
                 "education": self.EDUCATION_FILE,
                 "metadata": self.METADATA_FILE,
@@ -228,6 +226,7 @@ class CareerCorpusStore:
     def index_referenced_paths(cls, index_doc: Dict[str, Any]) -> List[str]:
         core_files = index_doc.get("core_files", {})
         paths: List[str] = []
+        # Include legacy "skills" core file if present in older split indexes.
         for key in ("profile", "skills", "certifications", "education", "metadata"):
             path = core_files.get(key)
             if isinstance(path, str) and path:
@@ -257,10 +256,22 @@ class CareerCorpusStore:
             return documents_by_path[path]
 
         profile_doc = _require("profile")
-        skills_doc = _require("skills")
         certs_doc = _require("certifications")
         edu_doc = _require("education")
         metadata_doc = _require("metadata")
+
+        profile = deepcopy(profile_doc.get("profile", {}))
+        if not isinstance(profile, dict):
+            profile = {}
+
+        # Backfill profile.skills when assembling from legacy split indexes.
+        skills_path = core_files.get("skills")
+        if "skills" not in profile and isinstance(skills_path, str) and skills_path in documents_by_path:
+            legacy_skills_doc = documents_by_path[skills_path]
+            if isinstance(legacy_skills_doc, dict):
+                legacy_skills = legacy_skills_doc.get("skills")
+                if isinstance(legacy_skills, dict):
+                    profile["skills"] = deepcopy(legacy_skills)
 
         experience = []
         for item in index_doc.get("experience_files", []):
@@ -284,10 +295,9 @@ class CareerCorpusStore:
 
         corpus = {
             "schema_version": index_doc.get("schema_version", "1.0.0"),
-            "profile": deepcopy(profile_doc.get("profile", {})),
+            "profile": profile,
             "experience": experience,
             "projects": projects,
-            "skills": deepcopy(skills_doc.get("skills", {})),
             "certifications": deepcopy(certs_doc.get("certifications", [])),
             "education": deepcopy(edu_doc.get("education", [])),
             "metadata": deepcopy(metadata_doc.get("metadata", {})),
@@ -686,9 +696,10 @@ class CareerCorpusStore:
         if isinstance(profile, dict) and "notes" in profile:
             changed = _normalize_note_value(profile, "notes") or changed
 
-        skills = self._corpus.get("skills")
-        if isinstance(skills, dict) and "notes" in skills:
-            changed = _normalize_note_value(skills, "notes") or changed
+        if isinstance(profile, dict):
+            skills = profile.get("skills")
+            if isinstance(skills, dict) and "notes" in skills:
+                changed = _normalize_note_value(skills, "notes") or changed
 
         for section in ("experience", "projects", "certifications", "education"):
             rows = self._corpus.get(section)
@@ -699,6 +710,29 @@ class CareerCorpusStore:
                     changed = _normalize_note_value(row, "notes") or changed
 
         return changed
+
+    def _migrate_top_level_skills_to_profile(self) -> bool:
+        """
+        Move legacy top-level `skills` into `profile.skills`.
+        """
+        if not isinstance(self._corpus, dict):
+            return False
+        if "skills" not in self._corpus:
+            return False
+
+        legacy_skills = self._corpus.get("skills")
+        profile = self._corpus.setdefault("profile", {})
+        if not isinstance(profile, dict):
+            profile = {}
+            self._corpus["profile"] = profile
+
+        changed = False
+        if isinstance(legacy_skills, dict) and "skills" not in profile:
+            profile["skills"] = deepcopy(legacy_skills)
+            changed = True
+
+        del self._corpus["skills"]
+        return True
 
     def _ensure_item_id(self, item: Dict[str, Any], section: str) -> str:
         item_id = item.get("id")

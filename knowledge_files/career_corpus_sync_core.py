@@ -81,7 +81,6 @@ class CareerCorpusSync:
         "profile",
         "experience",
         "projects",
-        "skills",
         "certifications",
         "education",
         "metadata",
@@ -888,7 +887,6 @@ class CareerCorpusSync:
     def _allowed_paths_for_sections(cls, target_sections: Set[str]) -> Set[str]:
         mapping = {
             "profile": "corpus_profile.json",
-            "skills": "corpus_skills.json",
             "certifications": "corpus_certifications.json",
             "education": "corpus_education.json",
             "metadata": "corpus_metadata.json",
@@ -897,6 +895,10 @@ class CareerCorpusSync:
         for section, path in mapping.items():
             if section in target_sections:
                 allowed.add(path)
+        # Skills now live under profile, but keep legacy skills file removable during migration pushes.
+        if "profile" in target_sections or "skills" in target_sections:
+            allowed.add("corpus_profile.json")
+            allowed.add("corpus_skills.json")
         return allowed
 
     @staticmethod

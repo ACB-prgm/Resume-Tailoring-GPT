@@ -10,8 +10,8 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 ## Canonical memory files
 - Split corpus files (remote canonical):
   - `corpus_index.json` (manifest)
-  - `corpus_profile.json`, `corpus_skills.json`,
-    `corpus_certifications.json`, `corpus_education.json`, `corpus_metadata.json`
+  - `corpus_profile.json`, `corpus_certifications.json`,
+    `corpus_education.json`, `corpus_metadata.json`
   - `corpus_experience_<id>.json` (one file per experience)
   - `corpus_project_<id>.json` (one file per project)
 - Local corpus cache path: `/mnt/data/career_corpus.json`
@@ -80,7 +80,7 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 ## Onboarding finalization rule (required)
 - During onboarding, do not persist section-by-section.
 - Collect explicit approvals for the full onboarding required set:
-  - `profile`, `experience`, `projects`, `skills`, `certifications`, `education`, `metadata`.
+  - `profile`, `experience`, `projects`, `certifications`, `education`, `metadata`.
 - Execute one final validate -> push operation after full approval set is collected.
 - `onboarding_complete` may be marked true only after this final push succeeds and verification passes.
 

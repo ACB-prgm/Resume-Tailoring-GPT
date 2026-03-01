@@ -9,7 +9,6 @@
     "profile",
     "experience",
     "projects",
-    "skills",
     "certifications",
     "education",
     "metadata"
@@ -23,7 +22,8 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "full_name"
+        "full_name",
+        "skills"
       ],
       "properties": {
         "full_name": {
@@ -57,6 +57,48 @@
                 "type": "string",
                 "minLength": 1
               }
+            }
+          }
+        },
+        "skills": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "technical",
+            "platforms",
+            "methods",
+            "domains"
+          ],
+          "properties": {
+            "technical": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "platforms": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "methods": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "domains": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "notes": {
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         },
@@ -183,48 +225,6 @@
               "null"
             ]
           }
-        }
-      }
-    },
-    "skills": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "technical",
-        "platforms",
-        "methods",
-        "domains"
-      ],
-      "properties": {
-        "technical": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "platforms": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "methods": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "domains": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "notes": {
-          "type": [
-            "string",
-            "null"
-          ]
         }
       }
     },

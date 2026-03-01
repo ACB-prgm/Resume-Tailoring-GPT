@@ -54,15 +54,17 @@ def make_corpus(with_ids: bool = True) -> Dict[str, Any]:
 
     return {
         "schema_version": "1.0.0",
-        "profile": {"full_name": "Test User"},
+        "profile": {
+            "full_name": "Test User",
+            "skills": {
+                "technical": ["Python"],
+                "platforms": ["Azure"],
+                "methods": ["Agile"],
+                "domains": ["Enterprise IT"],
+            },
+        },
         "experience": [exp],
         "projects": [proj],
-        "skills": {
-            "technical": ["Python"],
-            "platforms": ["Azure"],
-            "methods": ["Agile"],
-            "domains": ["Enterprise IT"],
-        },
         "certifications": [cert],
         "education": [edu],
         "metadata": {
@@ -503,7 +505,6 @@ class CareerCorpusMemoryTests(unittest.TestCase):
             "profile",
             "experience",
             "projects",
-            "skills",
             "certifications",
             "education",
             "metadata",
@@ -532,7 +533,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         baseline = sync.pull(force=True)
         self.assertTrue(baseline["ok"])
         # Change outside target section intentionally.
-        store.set(["skills", "technical"], ["Python", "SQL"])
+        store.set(["profile", "skills", "technical"], ["Python", "SQL"])
         result = sync.push(
             "Bad scoped update",
             target_sections=["education"],
@@ -603,7 +604,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         corpus = self._write_corpus(with_ids=True)
         corpus["profile"]["notes"] = "   "
         corpus["experience"][0]["notes"] = ""
-        corpus["skills"]["notes"] = " "
+        corpus["profile"]["skills"]["notes"] = " "
         self.corpus_path.write_text(json.dumps(corpus), encoding="utf-8")
 
         store = self._store()
@@ -611,7 +612,7 @@ class CareerCorpusMemoryTests(unittest.TestCase):
         self.assertTrue(store.dirty)
         self.assertIsNone(loaded["profile"]["notes"])
         self.assertIsNone(loaded["experience"][0]["notes"])
-        self.assertIsNone(loaded["skills"]["notes"])
+        self.assertIsNone(loaded["profile"]["skills"]["notes"])
 
     def test_push_user_message_plain_language_default(self) -> None:
         self._write_corpus(with_ids=True)

@@ -55,7 +55,7 @@ class MemoryWorkflowContractsTests(unittest.TestCase):
         assert_sections_explicitly_approved(approved, ["education"])
 
         with self.assertRaises(RuntimeError):
-            assert_sections_explicitly_approved(approved, ["education", "skills"])
+            assert_sections_explicitly_approved(approved, ["education", "profile"])
 
     def test_validation_gate_enforcement(self) -> None:
         assert_validated_before_write(True)
