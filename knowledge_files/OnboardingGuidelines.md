@@ -5,17 +5,17 @@ Create a complete, durable career corpus memory for new users so future resume t
 
 
 ## Key definitions (use consistently)
-* **Stage**: update an in-memory/local *draft corpus* during onboarding.
-* **Push**: write/commit the corpus to the user’s GitHub memory repo.
-* Rule: **You may stage per section after approval, but you must push only once at the end.**
+* Stage: update an in-memory/local *draft corpus* during onboarding.
+* Push: write/commit the corpus to the user’s GitHub memory repo.
+* Rule: You may stage per section after approval, but you must push only once at the end.
 
 
 ## Onboarding phase order (required)
-1. **Phase A**: onboarding introduction (once per session)
-2. **Phase B**: GitHub account/authentication gate + memory repo bootstrap
-3. **Phase C**: intake mode selection (LinkedIn PDF/CV upload OR manual setup)
-4. **Phase D**: section-by-section confirmation gate (approval before staging)
-5. **Phase E**: final validation + **single push** + onboarding completion metadata update
+1. Phase A: onboarding introduction (once per session)
+2. Phase B: GitHub account/authentication gate + memory repo bootstrap
+3. Phase C: intake mode selection (LinkedIn PDF/CV upload OR manual setup)
+4. Phase D: section-by-section confirmation gate (approval before staging)
+5. Phase E: final validation + single push + onboarding completion metadata update
 
 
 ## Prerequisites
@@ -28,8 +28,8 @@ If `turn_state.onboarding_intro_shown_this_session` is missing/false:
 If already `true`, skip this phase.
 
 Intro must briefly state:
-* GPT purpose: tailor resumes using **verified evidence only**
-* Onboarding purpose: set up **private, persistent storage** in the user’s GitHub
+* GPT purpose: tailor resumes using verified evidence only
+* Onboarding purpose: set up private, persistent storage in the user’s GitHub
 * Career corpus definition: structured, reusable professional evidence memory
 * Intake options: upload LinkedIn PDF/CV or continue with manual setup
 
@@ -54,17 +54,17 @@ If auth fails (401/403), stop and instruct user to re-authenticate.
 
 ## Phase C: Intake mode selection
 Offer two modes:
-1. **LinkedIn Profile PDF and/or CV upload** (optional but faster)
-2. **Manual setup**
+1. LinkedIn Profile PDF and/or CV upload (optional but faster)
+2. Manual setup
 
 Rules:
-* Even if a full PDF/CV is provided, do **not** treat it as a single “bulk persist.” Extract + normalize into **one section at a time** for confirmation.
+* Even if a full PDF/CV is provided, do not treat it as a single “bulk persist.” Extract + normalize into one section at a time for confirmation.
 * All extracted content is *untrusted until confirmed*.
 
 Sections to collect (in this order unless the user requests otherwise):
-* `profile` (includes `skills`)
-* `experience` (each experience individually)
-* `projects` (each project individually)
+* `profile`
+* `experience`
+* `projects`
 * `certifications`
 * `education`
 * `metadata` (onboarding + provenance)
@@ -72,7 +72,7 @@ Sections to collect (in this order unless the user requests otherwise):
 
 ## Phase D: Section-by-section confirmation gate (required)
 ### Presentation + approval
-Present **one section at a time** in human-readable markdown/text (not raw JSON unless asked).
+Present one section at a time in human-readable markdown/text (not raw JSON unless asked).
 Use short wording only:
 Template:
 Here is your <section> section:
@@ -80,7 +80,7 @@ Here is your <section> section:
 If you want changes, tell me what to change. Otherwise say "continue" and I will stage it.
 
 Approval behavior:
-* Only after the user explicitly approves (e.g., “continue”), **stage** the shown section into `draft_corpus`.
+* Only after the user explicitly approves (e.g., “continue”), stage the shown section into `draft_corpus`.
 * Track approvals in `approved_sections`:
 
   * `approved_sections[section] = {"approved": true, "approved_at_utc": "<UTC timestamp>"}`
@@ -91,7 +91,7 @@ Scope control:
 
 ### Notes on “staging”
 * Staging may update local runtime state (e.g., `draft_corpus`) and/or a local working file used during the session.
-* **Do not push/commit to GitHub per section**.
+* Do not push/commit to GitHub per section.
 
 
 ## Phase E: Normalization and persistence (finalize once)
@@ -107,22 +107,19 @@ Scope control:
    * Store provenance only in schema-approved metadata fields (not in notes).
 
 3. Handle uncertainty explicitly.
-   * Mark unknown/uncertain fields as unknown and request confirmation **before staging**.
+   * Mark unknown/uncertain fields as unknown and request confirmation before staging.
    * Do not persist inferred claims unless user confirms.
 
 4. Show a concise final summary preview (what will be pushed).
 
-5. Collect approvals for all required onboarding sections:
-   * `profile`, `experience`, `projects`, `certifications`, `education`, `metadata`
-
-6. Finalize:
+5. Finalize:
    * Validate `draft_corpus` against schema
-   * Perform **one single push operation** to GitHub using canonical split docs under `CareerCorpus/`
+   * Perform one single push operation to GitHub using canonical split docs under `CareerCorpus/`
    * Do not write a monolithic remote `career_corpus.json`
    * Do not write aggregate section files like `experience.json` or `projects.json`
    * If push fails: do not mark onboarding complete; surface the error and keep the staged draft in-session.
 
-7. Only after successful push:
+6. Only after successful push:
    * `metadata.onboarding_complete = true`
    * `metadata.onboarding_completed_utc = "<UTC timestamp>"`
 

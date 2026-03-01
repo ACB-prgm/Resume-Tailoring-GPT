@@ -7,7 +7,7 @@ Treat the JD as a requirements document, not marketing copy. Extract constraints
 1) Extract Binary Gates (eligibility/location/travel/degree/years/platforms/certs).  
 Mark each gate as:
 - Supported by corpus/current chat
-- Not supported or unknown (do not claim)
+- Exclude if not supported or unknown (do not claim)
 
 2) Build Tiered keyword sets:
 - Tier 1 Required keywords (ranked by explicit required language, repetition frequency, and presence across summary/responsibilities/qualifications)
