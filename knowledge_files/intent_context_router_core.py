@@ -42,44 +42,6 @@ class Intent(str, Enum):
     MEMORY_STATUS = "INTENT_MEMORY_STATUS"
     INITIALIZATION_OR_SETUP = "INTENT_INITIALIZATION_OR_SETUP"
 
-_LEGACY_REFERENCE_PACKS: Dict[Intent, Tuple[str, ...]] = {
-    Intent.CONVERSATION_ONLY: ("UATGuardrails.md",),
-    Intent.FAILURE_RECOVERY: (
-        "UATGuardrails.md",
-        "MemoryPersistenceGuidelines.md",
-        "MemoryStateModel.md",
-    ),
-    Intent.PDF_EXPORT: (
-        "PDFExportGuidelines.md",
-        "resume_renderer.py",
-        "resume_theme.py",
-    ),
-    Intent.MEMORY_PERSIST_UPDATE: (
-        "MemoryPersistenceGuidelines.md",
-        "memory_validation_surface.py",
-        "career_corpus_store_surface.py",
-        "career_corpus_sync_surface.py",
-        "career_corpus.schema.json",
-        "github_action_schema.json",
-    ),
-    Intent.ONBOARDING_IMPORT_REPAIR: (
-        "OnboardingGuidelines.md",
-        "UATGuardrails.md",
-        "MemoryPersistenceGuidelines.md",
-    ),
-    Intent.RESUME_DRAFTING: (
-        "ResumeBuildingGuidelines.md",
-        "ResumeTemplate.md",
-        "MemoryPersistenceGuidelines.md",
-    ),
-    Intent.JD_ANALYSIS: ("JDAnalysisGuidelines.md", "UATGuardrails.md"),
-    Intent.MEMORY_STATUS: ("MemoryStateModel.md", "MemoryPersistenceGuidelines.md"),
-    Intent.INITIALIZATION_OR_SETUP: (
-        "InitializationGuidelines.md",
-        "MemoryPersistenceGuidelines.md",
-    ),
-}
-
 
 @gpt_core
 @dataclass(frozen=True)
@@ -378,11 +340,7 @@ def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
 
     rendered_context = "\n\n".join(rendered_parts)
     required_routes, block_reason, next_step_hint = _derive_required_routes(intent, state)
-    legacy_pack = _LEGACY_REFERENCE_PACKS.get(intent, ())
     selected_sources = sorted({atom.source_ref for atom in kept_atoms})
-    legacy_overlap = sorted(source for source in selected_sources if source in set(legacy_pack))
-    legacy_only = sorted(source for source in legacy_pack if source not in set(selected_sources))
-    atom_only_sources = sorted(source for source in selected_sources if source not in set(legacy_pack))
 
     diagnostics: Dict[str, Any] = {
         "selected_atom_ids": [atom.id for atom in kept_atoms],
@@ -396,13 +354,7 @@ def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
         "max_rendered_chars": DEFAULT_MAX_RENDERED_CHARS,
         "source_model": "atoms_only",
         "registry_size": len(_ATOM_REGISTRY),
-        "shadow": {
-            "legacy_reference_pack": list(legacy_pack),
-            "selected_source_refs": selected_sources,
-            "overlap": legacy_overlap,
-            "legacy_only": legacy_only,
-            "atom_only_sources": atom_only_sources,
-        },
+        "selected_source_refs": selected_sources,
     }
 
     return ContextPack(

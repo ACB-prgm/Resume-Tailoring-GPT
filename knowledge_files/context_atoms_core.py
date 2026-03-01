@@ -268,8 +268,8 @@ ATOM_REGISTRY: Tuple[AtomSpec, ...] = (
         title="Memory Status Visibility",
         content=(
             "Show MEMORY STATUS only on explicit request, state change, or failure. "
-            "Always include: repo_exists, corpus_exists, onboarding_complete, last_written. "
-            "Include optional fields only when relevant to the operation."
+            "Required block lines are repo_exists, corpus_exists, onboarding_complete, and last_written. "
+            "Optional fields appear only when relevant: validated, persisted, fallback_used, method, retry_count, verification."
         ),
         intents=frozenset({INTENT_MEMORY_PERSIST_UPDATE, INTENT_MEMORY_STATUS, INTENT_FAILURE_RECOVERY}),
         priority=42,
@@ -422,8 +422,9 @@ ATOM_REGISTRY: Tuple[AtomSpec, ...] = (
         id="memory_status.state_block",
         title="Memory Status Block Format",
         content=(
-            "Use compact MEMORY STATUS block. Always include repo_exists, corpus_exists, onboarding_complete, and last_written. "
-            "Format last_written as friendly UTC timestamp or Never."
+            "Use compact block exactly as baseline: "
+            "MEMORY STATUS; - repo_exists; - corpus_exists; - onboarding_complete; - last_written (friendly UTC timestamp or Never). "
+            "Do not include unrelated variables by default."
         ),
         intents=frozenset({INTENT_MEMORY_STATUS}),
         priority=80,
@@ -436,7 +437,9 @@ ATOM_REGISTRY: Tuple[AtomSpec, ...] = (
         id="memory_status.optional_fields",
         title="Memory Status Optional Fields",
         content=(
-            "Only include optional fields when relevant: validated, persisted, fallback_used, method, retry_count, verification."
+            "Optional fields are conditional only: validated (validation ran), persisted (write attempted), "
+            "fallback_used (fallback path), method (debug contexts), retry_count (retries occurred), "
+            "verification (verification ran or failed)."
         ),
         intents=frozenset({INTENT_MEMORY_STATUS}),
         priority=81,
@@ -551,7 +554,9 @@ ATOM_REGISTRY: Tuple[AtomSpec, ...] = (
         id="state.memory_status_only_when_relevant",
         title="State Rule: Status Emission Trigger",
         content=(
-            "Emit MEMORY STATUS only when requested, when status changed, or after a failed operation."
+            "Emit MEMORY STATUS only when requested, when status changed, or after a failed operation. "
+            "When emitted, keep the clean baseline block (repo_exists, corpus_exists, onboarding_complete, last_written) "
+            "and include optional fields only when flow-relevant."
         ),
         intents=frozenset({INTENT_MEMORY_STATUS, INTENT_MEMORY_PERSIST_UPDATE, INTENT_FAILURE_RECOVERY}),
         priority=105,

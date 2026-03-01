@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from knowledge_files import intent_context_router_surface as router_surface
+from knowledge_files.context_atoms_core import get_all_atoms
 from knowledge_files.intent_context_router_core import Intent, RuntimeState
 
 
@@ -53,13 +54,27 @@ class IntentContextRouterContractsTests(unittest.TestCase):
         self.assertNotIn("state.memory_status_only_when_relevant", atom_ids)
         self.assertIn("persist.status_visibility", pack.diagnostics["filtered_ids"]["conflict"])
 
-    def test_shadow_diagnostics_present(self) -> None:
+    def test_source_ref_diagnostics_present(self) -> None:
         state = RuntimeState()
         pack = router_surface.build_context(Intent.JD_ANALYSIS, state)
-        shadow = pack.diagnostics.get("shadow", {})
-        self.assertIn("legacy_reference_pack", shadow)
-        self.assertIn("selected_source_refs", shadow)
-        self.assertIn("overlap", shadow)
+        self.assertIn("selected_source_refs", pack.diagnostics)
+        self.assertIsInstance(pack.diagnostics["selected_source_refs"], list)
+
+    def test_memory_status_format_contract_is_atom_driven(self) -> None:
+        by_id = {atom.id: atom for atom in get_all_atoms()}
+        baseline = by_id["memory_status.state_block"].content
+        optional = by_id["memory_status.optional_fields"].content
+
+        self.assertIn("MEMORY STATUS", baseline)
+        self.assertIn("repo_exists", baseline)
+        self.assertIn("corpus_exists", baseline)
+        self.assertIn("onboarding_complete", baseline)
+        self.assertIn("last_written", baseline)
+        self.assertIn("validated", optional)
+        self.assertIn("persisted", optional)
+        self.assertIn("fallback_used", optional)
+        self.assertIn("retry_count", optional)
+        self.assertIn("verification", optional)
 
 
 if __name__ == "__main__":
