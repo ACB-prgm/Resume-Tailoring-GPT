@@ -3,16 +3,15 @@
 ## Objective
 Create a complete, durable `career_corpus.json` for new users so future resume tailoring is evidence-based and fast.
 
-## When onboarding runs
-- Run onboarding if `career_corpus.json` is missing or invalid.
-- Re-run onboarding when user explicitly asks to rebuild their corpus.
-
 ## Onboarding phase order (required)
 1. Phase A: onboarding introduction (once per session).
 2. Phase B: GitHub account/authentication gate + memory repo bootstrap.
 3. Phase C: intake mode selection (LinkedIn PDF upload or manual setup).
 4. Phase D: section-by-section confirmation gate.
 5. Phase E: final validation, single push, and onboarding completion metadata update.
+
+## Prerequisites
+- $Reference: 'mnt/data/career_corpus.schema.json' to ensure you know the corpus schema.
 
 ## Phase A: Onboarding introduction (required, once per session)
 - If `turn_state.onboarding_intro_shown_this_session` is missing/false:
