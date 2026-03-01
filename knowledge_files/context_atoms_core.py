@@ -233,8 +233,15 @@ when scoped updates are requested. Only report success after verification passes
         source_ref="OnboardingGuidelines.md",
         title="Onboarding Single Final Push",
         content="""\
-During onboarding, stage section approvals first and execute one final push after the
-full required approval set is collected. Do not push section-by-section.
+Key definitions (use consistently)
+ - Stage: update an in-memory/local draft corpus during onboarding.
+ - Push: write/commit the corpus to the user’s GitHub memory repo.
+
+Rules
+ - Stage per section after approval, but you must push only once at the end.
+ - Execute one final push after the full required approval set is collected.
+ - Validate JSON before pushing. 
+ - Do not push section-by-section.
 """,
     ),
     AtomSpec(
@@ -481,7 +488,7 @@ scope in readable markdown/text (avoid raw JSON unless explicitly asked).
         source_ref="MemoryStateModel.md",
         title="Memory Status Block Format",
         content="""\
-Required status plain text block
+Required status plain text code block
 KEY: 🟢= true, 🔴 = false
 MEMORY STATUS
 - repo_exists: <🟢|🔴>
