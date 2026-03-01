@@ -5,7 +5,7 @@ Treat the JD as a requirements document, not marketing copy. Extract constraints
 
 ## Required workflow
 0) Memory preflight for evidence-backed analysis:
-- Route to `intent_memory_status` first to check corpus availability and trigger canonical pull/reassembly from GitHub.
+- Route to `intent_memory_status` first to check corpus availability and trigger canonical pull/reassembly from GitHub. IF YOU DO NOT HAVE THE USER'S CORPUS, DO NOT PROCEED.
 - If runtime/repo is not initialized, route to `intent_initialization_or_setup`, then retry `intent_memory_status`.
 - If corpus is missing/invalid after preflight, route to `intent_onboarding_import_repair`.
 - Do not perform experience-based candidate alignment until corpus is available.
