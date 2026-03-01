@@ -35,6 +35,12 @@ Run a deterministic startup sequence before any memory read/write so repo bootst
 - Use turn guard `repo_create_attempted_this_turn`.
 - Never call `createMemoryRepo` twice in the same turn.
 
+## GitHub Accept header contract (memory operations)
+- During setup-adjacent memory API calls:
+  - `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`
+  - All other calls that include an `Accept` header: `Accept: application/vnd.github+json`
+- Apply this map even when schema `const` constraints are missing or ignored.
+
 ## Required initialization status block
 ```text
 INITIALIZATION STATUS

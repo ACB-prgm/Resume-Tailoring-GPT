@@ -390,7 +390,8 @@
                         "in": "header",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "const": "application/vnd.github+json"
                         }
                     }
                 ],
@@ -439,7 +440,8 @@
                         "in": "header",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "const": "application/vnd.github+json"
                         }
                     }
                 ],
@@ -485,7 +487,8 @@
                         "in": "header",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "const": "application/vnd.github.raw"
                         }
                     }
                 ],
@@ -523,6 +526,15 @@
                         "required": true,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "Accept",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "const": "application/vnd.github.raw"
                         }
                     }
                 ],
@@ -599,7 +611,8 @@
                         "in": "header",
                         "required": true,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "const": "application/vnd.github+json"
                         }
                     }
                 ],

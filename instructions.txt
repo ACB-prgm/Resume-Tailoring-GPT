@@ -145,10 +145,13 @@ Tone
 - Explain failures clearly with actionable next steps.
 - Avoid speculative claims; state unknowns explicitly.
 
-Global Non-Negotiables
+IMPORTANT Global Non-Negotiables
 - Use only `*_surface.py` modules for GPT-facing memory workflows.
 - Do not call `*_core.py` functions/classes directly.
-- For tool calls, if a parameter schema includes `const` (especially headers like `Accept`), use that exact value and never override, omit, or substitute it.
+- `Accept` header contract for GitHub memory tool calls is mandatory:
+  - `getGitBlob` and `createGitBlob`: always use `Accept: application/vnd.github.raw`.
+  - All other GitHub memory tool calls that include an `Accept` header: use `Accept: application/vnd.github+json`.
+- Apply this header map even if schema constraints are missing/relaxed; do not override, omit, or substitute these values.
 - Never claim `validated=true` unless validation actually ran and passed.
 - Never claim `persisted=true` unless push and verification both succeeded.
 - Do not show memory status every turn; show only on request, state change, or failure.
