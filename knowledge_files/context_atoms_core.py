@@ -312,20 +312,6 @@ core competencies, and first role bullets with linked evidence.
 """,
     ),
     AtomSpec(
-        id="jd.preflight_required",
-        intents=frozenset({INTENT_JD_ANALYSIS}),
-        priority=7,
-        predicate=_always,
-        restrictive=True,
-        tags=frozenset({"jd", "memory"}),
-        source_ref="JDAnalysisGuidelines.md",
-        title="JD Analysis Memory Preflight",
-        content="""\
-JD analysis requires corpus-backed evidence. If corpus is not loaded/valid, route
-through memory preflight before requirement scoring or candidate alignment.
-""",
-    ),
-    AtomSpec(
         id="jd.markdown_output_contract",
         intents=frozenset({INTENT_JD_ANALYSIS}),
         priority=7,
@@ -335,23 +321,22 @@ through memory preflight before requirement scoring or candidate alignment.
         source_ref="JDAnalysisGuidelines.md",
         title="JD Markdown Output Contract",
         content="""\
-Return JD analysis in markdown with binary gates (only those present in JD), Tier 1 and
-Tier 2 keywords, core skill clusters, translation map, recruiter search simulation, and
-concise candidate alignment.
-""",
-    ),
-    AtomSpec(
-        id="jd.status_markers",
-        intents=frozenset({INTENT_JD_ANALYSIS}),
-        priority=7,
-        predicate=_always,
-        restrictive=False,
-        tags=frozenset({"jd"}),
-        source_ref="JDAnalysisGuidelines.md",
-        title="JD Evidence Markers",
-        content="""\
-Use consistent status markers throughout JD analysis: green for solid evidence, yellow
-for partial alignment, red for clear gaps. Omit binary gates not specified in the JD.
+Objective
+- Treat the JD as a requirements document, not marketing copy. Extract constraints, 
+weighted requirements, and the hiring risk model before writing resume content.
+
+Rules
+- Prioritize hard constraints and literal requirements.
+- Do not infer unsupported claims.
+- If a requirement is not supported, flag it as a gap.
+- In the Binary Gates section, omit any gate not explicitly specified in the JD.
+- Use marker statuses throughout the full analysis:
+    - 🟢 solid matching corpus evidence
+    - 🟡 mediocre/partial evidence alignment
+    - 🔴 total gap (no supporting evidence)
+
+Formatting
+- Strictly adhere to `mnt/data/JDAnalysisTemplate.md`
 """,
     ),
     AtomSpec(
@@ -376,12 +361,12 @@ route to INTENT_RESUME_DRAFTING.
         restrictive=True,
         tags=frozenset({"load_corpus", "memory", "precondition"}),
         source_ref="MemoryPersistenceGuidelines.md",
-        title="Load Corpus: Pull, Reassemble, Validate",
+        title="Load Corpus",
         content="""\
-Load corpus from GitHub when corpus_loaded=false and corpus_exists=true:
-1. Use CareerCorpusSync.pull() to fetch canonical split files from GitHub.
+Pull corpus from GitHub:
+1. Use CareerCorpusSync.pull() from career_corpus_sync_surface.py to fetch canonical split files from GitHub.
 2. Reassemble and hydrate local corpus runtime state.
-3. Validate loaded corpus and set corpus_loaded/corpus_valid from real result.
+3. Validate loaded corpus and set RuntimeState corpus_loaded/corpus_valid from real result.
 4. If pull reports missing/invalid corpus, route to INTENT_ONBOARDING_IMPORT_REPAIR.
 """,
     ),

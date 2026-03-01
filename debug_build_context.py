@@ -29,15 +29,15 @@ from knowledge_files.intent_context_router_surface import Intent, RuntimeState, 
 #     MEMORY_STATUS = "INTENT_MEMORY_STATUS"
 #     INITIALIZATION_OR_SETUP = "INTENT_INITIALIZATION_OR_SETUP"
 
-INTENT = Intent.JD_ANALYSIS
+INTENT = Intent.RESUME_DRAFTING
 
 STATE_OVERRIDES = {
     # Example overrides:
     "runtime_initialized": True,
     "repo_exists": True,
     "corpus_exists": True,
-    # "corpus_loaded": True,
-    # "corpus_valid": True,
+    "corpus_loaded": True,
+    "corpus_valid": True,
 }
 
 # Return full verbose ContextPack when True; compact model-facing output when False.
