@@ -1,21 +1,18 @@
 # Memory State Model
 
 ## Objective
-Make memory bootstrap and persistence decisions explicit and auditable.
+Keep memory state decisions simple and explicit for markdown memory.
 
 ## Required booleans
 - `memory_repo_exists`
-- `career_corpus_exists` (manifest `CareerCorpus/corpus_index.json` for canonical split model)
-- `onboarding_complete` (persisted in corpus metadata: `metadata.onboarding_complete`)
-- `onboarding_complete` flips to `true` only after the final successful onboarding push.
+- `career_corpus_exists` (`CareerCorpus/corpus.md` exists remotely)
+- `onboarding_complete` (stored inside `CareerCorpus/corpus.md`)
 
 ## States
-- `NO_REPO`: `memory_repo_exists=false`, `career_corpus_exists=false`
-- `REPO_NO_CORPUS`: `memory_repo_exists=true`, `career_corpus_exists=false`
-- `CORPUS_PARTIAL`: `memory_repo_exists=true`, `career_corpus_exists=true`, `onboarding_complete=false`
-- `CORPUS_READY`: `memory_repo_exists=true`, `career_corpus_exists=true`, `onboarding_complete=true`, and schema-valid
-- `CORPUS_INVALID`: corpus exists but JSON/schema invalid
-- `PERSIST_FAILED`: write attempt failed after retry policy
+- `NO_REPO`: repo missing.
+- `REPO_NO_CORPUS`: repo exists, corpus file missing.
+- `CORPUS_READY`: repo and corpus file exist.
+- `PERSIST_FAILED`: write failed after retry.
 
 ## Required status block
 ```text
@@ -26,33 +23,11 @@ MEMORY STATUS
 - last_written: <friendly timestamp | Never>
 ```
 
-## Optional status fields (show only when relevant)
-- `validated`: include when a validation gate ran in this flow.
-- `persisted`: include when a write attempt occurred this flow.
-- `fallback_used`: include only when fallback path was used.
-- `method`: include for persistence/status-debug contexts.
-- `retry_count`: include when retries were attempted.
-- `verification`: include when verification ran or failed.
+## Optional fields (show only when relevant)
+- `persisted`
+- `retry_count`
+- `method`
 
 ## Status display policy
-- Do not show memory status on every turn.
-- Show `MEMORY STATUS` only when:
-  - user explicitly asks for memory status
-  - status has changed since last shown state
-  - a memory operation fails
-- When shown, render as a compact plain-text code block.
-- Always include the four baseline lines:
-  - `repo_exists`
-  - `corpus_exists`
-  - `onboarding_complete`
-  - `last_written`
-- `last_written` should represent the most recent successful corpus write (use `last_push_utc`/equivalent) formatted for humans, e.g. `Feb 28, 2026 10:42 AM UTC`.
-- If no successful write has occurred yet, set `last_written: Never`.
-
-## Transition rules
-- `NO_REPO -> REPO_NO_CORPUS`: create fixed repo `career-corpus-memory`.
-- `REPO_NO_CORPUS -> CORPUS_PARTIAL`: onboarding started with partial section approvals.
-- `CORPUS_PARTIAL -> CORPUS_READY`: all required sections approved + validated + persisted.
-- `CORPUS_READY -> PERSIST_FAILED`: write fails after preflight + one retry.
-- `CORPUS_INVALID -> REPO_NO_CORPUS`: treat as unavailable corpus and route to repair/onboarding.
-- `PERSIST_FAILED -> CORPUS_READY`: only after successful corrected upsert.
+- Show status only when requested, when state changes, or when a memory operation fails.
+- `last_written` comes from the most recent successful write to `CareerCorpus/corpus.md`.

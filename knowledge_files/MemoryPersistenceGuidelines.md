@@ -1,136 +1,47 @@
 # Memory Persistence Guide
 
 ## Objective
-Persist durable user memory safely in one fixed GitHub repository with strict validation and deterministic status reporting.
+Persist and retrieve memory using one markdown file in GitHub with a local mirror copy.
 
 ## Fixed repository rule
 - Use only repository `career-corpus-memory`.
-- Do not create or read any alternative memory repository.
+- Do not create or read alternative memory repositories.
 
 ## Canonical memory files
-- Split corpus files (remote canonical):
-  - `CareerCorpus/corpus_index.json` (manifest)
-  - `CareerCorpus/corpus_profile.json`, `CareerCorpus/corpus_certifications.json`,
-    `CareerCorpus/corpus_education.json`, `CareerCorpus/corpus_metadata.json`
-  - `CareerCorpus/corpus_experience_<id>.json` (one file per experience)
-  - `CareerCorpus/corpus_project_<id>.json` (one file per project)
-- Local corpus cache path: `/mnt/data/career_corpus.json`
-- Local sync metadata path: `/mnt/data/career_corpus.meta.json`
+- Remote canonical: `CareerCorpus/corpus.md`
+- Local mirror: `/mnt/data/CareerCorpus/corpus.md`
 
-## Forbidden remote writes
-- Do not write remote `career_corpus.json`.
-- Do not write split docs outside `CareerCorpus/`.
-- Do not write aggregate files such as `experience.json`, `projects.json`, `corpus_experience.json`, or `corpus_project.json`.
+## Direct read flow
+1. Resolve owner: `getAuthenticatedUser`.
+2. Ensure repo exists: `getMemoryRepo`, optional `createMemoryRepo`, confirm `getMemoryRepo`.
+3. Resolve head: `getBranchRef` -> `getGitCommit` -> `getGitTree(recursive=1)`.
+4. Locate `CareerCorpus/corpus.md`.
+5. If found, read with `getGitBlob` and overwrite local mirror.
+6. If not found, treat corpus as missing and route to onboarding/import.
 
-## Local-first runtime model (required)
-- Use `CareerCorpusStore` for all in-session reads/edits.
-- Keep corpus loaded in memory; avoid repeated tool fetches.
-- Use `CareerCorpusSync` only for explicit:
-  - `pull()` (refresh local cache from GitHub)
-  - `push()` (persist approved changes to GitHub)
-- Do not fetch/decode/parse the full corpus through tools for every edit.
-- Before Python imports, bootstrap:
-  - add `/mnt/data` to `sys.path`.
-- Do not run direct Git writes before store/sync bootstrap completes.
-- Use only surface modules for GPT workflow imports:
-  - `/mnt/data/career_corpus_store_surface.py`
-  - `/mnt/data/career_corpus_sync_surface.py`
-  - `/mnt/data/memory_validation_surface.py`
-- Do not call `*_core.py` modules directly from GPT workflow code.
+## Direct write flow
+1. Ensure repo exists.
+2. Build markdown corpus text.
+3. `createGitBlob` for markdown text.
+4. `createGitTree` path `CareerCorpus/corpus.md`.
+5. `createGitCommit`.
+6. `updateBranchRef`.
+7. Only after successful ref update, overwrite local mirror.
 
-## Startup bootstrap (required)
-1. Resolve `{owner}` via `getAuthenticatedUser`.
-2. Run deterministic bootstrap: `getMemoryRepo -> (if 404) createMemoryRepo -> getMemoryRepo(confirm)`.
-3. Enforce `repo_create_attempted_this_turn` guard (no double create in same turn).
-4. Optionally call `setMemoryRepoTopics` with `["career-corpus-memory"]`; continue if topic call fails.
-5. Initialize store/sync objects.
-6. Check split corpus presence via manifest `CareerCorpus/corpus_index.json`.
-7. Emit memory status only when policy requires it:
-- user asks, state changes, or a memory operation fails.
-- Use the `MEMORY STATUS` code block from `MemoryStateModel.md`.
-  - Always include baseline fields: `repo_exists`, `corpus_exists`, `onboarding_complete`, `last_written`.
-  - Include other fields only when relevant to the current operation.
-  - Format `last_written` as a friendly UTC timestamp (or `Never` if no successful write yet).
+## Header contract
+- `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`
+- All other memory calls that include `Accept`: `Accept: application/vnd.github+json`
 
-## Explicit sync behavior
-- `pull(force=False)`:
-  - Resolve branch head and load `CareerCorpus/corpus_index.json` from Git tree/blob APIs.
-  - `Accept` header rule:
-    - `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`
-    - All other GitHub memory tool calls that include an `Accept` header: `Accept: application/vnd.github+json`
-  - Apply this map even if schema-level `const` is missing or ignored by runtime behavior.
-  - If manifest sha matches `meta.remote_file_sha` and `force` is false, no-op.
-  - Else read referenced split files, assemble local `/mnt/data/career_corpus.json`, update meta.
-  - Pull/read flow may skip schema validation; schema validation remains mandatory for write and resume-use paths.
-- `pull_if_stale_before_write(force=False)`:
-  - Use before a section commit flow.
-  - If local store is already loaded and has `remote_file_sha`, skip pre-write pull.
-  - This reduces redundant `getGitBlob` calls before write.
-  - `push(message)`:
-  - Accept `target_sections` + `approved_sections` for guarded section writes.
-  - Reject write if target sections are not explicitly approved.
-  - Reject write when changed/deleted paths include unapproved sections.
-  - Run schema validation and UTF-8 payload diagnostics.
-  - Upload only when local store is dirty.
-  - Materialize split docs + manifest and per-file hashes.
-  - Determine changed/deleted paths vs `meta.remote_file_hashes`.
-  - Use Git Data flow only:
-    - `createGitBlob` -> `createGitTree` -> `createGitCommit` -> `updateBranchRef`
-  - On success, verify changed/deleted paths by tree/blob SHA match from the committed tree.
-  - Persisted success requires successful write and verification.
-  - Update meta fields:
-    - `remote_blob_sha`, `remote_commit_sha`, `remote_branch`, `remote_file_sha`,
-      `remote_file_hashes`, `last_verified_utc`, `last_push_method`.
-
-## Onboarding finalization rule (required)
-- During onboarding, do not persist section-by-section.
-- Collect explicit approvals for the full onboarding required set:
-  - `profile`, `experience`, `projects`, `certifications`, `education`, `metadata`.
-- Execute one final validate -> push operation after full approval set is collected.
-- `onboarding_complete` may be marked true only after this final push succeeds and verification passes.
-
-## Validation + preflight sequence (hard fail)
-Before **any** write:
-0. Confirm initialization completed (owner resolved, repo checked/created, store/sync initialized).
-1. Import helpers from `/mnt/data/memory_validation_surface.py`.
-2. Validate full target document:
-- `validate_career_corpus(...)`
-3. For onboarding/import flows, present section preview(s) and get explicit user confirmation before write.
-   - Required prompt style:
-   - `Here is your <section> section:`
-   - `<section_content>`
-   - `If this looks good, let me know and I'll save it to the corpus.`
-4. Run diagnostics:
-- `diagnose_payload_integrity(canonical_json_text(...))`
-5. Enforce write guard:
-- `assert_validated_before_write(validated, context)`
-  - `assert_sections_explicitly_approved(approved_sections, target_sections)` when section writes are used
-6. Execute Git Data write flow.
-7. Verify committed tree/blob SHAs match expected changed paths.
+## Simplification rules
+- No schema validation.
+- No manifest/index file.
+- No split-doc assembly logic.
+- No section approval or validation gates in the write path.
 
 ## Retry and failure handling
-- Retryable errors: `409`, transient `422`, and transient tool transport failures.
-- Perform exactly one retry using fresh ref/commit state.
-- If retry fails, stop writes and set state to `PERSIST_FAILED`.
-- Provide explicit manual next steps; no async/background promises.
+- One deterministic retry for retryable write failures.
+- If retry fails, return explicit failure and next manual step.
+- Do not claim persistence success when ref update fails.
 
-## Persistence outcome contract
-- `persisted=true` only when ref update succeeds AND post-write verification hash matches.
-- Local fallback files are allowed only as temporary recovery aids and must be labeled:
-- `persisted=false`, `fallback_used=true`, `status=NOT PERSISTED`
-- Default user-facing language:
-  - success: `Saved to memory/corpus.`
-  - failure: `Couldn't save to memory.`
-- Do not include branch/commit/SHA details unless user requests technical details (or preference is technical).
-- Push status must include:
-  - `method`, `retry_count`, `verification`, `error_code`
-
-## Onboarding and repair triggers
-- If assembled corpus is missing/invalid or split manifest/files are missing/invalid, route to onboarding/repair before tailoring.
-- If canonical manifest `CareerCorpus/corpus_index.json` is missing, treat as non-canonical layout and route to onboarding/repair before tailoring.
-- Onboarding behavior is defined in `/mnt/data/OnboardingGuidelines.md`.
-
-## Guardrails
-- Never overwrite memory with blank content unless user explicitly requests it.
-- Never persist inferred or unsupported claims.
-- If user introduces new facts not in corpus, ask for explicit persist approval first.
+## Onboarding completion storage
+- Keep onboarding completion state inside `CareerCorpus/corpus.md` (frontmatter or explicit metadata section).

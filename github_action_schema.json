@@ -105,7 +105,7 @@
                             "properties": {
                                 "path": {
                                     "type": "string",
-                                    "pattern": "^CareerCorpus\\/.*\\.json$"
+                                    "pattern": "^CareerCorpus\\/.*\\.md$"
                                 },
                                 "mode": {
                                     "type": "string",
@@ -308,7 +308,7 @@
                         "description": "Created"
                     },
                     "422": {
-                        "description": "Validation failed (often malformed base64 or invalid request payload)"
+                        "description": "Validation failed"
                     }
                 }
             }
