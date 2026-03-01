@@ -4,6 +4,12 @@
 Treat the JD as a requirements document, not marketing copy. Extract constraints, weighted requirements, and the hiring risk model before writing resume content.
 
 ## Required workflow
+0) Memory preflight for evidence-backed analysis:
+- Route to `intent_memory_status` first to check corpus availability and trigger canonical pull/reassembly from GitHub.
+- If runtime/repo is not initialized, route to `intent_initialization_or_setup`, then retry `intent_memory_status`.
+- If corpus is missing/invalid after preflight, route to `intent_onboarding_import_repair`.
+- Do not perform experience-based candidate alignment until corpus is available.
+
 1) Extract Binary Gates (eligibility/location/travel/degree/years/platforms/certs).  
 Mark each gate as:
 - Supported by corpus/current chat
@@ -43,6 +49,7 @@ Mark each gate as:
   - `🟢` solid matching corpus evidence
   - `🟡` mediocre/partial evidence alignment
   - `🔴` total gap (no supporting evidence)
+- Candidate alignment section is allowed only when corpus preflight confirms corpus availability.
 
 ## Standardized markdown output template (must be produced every run before resume writing)
 - Output must be in markdown.
