@@ -21,11 +21,11 @@ INTENT = Intent.JD_ANALYSIS
 
 STATE_OVERRIDES = {
     # Example overrides:
-    # "repo_exists": True,
-    # "runtime_initialized": True,
-    # "corpus_loaded": True,
-    # "corpus_exists": True,
-    # "corpus_valid": True,
+    "repo_exists": True,
+    "runtime_initialized": True,
+    "corpus_loaded": True,
+    "corpus_exists": True,
+    "corpus_valid": True,
 }
 
 # Return full verbose ContextPack when True; compact model-facing output when False.
@@ -93,7 +93,10 @@ def main() -> None:
     if VERBOSE:
         output: dict[str, Any] = {"context_pack": _pack_to_dict(result)}
     else:
-        output = {"context": _jsonable(result)}
+        compact_text = str(result)
+        output = {
+            "context": compact_text.splitlines(),
+        }
     if INCLUDE_INPUT:
         output["input"] = {
             "intent": INTENT.value,

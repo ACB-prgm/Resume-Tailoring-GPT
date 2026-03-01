@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Union
+from typing import Any, Union
 
 try:
     from intent_context_router_core import (
@@ -57,6 +57,6 @@ def build_context(
     state: RuntimeState,
     verbose: bool = False,
     max_reroutes: int = 6,
-) -> Union[ContextPack, Dict[str, Any]]:
-    """When to use: build routed context for one intent. Inputs: intent + runtime state. Outputs: compact dict (default) or ContextPack (verbose)."""
+) -> Union[ContextPack, str]:
+    """When to use: build routed context for one intent. Inputs: intent + runtime state. Outputs: compact string (default) or ContextPack (verbose)."""
     return _build_context(intent, state, verbose=verbose, max_reroutes=max_reroutes)

@@ -433,16 +433,19 @@ def _build_context_pack(intent: Intent, state: RuntimeState) -> ContextPack:
     )
 
 
-def _compact_context_output(pack: ContextPack) -> Dict[str, Any]:
+def _compact_context_output(pack: ContextPack) -> str:
     """Return compact model-facing output for non-verbose mode."""
-    output: Dict[str, Any] = {"rendered_context": pack.rendered_context}
-    if pack.rerouted_to:
-        output["rerouted_to"] = [intent.value for intent in pack.rerouted_to]
+    lines: List[str] = []
     if pack.block_current_intent:
-        output["blocked"] = True
+        lines.append("BLOCKED: true")
         if pack.block_reason:
-            output["block_reason"] = pack.block_reason
-    return output
+            lines.append(f"BLOCK REASON: {pack.block_reason}")
+    if pack.rerouted_to:
+        rerouted = ", ".join(intent.value for intent in pack.rerouted_to)
+        lines.append(f"REROUTED TO: {rerouted}")
+    lines.append("RENDERED CONTEXT:")
+    lines.append(pack.rendered_context)
+    return "\n".join(lines)
 
 
 @gpt_core
@@ -451,7 +454,7 @@ def build_context(
     state: RuntimeState,
     verbose: bool = False,
     max_reroutes: int = 6,
-) -> Union[ContextPack, Dict[str, Any]]:
+) -> Union[ContextPack, str]:
     """Build context and auto-reroute to the next actionable intent when blocked."""
     if not isinstance(intent, Intent):
         raise TypeError("intent must be an Intent enum value")

@@ -65,11 +65,11 @@ class IntentContextRouterContractsTests(unittest.TestCase):
         self.assertIn("selected_source_refs", pack.diagnostics)
         self.assertIsInstance(pack.diagnostics["selected_source_refs"], list)
 
-    def test_default_mode_returns_compact_dict(self) -> None:
-        """Test that default mode returns compact dict output."""
+    def test_default_mode_returns_compact_string(self) -> None:
+        """Test that default mode returns compact string output."""
         result = router_surface.build_context(Intent.JD_ANALYSIS, RuntimeState())
-        self.assertIsInstance(result, dict)
-        self.assertIn("rendered_context", result)
+        self.assertIsInstance(result, str)
+        self.assertIn("RENDERED CONTEXT:", result)
 
     def test_memory_status_format_contract_is_atom_driven(self) -> None:
         """Test that memory status format contract is atom driven."""
