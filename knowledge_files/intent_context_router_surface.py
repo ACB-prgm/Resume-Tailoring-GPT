@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 try:
     from intent_context_router_core import (
@@ -11,7 +11,6 @@ try:
         Intent,
         RuntimeState,
         build_context as _build_context,
-        resolve_intent as _resolve_intent,
     )
 except ImportError:
     from knowledge_files.intent_context_router_core import (  # type: ignore
@@ -20,7 +19,6 @@ except ImportError:
         Intent,
         RuntimeState,
         build_context as _build_context,
-        resolve_intent as _resolve_intent,
     )
 
 
@@ -29,7 +27,6 @@ __all__ = [
     "RuntimeState",
     "ContextAtom",
     "ContextPack",
-    "resolve_intent",
     "build_context",
 ]
 
@@ -52,12 +49,6 @@ gpt_surface(Intent)
 gpt_surface(RuntimeState)
 gpt_surface(ContextAtom)
 gpt_surface(ContextPack)
-
-
-@gpt_surface
-def resolve_intent(user_text: str, hints: Optional[Dict[str, Any]] = None) -> Intent:
-    """When to use: map user text to one deterministic primary intent. Inputs: user text + optional hints. Outputs: Intent enum."""
-    return _resolve_intent(user_text, hints)
 
 
 @gpt_surface

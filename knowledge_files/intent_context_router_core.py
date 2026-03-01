@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, FrozenSet, List, Optional, Sequence, Tuple
 
 try:
     from context_atoms_core import (
@@ -32,28 +32,15 @@ def gpt_core(obj: Any) -> Any:
 
 @gpt_core
 class Intent(str, Enum):
-    CONVERSATION_ONLY = "intent_conversation_only"
-    FAILURE_RECOVERY = "intent_failure_recovery"
-    PDF_EXPORT = "intent_pdf_export"
-    MEMORY_PERSIST_UPDATE = "intent_memory_persist_update"
-    ONBOARDING_IMPORT_REPAIR = "intent_onboarding_import_repair"
-    RESUME_DRAFTING = "intent_resume_drafting"
-    JD_ANALYSIS = "intent_jd_analysis"
-    MEMORY_STATUS = "intent_memory_status"
-    INITIALIZATION_OR_SETUP = "intent_initialization_or_setup"
-
-
-INTENT_PRIORITY: Tuple[Intent, ...] = (
-    Intent.CONVERSATION_ONLY,
-    Intent.FAILURE_RECOVERY,
-    Intent.PDF_EXPORT,
-    Intent.MEMORY_PERSIST_UPDATE,
-    Intent.ONBOARDING_IMPORT_REPAIR,
-    Intent.RESUME_DRAFTING,
-    Intent.JD_ANALYSIS,
-    Intent.MEMORY_STATUS,
-    Intent.INITIALIZATION_OR_SETUP,
-)
+    CONVERSATION_ONLY = "INTENT_CONVERSATION_ONLY"
+    FAILURE_RECOVERY = "INTENT_FAILURE_RECOVERY"
+    PDF_EXPORT = "INTENT_PDF_EXPORT"
+    MEMORY_PERSIST_UPDATE = "INTENT_MEMORY_PERSIST_UPDATE"
+    ONBOARDING_IMPORT_REPAIR = "INTENT_ONBOARDING_IMPORT_REPAIR"
+    RESUME_DRAFTING = "INTENT_RESUME_DRAFTING"
+    JD_ANALYSIS = "INTENT_JD_ANALYSIS"
+    MEMORY_STATUS = "INTENT_MEMORY_STATUS"
+    INITIALIZATION_OR_SETUP = "INTENT_INITIALIZATION_OR_SETUP"
 
 _LEGACY_REFERENCE_PACKS: Dict[Intent, Tuple[str, ...]] = {
     Intent.CONVERSATION_ONLY: ("UATGuardrails.md",),
@@ -211,189 +198,6 @@ def _convert_atom(spec: AtomSpec) -> ContextAtom:
 _ATOM_REGISTRY: Tuple[ContextAtom, ...] = tuple(_convert_atom(spec) for spec in get_all_atoms())
 _ATOM_BY_ID: Dict[str, ContextAtom] = {atom.id: atom for atom in _ATOM_REGISTRY}
 _ATOM_INDEXES = get_atom_indexes()
-
-
-def _parse_intent(value: Any) -> Optional[Intent]:
-    if isinstance(value, Intent):
-        return value
-    if isinstance(value, str):
-        lowered = value.strip().lower()
-        for intent in Intent:
-            if lowered == intent.value or lowered == intent.name.lower():
-                return intent
-    return None
-
-
-def _contains_any(text: str, terms: Iterable[str]) -> bool:
-    return any(term in text for term in terms)
-
-
-def _matches_conversation_only(text: str) -> bool:
-    if not text.strip():
-        return True
-
-    greetings = {
-        "hi",
-        "hello",
-        "hey",
-        "thanks",
-        "thank you",
-        "good morning",
-        "good afternoon",
-        "good evening",
-        "how are you",
-        "lol",
-    }
-    action_terms = {
-        "resume",
-        "jd",
-        "job description",
-        "onboarding",
-        "memory",
-        "status",
-        "persist",
-        "commit",
-        "save",
-        "initialize",
-        "bootstrap",
-        "export",
-        "pdf",
-        "draft",
-        "analyze",
-        "analysis",
-        "tailor",
-    }
-    return _contains_any(text, greetings) and not _contains_any(text, action_terms)
-
-
-def _matches_failure_recovery(text: str) -> bool:
-    terms = {
-        "error",
-        "failed",
-        "failure",
-        "409",
-        "422",
-        "conflict",
-        "retry",
-        "not persisted",
-        "couldn't save",
-        "could not save",
-        "transport_corruption",
-    }
-    return _contains_any(text, terms)
-
-
-def _matches_pdf_export(text: str) -> bool:
-    terms = {"export", "pdf", "finalize", "render", "generate final"}
-    return _contains_any(text, terms)
-
-
-def _matches_memory_persist_update(text: str) -> bool:
-    terms = {
-        "commit",
-        "save to memory",
-        "save this",
-        "persist",
-        "push",
-        "update memory",
-        "update corpus",
-        "write to corpus",
-    }
-    return _contains_any(text, terms)
-
-
-def _matches_onboarding(text: str) -> bool:
-    terms = {
-        "onboarding",
-        "linkedin",
-        "cv",
-        "uploaded",
-        "upload",
-        "rebuild onboarding",
-        "import",
-        "repair",
-        "missing corpus",
-        "invalid corpus",
-    }
-    return _contains_any(text, terms)
-
-
-def _matches_resume_drafting(text: str) -> bool:
-    terms = {"tailor resume", "draft resume", "resume draft", "rewrite resume", "resume"}
-    return _contains_any(text, terms)
-
-
-def _matches_jd_analysis(text: str) -> bool:
-    terms = {
-        "analyze jd",
-        "jd analysis",
-        "job description",
-        "extract requirements",
-        "analyze this role",
-        "analyze this jd",
-    }
-    return _contains_any(text, terms)
-
-
-def _matches_memory_status(text: str) -> bool:
-    terms = {
-        "memory status",
-        "is it saved",
-        "corpus status",
-        "what is in corpus",
-        "what's in corpus",
-        "status",
-    }
-    return _contains_any(text, terms)
-
-
-def _matches_initialization(text: str) -> bool:
-    terms = {
-        "initialize",
-        "initialization",
-        "bootstrap",
-        "set up memory",
-        "setup memory",
-        "authenticate",
-        "auth",
-    }
-    return _contains_any(text, terms)
-
-
-_INTENT_MATCHERS: Dict[Intent, Callable[[str], bool]] = {
-    Intent.CONVERSATION_ONLY: _matches_conversation_only,
-    Intent.FAILURE_RECOVERY: _matches_failure_recovery,
-    Intent.PDF_EXPORT: _matches_pdf_export,
-    Intent.MEMORY_PERSIST_UPDATE: _matches_memory_persist_update,
-    Intent.ONBOARDING_IMPORT_REPAIR: _matches_onboarding,
-    Intent.RESUME_DRAFTING: _matches_resume_drafting,
-    Intent.JD_ANALYSIS: _matches_jd_analysis,
-    Intent.MEMORY_STATUS: _matches_memory_status,
-    Intent.INITIALIZATION_OR_SETUP: _matches_initialization,
-}
-
-
-@gpt_core
-def resolve_intent(user_text: str, hints: Optional[Dict[str, Any]] = None) -> Intent:
-    """Resolve one intent deterministically using priority order and optional hints."""
-    hints = hints or {}
-
-    for key in ("intent", "primary_intent", "force_intent"):
-        forced = _parse_intent(hints.get(key))
-        if forced is not None:
-            return forced
-
-    lowered = (user_text or "").strip().lower()
-
-    if bool(hints.get("last_operation_failed")):
-        return Intent.FAILURE_RECOVERY
-
-    for intent in INTENT_PRIORITY:
-        matcher = _INTENT_MATCHERS[intent]
-        if matcher(lowered):
-            return intent
-
-    return Intent.CONVERSATION_ONLY
 
 
 def _extract_conflict_keys(atom: ContextAtom) -> List[str]:

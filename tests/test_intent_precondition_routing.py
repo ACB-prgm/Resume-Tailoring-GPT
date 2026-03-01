@@ -19,9 +19,9 @@ class IntentPreconditionRoutingTests(unittest.TestCase):
         self.assertEqual(
             [route.value for route in pack.required_routes],
             [
-                "intent_initialization_or_setup",
-                "intent_memory_status",
-                "intent_onboarding_import_repair",
+                "INTENT_INITIALIZATION_OR_SETUP",
+                "INTENT_MEMORY_STATUS",
+                "INTENT_ONBOARDING_IMPORT_REPAIR",
             ],
         )
 

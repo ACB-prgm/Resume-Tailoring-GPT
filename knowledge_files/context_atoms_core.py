@@ -6,15 +6,15 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, FrozenSet, List, Tuple
 
 
-INTENT_CONVERSATION_ONLY = "intent_conversation_only"
-INTENT_FAILURE_RECOVERY = "intent_failure_recovery"
-INTENT_PDF_EXPORT = "intent_pdf_export"
-INTENT_MEMORY_PERSIST_UPDATE = "intent_memory_persist_update"
-INTENT_ONBOARDING_IMPORT_REPAIR = "intent_onboarding_import_repair"
-INTENT_RESUME_DRAFTING = "intent_resume_drafting"
-INTENT_JD_ANALYSIS = "intent_jd_analysis"
-INTENT_MEMORY_STATUS = "intent_memory_status"
-INTENT_INITIALIZATION_OR_SETUP = "intent_initialization_or_setup"
+INTENT_CONVERSATION_ONLY = "INTENT_CONVERSATION_ONLY"
+INTENT_FAILURE_RECOVERY = "INTENT_FAILURE_RECOVERY"
+INTENT_PDF_EXPORT = "INTENT_PDF_EXPORT"
+INTENT_MEMORY_PERSIST_UPDATE = "INTENT_MEMORY_PERSIST_UPDATE"
+INTENT_ONBOARDING_IMPORT_REPAIR = "INTENT_ONBOARDING_IMPORT_REPAIR"
+INTENT_RESUME_DRAFTING = "INTENT_RESUME_DRAFTING"
+INTENT_JD_ANALYSIS = "INTENT_JD_ANALYSIS"
+INTENT_MEMORY_STATUS = "INTENT_MEMORY_STATUS"
+INTENT_INITIALIZATION_OR_SETUP = "INTENT_INITIALIZATION_OR_SETUP"
 
 ALL_INTENT_IDS: FrozenSet[str] = frozenset(
     {
@@ -409,7 +409,7 @@ ATOM_REGISTRY: Tuple[AtomSpec, ...] = (
         title="JD to Resume Handoff",
         content=(
             "At the end of JD analysis, ask whether to draft a tailored resume now. "
-            "If user says yes, route to intent_resume_drafting."
+            "If user says yes, route to INTENT_RESUME_DRAFTING."
         ),
         intents=frozenset({INTENT_JD_ANALYSIS}),
         priority=73,
@@ -478,7 +478,7 @@ ATOM_REGISTRY: Tuple[AtomSpec, ...] = (
         title="State Gate: Initialization Required",
         content=(
             "Runtime is not initialized or repo does not exist. Block current memory-dependent intent and route to "
-            "intent_initialization_or_setup first."
+            "INTENT_INITIALIZATION_OR_SETUP first."
         ),
         intents=frozenset(
             {
@@ -499,7 +499,7 @@ ATOM_REGISTRY: Tuple[AtomSpec, ...] = (
         id="state.require_corpus_preflight",
         title="State Gate: Corpus Preflight Required",
         content=(
-            "Corpus is not loaded. Route to intent_memory_status to trigger pull/reassembly before continuing this intent."
+            "Corpus is not loaded. Route to INTENT_MEMORY_STATUS to trigger pull/reassembly before continuing this intent."
         ),
         intents=frozenset({INTENT_JD_ANALYSIS, INTENT_RESUME_DRAFTING, INTENT_MEMORY_PERSIST_UPDATE}),
         priority=101,
@@ -512,7 +512,7 @@ ATOM_REGISTRY: Tuple[AtomSpec, ...] = (
         id="state.require_onboarding_repair",
         title="State Gate: Onboarding/Repair Required",
         content=(
-            "Corpus is missing or invalid after preflight. Route to intent_onboarding_import_repair before proceeding."
+            "Corpus is missing or invalid after preflight. Route to INTENT_ONBOARDING_IMPORT_REPAIR before proceeding."
         ),
         intents=frozenset({INTENT_JD_ANALYSIS, INTENT_RESUME_DRAFTING, INTENT_MEMORY_PERSIST_UPDATE}),
         priority=102,
@@ -525,7 +525,7 @@ ATOM_REGISTRY: Tuple[AtomSpec, ...] = (
         id="state.require_jd_before_resume",
         title="State Gate: JD Analysis Required",
         content=(
-            "Resume drafting requires completed JD analysis first. Route to intent_jd_analysis before drafting."
+            "Resume drafting requires completed JD analysis first. Route to INTENT_JD_ANALYSIS before drafting."
         ),
         intents=frozenset({INTENT_RESUME_DRAFTING}),
         priority=103,
@@ -538,7 +538,7 @@ ATOM_REGISTRY: Tuple[AtomSpec, ...] = (
         id="state.require_approved_markdown",
         title="State Gate: Approved Markdown Required",
         content=(
-            "PDF export is blocked until approved_markdown_ready=true. Route to intent_resume_drafting review/finalization first."
+            "PDF export is blocked until approved_markdown_ready=true. Route to INTENT_RESUME_DRAFTING review/finalization first."
         ),
         intents=frozenset({INTENT_PDF_EXPORT}),
         priority=104,

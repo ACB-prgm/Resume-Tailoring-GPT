@@ -13,7 +13,6 @@ class IntentContextRouterContractsTests(unittest.TestCase):
             "RuntimeState",
             "ContextAtom",
             "ContextPack",
-            "resolve_intent",
             "build_context",
         ]
         self.assertEqual(router_surface.__all__, expected)
@@ -21,7 +20,6 @@ class IntentContextRouterContractsTests(unittest.TestCase):
         self.assertTrue(getattr(router_surface.RuntimeState, "__gpt_surface__", False))
         self.assertTrue(getattr(router_surface.ContextAtom, "__gpt_surface__", False))
         self.assertTrue(getattr(router_surface.ContextPack, "__gpt_surface__", False))
-        self.assertTrue(getattr(router_surface.resolve_intent, "__gpt_surface__", False))
         self.assertTrue(getattr(router_surface.build_context, "__gpt_surface__", False))
 
     def test_deterministic_ordering(self) -> None:
@@ -54,10 +52,6 @@ class IntentContextRouterContractsTests(unittest.TestCase):
         self.assertNotIn("persist.status_visibility", atom_ids)
         self.assertNotIn("state.memory_status_only_when_relevant", atom_ids)
         self.assertIn("persist.status_visibility", pack.diagnostics["filtered_ids"]["conflict"])
-
-    def test_intent_resolution_priority(self) -> None:
-        intent = router_surface.resolve_intent("export pdf and save to memory")
-        self.assertEqual(intent, Intent.PDF_EXPORT)
 
     def test_shadow_diagnostics_present(self) -> None:
         state = RuntimeState()

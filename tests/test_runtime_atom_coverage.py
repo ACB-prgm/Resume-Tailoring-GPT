@@ -30,15 +30,15 @@ class RuntimeAtomCoverageTests(unittest.TestCase):
         atoms = get_all_atoms()
         intents = {intent for atom in atoms for intent in atom.intents}
         expected = {
-            "intent_conversation_only",
-            "intent_failure_recovery",
-            "intent_pdf_export",
-            "intent_memory_persist_update",
-            "intent_onboarding_import_repair",
-            "intent_resume_drafting",
-            "intent_jd_analysis",
-            "intent_memory_status",
-            "intent_initialization_or_setup",
+            "INTENT_CONVERSATION_ONLY",
+            "INTENT_FAILURE_RECOVERY",
+            "INTENT_PDF_EXPORT",
+            "INTENT_MEMORY_PERSIST_UPDATE",
+            "INTENT_ONBOARDING_IMPORT_REPAIR",
+            "INTENT_RESUME_DRAFTING",
+            "INTENT_JD_ANALYSIS",
+            "INTENT_MEMORY_STATUS",
+            "INTENT_INITIALIZATION_OR_SETUP",
         }
         self.assertEqual(intents, expected)
 

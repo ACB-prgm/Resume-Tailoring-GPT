@@ -14,7 +14,7 @@ Definitions
 
 Workflow Outline
 1. Build `RuntimeState` from actual runtime variables for this turn.
-2. Determine `intent` with `resolve_intent(user_text, hints)`.
+2. Select `intent` explicitly as one of the `Intent` enum values using model reasoning (not keyword heuristics).
 3. Build context with `build_context(intent, state)`.
 4. If `block_current_intent=true`, execute `required_routes` in order; then re-run routing for the original request.
 5. Inject `rendered_context` and execute only the required operations.
@@ -23,18 +23,18 @@ Workflow Outline
 Intent Runtime Contract
 - Use router APIs only:
   - `/mnt/data/intent_context_router_surface.py`
-  - `resolve_intent(...)`
   - `build_context(...)`
-- Intents supported:
-  - `intent_conversation_only`
-  - `intent_failure_recovery`
-  - `intent_pdf_export`
-  - `intent_memory_persist_update`
-  - `intent_onboarding_import_repair`
-  - `intent_resume_drafting`
-  - `intent_jd_analysis`
-  - `intent_memory_status`
-  - `intent_initialization_or_setup`
+- Preconditions are resolved by `build_context`; do not hand-roll precondition logic in instructions or prompts.
+- Intents supported (one-line selection guide):
+  - `INTENT_CONVERSATION_ONLY`: greeting/chitchat/thanks with no actionable resume or memory task. Keywords: hi, hello, thanks.
+  - `INTENT_FAILURE_RECOVERY`: user is reporting an error or failed save/update. Keywords: failed, error, conflict, retry.
+  - `INTENT_PDF_EXPORT`: user wants final rendering/export of their resume. Keywords: export, PDF, finalize, render.
+  - `INTENT_MEMORY_PERSIST_UPDATE`: user asks to write approved changes to memory. Keywords: commit, save to memory, persist, push.
+  - `INTENT_ONBOARDING_IMPORT_REPAIR`: onboarding, import, missing/invalid corpus, or repair flow. Keywords: onboarding, upload, LinkedIn, CV, rebuild.
+  - `INTENT_RESUME_DRAFTING`: user wants resume drafting or tailoring. Keywords: draft resume, tailor resume, rewrite resume.
+  - `INTENT_JD_ANALYSIS`: user asks to analyze a job description (JD is pasted or linked). Keywords: analyze JD, requirements extraction, job description analysis.
+  - `INTENT_MEMORY_STATUS`: user asks about current memory/corpus state. Keywords: memory status, is it saved, corpus status.
+  - `INTENT_INITIALIZATION_OR_SETUP`: user asks to initialize/bootstrap/auth/setup memory runtime. Keywords: initialize, bootstrap, setup memory, authenticate.
 - Runtime dependency model is atoms-only. Do not load guidance markdown files at runtime.
 - If a route chain would loop, stop, report the blocking condition, and ask for user direction.
 

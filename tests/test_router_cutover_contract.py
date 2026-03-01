@@ -10,9 +10,9 @@ class RouterCutoverContractTests(unittest.TestCase):
         text = path.read_text(encoding="utf-8")
 
         self.assertIn("intent_context_router_surface.py", text)
-        self.assertIn("resolve_intent", text)
         self.assertIn("build_context", text)
         self.assertIn("Runtime dependency model is atoms-only", text)
+        self.assertNotIn("resolve_intent", text)
 
         self.assertNotIn("Reference Pack", text)
         self.assertNotIn("$Ref:", text)
