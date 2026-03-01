@@ -205,7 +205,7 @@ def _ordered_unique(atom_ids: Iterable[str]) -> List[str]:
 
 
 def _render_atom(atom: ContextAtom) -> str:
-    return f"[{atom.id}] {atom.title}\n{atom.content}"
+    return f"{atom.title}\n{atom.content}"
 
 
 def _estimate_tokens(text: str) -> int:
