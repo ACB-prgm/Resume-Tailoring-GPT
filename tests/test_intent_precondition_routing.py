@@ -26,6 +26,9 @@ class IntentPreconditionRoutingTests(unittest.TestCase):
                 "INTENT_ONBOARDING_IMPORT_REPAIR",
             ],
         )
+        self.assertEqual(pack.atoms, [])
+        self.assertIn("INTENT BLOCKED: INTENT_JD_ANALYSIS", pack.rendered_context)
+        self.assertIn("build_context(INTENT_JD_ANALYSIS, state)", pack.rendered_context)
 
     def test_resume_without_jd_routes_to_jd(self) -> None:
         """Test that resume without jd routes to jd."""

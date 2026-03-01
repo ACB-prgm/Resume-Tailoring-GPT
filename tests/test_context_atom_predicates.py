@@ -11,6 +11,8 @@ class ContextAtomPredicatesTests(unittest.TestCase):
         """Test that jd requires preflight when state missing."""
         pack = build_context(Intent.JD_ANALYSIS, RuntimeState())
         self.assertTrue(pack.block_current_intent)
+        self.assertEqual(pack.atoms, [])
+        self.assertTrue(pack.diagnostics.get("blocked_mode"))
         self.assertEqual(
             pack.required_routes,
             [

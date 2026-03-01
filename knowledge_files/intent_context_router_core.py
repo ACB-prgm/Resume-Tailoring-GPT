@@ -25,7 +25,7 @@ except ImportError:
 
 
 def gpt_core(obj: Any) -> Any:
-    """Gpt core."""
+    """Mark symbols as core-layer internals for tooling and audits."""
     obj.__gpt_layer__ = "core"
     obj.__gpt_core__ = True
     return obj
@@ -33,7 +33,7 @@ def gpt_core(obj: Any) -> Any:
 
 @gpt_core
 class Intent(str, Enum):
-    """Intent."""
+    """Enum of supported runtime intents for atom context assembly."""
     CONVERSATION_ONLY = "INTENT_CONVERSATION_ONLY"
     FAILURE_RECOVERY = "INTENT_FAILURE_RECOVERY"
     PDF_EXPORT = "INTENT_PDF_EXPORT"
@@ -48,7 +48,7 @@ class Intent(str, Enum):
 @gpt_core
 @dataclass(frozen=True)
 class RuntimeState:
-    """Runtime State."""
+    """Immutable per-turn runtime snapshot used by atom predicates."""
     repo_exists: bool = False
     runtime_initialized: bool = False
     corpus_exists: bool = False
@@ -76,7 +76,7 @@ class RuntimeState:
         overrides = overrides or {}
 
         def _bool(name: str, *sources: Dict[str, Any]) -> bool:
-            """Internal helper to bool."""
+            """Read a boolean field from overrides, turn_state, then status."""
             for source in sources:
                 if name in source:
                     return bool(source.get(name))
@@ -110,7 +110,7 @@ class RuntimeState:
 @gpt_core
 @dataclass(frozen=True)
 class ContextAtom:
-    """Context Atom."""
+    """Router-ready atom representation derived from AtomSpec."""
     id: str
     title: str
     content: str
@@ -125,7 +125,7 @@ class ContextAtom:
 @gpt_core
 @dataclass(frozen=True)
 class ContextPack:
-    """Context Pack."""
+    """Deterministic output payload returned by build_context()."""
     intent: Intent
     atoms: List[ContextAtom]
     rendered_context: str
@@ -140,7 +140,7 @@ _ALL_INTENT_VALUES = {intent.value: intent for intent in Intent}
 
 
 def _convert_atom(spec: AtomSpec) -> ContextAtom:
-    """Internal helper to convert atom."""
+    """Convert an AtomSpec registry entry into a ContextAtom."""
     intents: List[Intent] = []
     for intent_id in spec.intents:
         intent = _ALL_INTENT_VALUES.get(intent_id)
@@ -149,7 +149,7 @@ def _convert_atom(spec: AtomSpec) -> ContextAtom:
         intents.append(intent)
 
     def _predicate(state: RuntimeState, fn: Callable[[Any], bool] = spec.predicate) -> bool:
-        """Internal helper to predicate."""
+        """Wrap spec predicates to always return strict bool values."""
         return bool(fn(state))
 
     return ContextAtom(
@@ -177,7 +177,7 @@ def _priority_level(priority: int) -> int:
 
 
 def _atom_sort_key(atom: ContextAtom) -> Tuple[int, int, int, str]:
-    """Internal helper to atom sort key."""
+    """Sort restrictive atoms first, then priority level, then registry order."""
     return (
         0 if atom.restrictive else 1,
         _priority_level(atom.priority),
@@ -187,7 +187,7 @@ def _atom_sort_key(atom: ContextAtom) -> Tuple[int, int, int, str]:
 
 
 def _extract_conflict_keys(atom: ContextAtom) -> List[str]:
-    """Internal helper to extract conflict keys."""
+    """Extract conflict groups from tags formatted as conflict:<key>."""
     keys: List[str] = []
     for tag in atom.tags:
         if tag.startswith("conflict:"):
@@ -196,7 +196,7 @@ def _extract_conflict_keys(atom: ContextAtom) -> List[str]:
 
 
 def _resolve_conflicts(atoms: Sequence[ContextAtom]) -> Tuple[List[ContextAtom], List[str]]:
-    """Internal helper to resolve conflicts."""
+    """Keep one winner per conflict group and record dropped atom ids."""
     grouped: Dict[str, List[ContextAtom]] = {}
     for atom in atoms:
         for key in _extract_conflict_keys(atom):
@@ -220,7 +220,7 @@ def _resolve_conflicts(atoms: Sequence[ContextAtom]) -> Tuple[List[ContextAtom],
 
 
 def _ordered_unique(atom_ids: Iterable[str]) -> List[str]:
-    """Internal helper to ordered unique."""
+    """Preserve first-seen ordering while removing duplicate atom ids."""
     seen = set()
     ordered: List[str] = []
     for atom_id in atom_ids:
@@ -232,17 +232,17 @@ def _ordered_unique(atom_ids: Iterable[str]) -> List[str]:
 
 
 def _render_atom(atom: ContextAtom) -> str:
-    """Internal helper to render atom."""
+    """Render one atom into the model-facing title + content block."""
     return f"{atom.title}\n{atom.content}"
 
 
 def _estimate_tokens(text: str) -> int:
-    """Internal helper to estimate tokens."""
+    """Cheap character-based token estimate for diagnostics only."""
     return max(1, len(text) // 4) if text else 0
 
 
 def _dedupe_intents(route_chain: Iterable[Intent], current_intent: Intent) -> List[Intent]:
-    """Internal helper to dedupe intents."""
+    """Remove duplicate/recursive routes while preserving route order."""
     deduped: List[Intent] = []
     seen = set()
     for route in route_chain:
@@ -256,7 +256,7 @@ def _dedupe_intents(route_chain: Iterable[Intent], current_intent: Intent) -> Li
 
 
 def _memory_preflight_routes(state: RuntimeState) -> List[Intent]:
-    """Internal helper to memory preflight routes."""
+    """Build required memory preflight route chain from runtime state."""
     routes: List[Intent] = []
     if not state.runtime_initialized or not state.repo_exists:
         routes.append(Intent.INITIALIZATION_OR_SETUP)
@@ -268,7 +268,7 @@ def _memory_preflight_routes(state: RuntimeState) -> List[Intent]:
 
 
 def _derive_required_routes(intent: Intent, state: RuntimeState) -> Tuple[List[Intent], Optional[str], Optional[str]]:
-    """Internal helper to derive required routes."""
+    """Compute intent preconditions, block reason, and next-step hint."""
     required: List[Intent] = []
     reason: Optional[str] = None
 
@@ -322,6 +322,22 @@ def _derive_required_routes(intent: Intent, state: RuntimeState) -> Tuple[List[I
     return required, reason, next_step
 
 
+def _render_blocked_context(
+    intent: Intent,
+    required_routes: Sequence[Intent],
+    block_reason: Optional[str],
+) -> str:
+    """Render precondition-only guidance when the requested intent is blocked."""
+    lines = [f"INTENT BLOCKED: {intent.value}"]
+    if block_reason:
+        lines.append(f"Reason: {block_reason}")
+    lines.append(f"Before running `{intent.value}`, execute required routes in order:")
+    for idx, route in enumerate(required_routes, start=1):
+        lines.append(f"{idx}. {route.value}")
+    lines.append(f"After completing routes, rerun `build_context({intent.value}, state)`.")
+    return "\n".join(lines)
+
+
 @gpt_core
 def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
     """Build deterministic context snippets and precondition routes for one intent."""
@@ -329,6 +345,32 @@ def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
         raise TypeError("intent must be an Intent enum value")
     if not isinstance(state, RuntimeState):
         raise TypeError("state must be a RuntimeState instance")
+
+    required_routes, block_reason, next_step_hint = _derive_required_routes(intent, state)
+    if required_routes:
+        rendered_context = _render_blocked_context(intent, required_routes, block_reason)
+        diagnostics: Dict[str, Any] = {
+            "selected_atom_ids": [],
+            "filtered_ids": {"conflict": [], "budget": []},
+            "required_routes": [route.value for route in required_routes],
+            "token_estimate": _estimate_tokens(rendered_context),
+            "max_atoms": DEFAULT_MAX_ATOMS,
+            "max_rendered_chars": DEFAULT_MAX_RENDERED_CHARS,
+            "source_model": "atoms_only",
+            "registry_size": len(_ATOM_REGISTRY),
+            "selected_source_refs": [],
+            "blocked_mode": True,
+        }
+        return ContextPack(
+            intent=intent,
+            atoms=[],
+            rendered_context=rendered_context,
+            required_routes=required_routes,
+            block_current_intent=True,
+            block_reason=block_reason,
+            next_step_hint=next_step_hint,
+            diagnostics=diagnostics,
+        )
 
     intent_ids = list(_ATOM_INDEXES.get("by_intent", {}).get(intent.value, []))
     state_ids = [atom.id for atom in _ATOM_REGISTRY if atom.predicate(state)]
@@ -367,7 +409,6 @@ def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
         rendered_chars = projected_chars
 
     rendered_context = "\n\n".join(rendered_parts)
-    required_routes, block_reason, next_step_hint = _derive_required_routes(intent, state)
     selected_sources = sorted({atom.source_ref for atom in kept_atoms})
 
     diagnostics: Dict[str, Any] = {
@@ -383,6 +424,7 @@ def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
         "source_model": "atoms_only",
         "registry_size": len(_ATOM_REGISTRY),
         "selected_source_refs": selected_sources,
+        "blocked_mode": False,
     }
 
     return ContextPack(
