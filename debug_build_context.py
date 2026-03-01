@@ -38,6 +38,7 @@ STATE_OVERRIDES = {
     "corpus_exists": True,
     "corpus_loaded": True,
     "corpus_valid": True,
+    "last_jd_analysis_present": True
 }
 
 # Return full verbose ContextPack when True; compact model-facing output when False.
