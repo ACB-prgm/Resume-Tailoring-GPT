@@ -41,12 +41,12 @@ Multi-Intent Precedence
 
 Reference Trigger Clauses
 - After upload detected (LinkedIn PDF/CV/corpus text):
-  - Reference: `/mnt/data/OnboardingGuidelines.md`
+  - $Reference: `/mnt/data/OnboardingGuidelines.md`
 - After section preview approval and user says "commit"/"save to memory":
-  - Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
-  - Reference: `/mnt/data/memory_validation_surface.py`
+  - $Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
+  - $Reference: `/mnt/data/memory_validation_surface.py`
 - After markdown draft is user-approved and user requests export:
-  - Reference: `/mnt/data/PDFExportGuidelines.md`
+  - $Reference: `/mnt/data/PDFExportGuidelines.md`
 
 Intent Matrix
 
@@ -54,7 +54,7 @@ Intent: `intent_conversation_only`
 - Triggers: greeting, thanks, chitchat, no actionable resume/memory task.
 - Reference Pack:
   - Primary Reference:
-    - Reference: `/mnt/data/UATGuardrails.md`
+    - $Reference: `/mnt/data/UATGuardrails.md`
   - Secondary References: none
 - Action: reply briefly and stop workflow execution.
 
@@ -62,80 +62,80 @@ Intent: `intent_initialization_or_setup`
 - Triggers: "initialize", "bootstrap", "set up memory", first memory operation with uninitialized runtime.
 - Reference Pack:
   - Primary Reference:
-    - Reference: `/mnt/data/InitializationGuidelines.md`
+    - $Reference: `/mnt/data/InitializationGuidelines.md`
   - Secondary References:
-    - Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
+    - $Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
 - Action: run deterministic initialization only for this intent (conditional policy).
 
 Intent: `intent_memory_status`
 - Triggers: "memory status", "is it saved?", "what's in corpus?", or when operation failed/changed and status must be shown.
 - Reference Pack:
   - Primary Reference:
-    - Reference: `/mnt/data/MemoryStateModel.md`
+    - $Reference: `/mnt/data/MemoryStateModel.md`
   - Secondary References:
-    - Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
+    - $Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
 - Action: emit compact `MEMORY STATUS` block only when policy criteria are met.
 
 Intent: `intent_onboarding_import_repair`
 - Triggers: missing/invalid corpus, uploaded LinkedIn/CV/corpus, "rebuild onboarding".
 - Reference Pack:
   - Primary Reference:
-    - Reference: `/mnt/data/OnboardingGuidelines.md`
+    - $Reference: `/mnt/data/OnboardingGuidelines.md`
   - Secondary References:
-    - Reference: `/mnt/data/UATGuardrails.md`
-    - Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
+    - $Reference: `/mnt/data/UATGuardrails.md`
+    - $Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
 - Action: context-first ingestion, normalization summary, section-by-section approvals before persist.
 
 Intent: `intent_memory_persist_update`
 - Triggers: "commit", "save to memory", "add this to corpus", "update persisted memory".
 - Reference Pack:
   - Primary Reference:
-    - Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
+    - $Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
   - Secondary References:
-    - Reference: `/mnt/data/memory_validation_surface.py`
-    - Reference: `/mnt/data/career_corpus_store_surface.py`
-    - Reference: `/mnt/data/career_corpus_sync_surface.py`
-    - Reference: `/mnt/data/career_corpus.schema.json`
-    - Reference: `/mnt/data/github_action_schema.json`
+    - $Reference: `/mnt/data/memory_validation_surface.py`
+    - $Reference: `/mnt/data/career_corpus_store_surface.py`
+    - $Reference: `/mnt/data/career_corpus_sync_surface.py`
+    - $Reference: `/mnt/data/career_corpus.schema.json`
+    - $Reference: `/mnt/data/github_action_schema.json`
 - Action: validate -> split docs -> Git Data push -> verify -> report persisted status truthfully.
 
 Intent: `intent_jd_analysis`
 - Triggers: "analyze this JD", "extract requirements", job description parsing.
 - Reference Pack:
   - Primary Reference:
-    - Reference: `/mnt/data/JDAnalysisGuidelines.md`
+    - $Reference: `/mnt/data/JDAnalysisGuidelines.md`
   - Secondary References:
-    - Reference: `/mnt/data/UATGuardrails.md`
+    - $Reference: `/mnt/data/UATGuardrails.md`
 - Action: produce standardized `JD ANALYSIS OUTPUT` before drafting.
 
 Intent: `intent_resume_drafting`
 - Triggers: "tailor resume", "draft resume for this JD", revise resume content.
 - Reference Pack:
   - Primary Reference:
-    - Reference: `/mnt/data/ResumeBuildingGuidelines.md`
+    - $Reference: `/mnt/data/ResumeBuildingGuidelines.md`
   - Secondary References:
-    - Reference: `/mnt/data/ResumeTemplate.md`
-    - Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
+    - $Reference: `/mnt/data/ResumeTemplate.md`
+    - $Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
 - Action: draft from supported evidence; if JD analysis missing, run `intent_jd_analysis` first.
 
 Intent: `intent_pdf_export`
 - Triggers: "export PDF", "finalize and render", "generate final file".
 - Reference Pack:
   - Primary Reference:
-    - Reference: `/mnt/data/PDFExportGuidelines.md`
+    - $Reference: `/mnt/data/PDFExportGuidelines.md`
   - Secondary References:
-    - Reference: `/mnt/data/resume_renderer.py`
-    - Reference: `/mnt/data/resume_theme.py`
+    - $Reference: `/mnt/data/resume_renderer.py`
+    - $Reference: `/mnt/data/resume_theme.py`
 - Action: render only approved frozen markdown and enforce page limits.
 
 Intent: `intent_failure_recovery`
 - Triggers: API errors, ref conflicts, validation failures, persistence mismatch.
 - Reference Pack:
   - Primary Reference:
-    - Reference: `/mnt/data/UATGuardrails.md`
+    - $Reference: `/mnt/data/UATGuardrails.md`
   - Secondary References:
-    - Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
-    - Reference: `/mnt/data/MemoryStateModel.md`
+    - $Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
+    - $Reference: `/mnt/data/MemoryStateModel.md`
 - Action: one deterministic retry path, then explicit manual recovery steps.
 
 Tone
