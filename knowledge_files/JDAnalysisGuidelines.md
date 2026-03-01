@@ -39,6 +39,10 @@ Mark each gate as:
 - Do not infer unsupported claims.
 - If a requirement is not supported, flag it as a gap.
 - In the Binary Gates section, omit any gate not explicitly specified in the JD.
+- Use marker statuses throughout the full analysis:
+  - `🟢` solid matching corpus evidence
+  - `🟡` mediocre/partial evidence alignment
+  - `🔴` total gap (no supporting evidence)
 
 ## Standardized markdown output template (must be produced every run before resume writing)
 - Output must be in markdown.
@@ -55,40 +59,21 @@ Mark each gate as:
 
 ### Binary Gates
 Include only gates explicitly specified in the JD. Omit all unspecified gates.
-- Work authorization:
-  - Status: Supported | Not supported/Unknown
-  - Evidence:
-- Location / hybrid:
-  - Status: Supported | Not supported/Unknown
-  - Evidence:
-- Travel:
-  - Status: Supported | Not supported/Unknown
-  - Evidence:
-- Degree:
-  - Status: Supported | Not supported/Unknown
-  - Evidence:
-- Years of experience:
-  - Status: Supported | Not supported/Unknown
-  - Evidence:
-- Platforms / tools:
-  - Status: Supported | Not supported/Unknown
-  - Evidence:
-- Certifications:
-  - Status: Supported | Not supported/Unknown
-  - Evidence:
+- Gates to evaluate when present in JD: Work authorization, Location/hybrid, Travel, Degree, Years of experience, Platforms/tools, Certifications.
+- For each included gate, use this concise format:
+  - [Gate]: 🟢 Supported | 🟡 Partial/Unclear | 🔴 Not supported/Unknown | Evidence: [corpus/chat evidence or "none"]
 
 ### Tier 1 Required Keywords (ranked)
-1.
-2.
-3.
+1. [keyword] - Status: 🟢 | 🟡 | 🔴
+2. [keyword] - Status: 🟢 | 🟡 | 🔴
 
 ### Tier 2 Preferred Keywords
-- 
-- 
+- [keyword] - Status: 🟢 | 🟡 | 🔴
+- [keyword] - Status: 🟢 | 🟡 | 🔴
 
 ### Core Skill Clusters (2-4)
-- Cluster 1:
-- Cluster 2:
+- Cluster 1 - Status: 🟢 | 🟡 | 🔴
+- Cluster 2 - Status: 🟢 | 🟡 | 🔴
 
 ### Core Need (one sentence)
 - 
@@ -97,28 +82,23 @@ Include only gates explicitly specified in the JD. Omit all unspecified gates.
 - JD term:
   - Equivalent evidence:
   - Placement: Summary | Core Competencies | Role bullets
+  - Match status: 🟢 | 🟡 | 🔴
 - JD term:
   - Equivalent evidence:
   - Placement: Summary | Core Competencies | Role bullets
+  - Match status: 🟢 | 🟡 | 🔴
 
 ### Recruiter Search Simulation
 - Boolean query:
 - Tier 1 token coverage check:
-  - Title line: Pass | Fail
-  - Summary: Pass | Fail
-  - Core Competencies: Pass | Fail
-  - First 2-3 bullets in most relevant role: Pass | Fail
+  - Title line: 🟢 | 🟡 | 🔴
+  - Summary: 🟢 | 🟡 | 🔴
+  - Core Competencies: 🟢 | 🟡 | 🔴
+  - First 2-3 bullets in most relevant role: 🟢 | 🟡 | 🔴
 
 ### Candidate Alignment to Role (concise, experience-based)
-- Overall alignment: Strong | Moderate | Limited
-- Experience alignment breakdown:
-  - Requirement:
-    - Supporting experience evidence:
-    - Alignment status: Match | Partial | Gap
-  - Requirement:
-    - Supporting experience evidence:
-    - Alignment status: Match | Partial | Gap
+- Overall alignment: 🟢 Strong | 🟡 Moderate | 🔴 Limited
 - Top gaps (if any):
-  - Gap:
-  - Gap:
+  - 🔴 Gap:
+  - 🔴 Gap:
 ```
