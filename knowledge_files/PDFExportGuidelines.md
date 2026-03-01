@@ -1,7 +1,7 @@
 # PDF Export Guide
 
 ## Objective
-Generate the final PDF from approved markdown without changing approved content.
+Generate the final PDF from user-approved markdown, using `ResumeTemplate.md` for format and layout, and do not change approved resume content during export.
 
 ## Preconditions
 - User has confirmed final markdown draft in canvas.
@@ -52,6 +52,7 @@ else:
   - Explicit assumptions (ideally none)
 
 ## Guardrails
+- format should strictly adhere to `ResumeTemplate.md`.
 - Do not regenerate or rewrite resume content during export.
 - If page length fails, return to drafting stage and edit content first.
 - If export fails, return an immediate actionable recovery path in the same turn (no background retry promises).
