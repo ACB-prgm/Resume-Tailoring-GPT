@@ -11,9 +11,8 @@ class RuntimeAtomCoverageTests(unittest.TestCase):
         tags = {tag for atom in atoms for tag in atom.tags}
 
         required_domains = {
-            "headers",
-            "canonical_layout",
-            "truthfulness",
+            "memory",
+            "persist",
             "onboarding",
             "jd",
             "resume",

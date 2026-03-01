@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, FrozenSet, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Sequence, Tuple
 
 try:
     from context_atoms_core import (
@@ -160,6 +160,21 @@ def _convert_atom(spec: AtomSpec) -> ContextAtom:
 _ATOM_REGISTRY: Tuple[ContextAtom, ...] = tuple(_convert_atom(spec) for spec in get_all_atoms())
 _ATOM_BY_ID: Dict[str, ContextAtom] = {atom.id: atom for atom in _ATOM_REGISTRY}
 _ATOM_INDEXES = get_atom_indexes()
+_ATOM_ORDER: Dict[str, int] = {atom.id: idx for idx, atom in enumerate(_ATOM_REGISTRY)}
+
+
+def _priority_level(priority: int) -> int:
+    """Normalize atom priority to configured 1..10 level buckets."""
+    return max(1, min(10, int(priority)))
+
+
+def _atom_sort_key(atom: ContextAtom) -> Tuple[int, int, int, str]:
+    return (
+        0 if atom.restrictive else 1,
+        _priority_level(atom.priority),
+        _ATOM_ORDER.get(atom.id, 10**9),
+        atom.id,
+    )
 
 
 def _extract_conflict_keys(atom: ContextAtom) -> List[str]:
@@ -181,7 +196,7 @@ def _resolve_conflicts(atoms: Sequence[ContextAtom]) -> Tuple[List[ContextAtom],
     for key, group in grouped.items():
         if len(group) < 2:
             continue
-        winner = sorted(group, key=lambda atom: (0 if atom.restrictive else 1, atom.priority, atom.id))[0]
+        winner = sorted(group, key=_atom_sort_key)[0]
         for atom in group:
             if atom.id == winner.id:
                 continue
@@ -298,19 +313,15 @@ def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
     if not isinstance(state, RuntimeState):
         raise TypeError("state must be a RuntimeState instance")
 
-    global_ids = list(_ATOM_INDEXES.get("by_tag", {}).get("global", ()))
-    intent_ids = list(_ATOM_INDEXES.get("by_intent", {}).get(intent.value, ()))
+    intent_ids = list(_ATOM_INDEXES.get("by_intent", {}).get(intent.value, []))
     state_ids = [atom.id for atom in _ATOM_REGISTRY if atom.predicate(state)]
 
-    ordered_ids = _ordered_unique([*global_ids, *intent_ids, *state_ids])
+    ordered_ids = _ordered_unique([*intent_ids, *state_ids])
     selected_atoms = [_ATOM_BY_ID[atom_id] for atom_id in ordered_ids if atom_id in _ATOM_BY_ID]
 
     selected_atoms, dropped_conflicts = _resolve_conflicts(selected_atoms)
 
-    selected_atoms = sorted(
-        selected_atoms,
-        key=lambda atom: (0 if atom.restrictive else 1, atom.priority, atom.id),
-    )
+    selected_atoms = sorted(selected_atoms, key=_atom_sort_key)
 
     kept_atoms: List[ContextAtom] = []
     dropped_budget: List[str] = []
