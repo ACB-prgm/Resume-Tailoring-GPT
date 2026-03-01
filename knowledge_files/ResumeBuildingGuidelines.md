@@ -8,7 +8,7 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - Canonical memory files from persistent memory repo:
   - `career_corpus.json`
 - Current chat facts provided by user
-- Resume template markdown
+- Resume template markdown from `/mnt/data/ResumeTemplate.md` (required structure baseline)
 
 ## Evidence rules (non-negotiable)
 - Every claim must be supported by corpus or current chat.
@@ -22,6 +22,7 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - Validate corpus with `/mnt/data/memory_validation_surface.py` before using it for drafting.
 - Block unsupported factual inserts unless user explicitly confirms and approves persistence path.
 - Resume title/header lines are generated per JD and are not persisted as dedicated corpus fields.
+- Do not add fluff: if content does not make an argument for a JD requirement/component, omit it.
 
 ## Build workflow
 1) Evidence retrieval
@@ -31,6 +32,7 @@ Convert JD Analysis Output + verified corpus evidence into a tailored, ATS-safe 
 - Surface unsupported Tier 1 requirements as explicit gaps.
 
 2) Resume construction (ATS-safe)
+- Build against `/mnt/data/ResumeTemplate.md`; do not invent alternate section structures unless user explicitly requests it.
 - Header:
   - Keep as template default unless user requests changes.
 - Target Title Line:
