@@ -35,8 +35,8 @@ class IntentContextRouterContractsTests(unittest.TestCase):
             corpus_valid=True,
             user_requested_memory_status=True,
         )
-        first = router_surface.build_context(Intent.MEMORY_STATUS, state)
-        second = router_surface.build_context(Intent.MEMORY_STATUS, state)
+        first = router_surface.build_context(Intent.MEMORY_STATUS, state, verbose=True)
+        second = router_surface.build_context(Intent.MEMORY_STATUS, state, verbose=True)
         self.assertEqual([atom.id for atom in first.atoms], [atom.id for atom in second.atoms])
         self.assertEqual(first.rendered_context, second.rendered_context)
 
@@ -50,7 +50,7 @@ class IntentContextRouterContractsTests(unittest.TestCase):
             corpus_valid=True,
             user_requested_memory_status=True,
         )
-        pack = router_surface.build_context(Intent.MEMORY_STATUS, state)
+        pack = router_surface.build_context(Intent.MEMORY_STATUS, state, verbose=True)
         atom_ids = [atom.id for atom in pack.atoms]
 
         self.assertIn("memory_status.state_block", atom_ids)
@@ -61,9 +61,15 @@ class IntentContextRouterContractsTests(unittest.TestCase):
     def test_source_ref_diagnostics_present(self) -> None:
         """Test that source ref diagnostics present."""
         state = RuntimeState()
-        pack = router_surface.build_context(Intent.JD_ANALYSIS, state)
+        pack = router_surface.build_context(Intent.JD_ANALYSIS, state, verbose=True)
         self.assertIn("selected_source_refs", pack.diagnostics)
         self.assertIsInstance(pack.diagnostics["selected_source_refs"], list)
+
+    def test_default_mode_returns_compact_dict(self) -> None:
+        """Test that default mode returns compact dict output."""
+        result = router_surface.build_context(Intent.JD_ANALYSIS, RuntimeState())
+        self.assertIsInstance(result, dict)
+        self.assertIn("rendered_context", result)
 
     def test_memory_status_format_contract_is_atom_driven(self) -> None:
         """Test that memory status format contract is atom driven."""

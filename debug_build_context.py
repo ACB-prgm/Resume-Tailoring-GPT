@@ -28,18 +28,24 @@ STATE_OVERRIDES = {
     # "corpus_valid": True,
 }
 
-# Default output is exactly what the model sees: rendered_context only.
-PRINT_RENDERED_CONTEXT_ONLY = True
+# Return full verbose ContextPack when True; compact model-facing output when False.
+VERBOSE = False
 
-# If False above, this controls whether atom content is shown in detailed output.
-SHOW_ATOM_CONTENT = True
+# Include intent/runtime_state input block before the function output.
+INCLUDE_INPUT = False
 # ---------------------------------------------------------------------------
 
 
 def _jsonable(value: Any) -> Any:
-    """Internal helper to jsonable."""
+    """Convert router values to JSON-serializable shapes."""
     if isinstance(value, Intent):
         return value.value
+    if callable(value):
+        return getattr(value, "__name__", type(value).__name__)
+    if isinstance(value, set):
+        return sorted(_jsonable(v) for v in value)
+    if isinstance(value, tuple):
+        return [_jsonable(v) for v in value]
     if isinstance(value, dict):
         return {k: _jsonable(v) for k, v in value.items()}
     if isinstance(value, list):
@@ -47,51 +53,53 @@ def _jsonable(value: Any) -> Any:
     return value
 
 
+def _pack_to_dict(pack: Any) -> dict[str, Any]:
+    """Return the full build_context output as a JSON-friendly dict."""
+    atoms = []
+    for atom in pack.atoms:
+        atoms.append(
+            {
+                "id": atom.id,
+                "title": atom.title,
+                "content": atom.content,
+                "intents": [intent.value for intent in atom.intents],
+                "priority": atom.priority,
+                "restrictive": atom.restrictive,
+                "tags": sorted(atom.tags),
+                "source_ref": atom.source_ref,
+                "predicate": getattr(atom.predicate, "__name__", str(atom.predicate)),
+            }
+        )
+
+    return {
+        "intent": pack.intent.value,
+        "atoms": atoms,
+        "rendered_context": pack.rendered_context,
+        "rerouted_to": [route.value for route in pack.rerouted_to],
+        "required_routes": [route.value for route in pack.required_routes],
+        "block_current_intent": pack.block_current_intent,
+        "block_reason": pack.block_reason,
+        "next_step_hint": pack.next_step_hint,
+        "diagnostics": _jsonable(pack.diagnostics),
+    }
+
+
 def main() -> None:
     """Run the script entrypoint."""
     default_state = asdict(RuntimeState())
     state_data = {**default_state, **STATE_OVERRIDES}
     state = RuntimeState(**state_data)
-    pack = build_context(INTENT, state)
-
-    if PRINT_RENDERED_CONTEXT_ONLY:
-        print(pack.rendered_context)
-        return
-
-    print("=== INPUT ===")
-    print(f"intent: {INTENT.value}")
-    print("runtime_state:")
-    for key in sorted(state_data.keys()):
-        print(f"  {key}: {state_data[key]}")
-
-    print("\n=== OUTPUT ===")
-    print(f"block_current_intent: {pack.block_current_intent}")
-    print(f"block_reason: {pack.block_reason or 'None'}")
-    print(f"next_step_hint: {pack.next_step_hint or 'None'}")
-    print("required_routes:")
-    if pack.required_routes:
-        for route in pack.required_routes:
-            print(f"  - {route.value}")
+    result = build_context(INTENT, state, verbose=VERBOSE)
+    if VERBOSE:
+        output: dict[str, Any] = {"context_pack": _pack_to_dict(result)}
     else:
-        print("  - (none)")
-
-    print("\natoms:")
-    if not pack.atoms:
-        print("  - (none)")
-    else:
-        for index, atom in enumerate(pack.atoms, start=1):
-            print(f"  {index}. {atom.title}")
-            print(f"     id={atom.id} priority={atom.priority} restrictive={atom.restrictive}")
-            if SHOW_ATOM_CONTENT:
-                print("     content:")
-                for line in atom.content.splitlines():
-                    print(f"       {line}")
-
-    print("\nrendered_context:")
-    print(pack.rendered_context or "(empty)")
-
-    print("\ndiagnostics:")
-    print(json.dumps(_jsonable(pack.diagnostics), indent=2, sort_keys=True))
+        output = {"context": _jsonable(result)}
+    if INCLUDE_INPUT:
+        output["input"] = {
+            "intent": INTENT.value,
+            "runtime_state": state_data,
+        }
+    print(json.dumps(output, indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":

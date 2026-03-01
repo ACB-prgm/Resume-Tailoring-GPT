@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, FrozenSet, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, FrozenSet, List, Optional, Sequence, Tuple, Union
 
 try:
     from context_atoms_core import (
@@ -129,6 +129,7 @@ class ContextPack:
     intent: Intent
     atoms: List[ContextAtom]
     rendered_context: str
+    rerouted_to: List[Intent]
     required_routes: List[Intent]
     block_current_intent: bool
     block_reason: Optional[str]
@@ -217,18 +218,6 @@ def _resolve_conflicts(atoms: Sequence[ContextAtom]) -> Tuple[List[ContextAtom],
 
     filtered = [atom for atom in atoms if atom.id in keep_ids]
     return filtered, sorted(set(drop_ids))
-
-
-def _ordered_unique(atom_ids: Iterable[str]) -> List[str]:
-    """Preserve first-seen ordering while removing duplicate atom ids."""
-    seen = set()
-    ordered: List[str] = []
-    for atom_id in atom_ids:
-        if atom_id in seen:
-            continue
-        seen.add(atom_id)
-        ordered.append(atom_id)
-    return ordered
 
 
 def _render_atom(atom: ContextAtom) -> str:
@@ -339,8 +328,8 @@ def _render_blocked_context(
 
 
 @gpt_core
-def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
-    """Build deterministic context snippets and precondition routes for one intent."""
+def _build_context_pack(intent: Intent, state: RuntimeState) -> ContextPack:
+    """Build one ContextPack without applying automatic reroute recursion."""
     if not isinstance(intent, Intent):
         raise TypeError("intent must be an Intent enum value")
     if not isinstance(state, RuntimeState):
@@ -365,6 +354,7 @@ def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
             intent=intent,
             atoms=[],
             rendered_context=rendered_context,
+            rerouted_to=[],
             required_routes=required_routes,
             block_current_intent=True,
             block_reason=block_reason,
@@ -373,10 +363,13 @@ def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
         )
 
     intent_ids = list(_ATOM_INDEXES.get("by_intent", {}).get(intent.value, []))
-    state_ids = [atom.id for atom in _ATOM_REGISTRY if atom.predicate(state)]
-
-    ordered_ids = _ordered_unique([*intent_ids, *state_ids])
-    selected_atoms = [_ATOM_BY_ID[atom_id] for atom_id in ordered_ids if atom_id in _ATOM_BY_ID]
+    selected_atoms = []
+    for atom_id in intent_ids:
+        atom = _ATOM_BY_ID.get(atom_id)
+        if atom is None:
+            continue
+        if atom.predicate(state):
+            selected_atoms.append(atom)
 
     selected_atoms, dropped_conflicts = _resolve_conflicts(selected_atoms)
 
@@ -431,9 +424,77 @@ def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
         intent=intent,
         atoms=kept_atoms,
         rendered_context=rendered_context,
+        rerouted_to=[],
         required_routes=required_routes,
         block_current_intent=bool(required_routes),
         block_reason=block_reason,
         next_step_hint=next_step_hint,
         diagnostics=diagnostics,
     )
+
+
+def _compact_context_output(pack: ContextPack) -> Dict[str, Any]:
+    """Return compact model-facing output for non-verbose mode."""
+    output: Dict[str, Any] = {"rendered_context": pack.rendered_context}
+    if pack.rerouted_to:
+        output["rerouted_to"] = [intent.value for intent in pack.rerouted_to]
+    if pack.block_current_intent:
+        output["blocked"] = True
+        if pack.block_reason:
+            output["block_reason"] = pack.block_reason
+    return output
+
+
+@gpt_core
+def build_context(
+    intent: Intent,
+    state: RuntimeState,
+    verbose: bool = False,
+    max_reroutes: int = 6,
+) -> Union[ContextPack, Dict[str, Any]]:
+    """Build context and auto-reroute to the next actionable intent when blocked."""
+    if not isinstance(intent, Intent):
+        raise TypeError("intent must be an Intent enum value")
+    if not isinstance(state, RuntimeState):
+        raise TypeError("state must be a RuntimeState instance")
+    if not isinstance(max_reroutes, int) or max_reroutes < 0:
+        raise ValueError("max_reroutes must be an integer >= 0")
+
+    current_intent = intent
+    reroute_chain: List[Intent] = []
+    visited: set[Intent] = set()
+    final_pack: Optional[ContextPack] = None
+
+    for _ in range(max_reroutes + 1):
+        pack = _build_context_pack(current_intent, state)
+        if not pack.block_current_intent or not pack.required_routes:
+            final_pack = pack
+            break
+
+        next_intent = pack.required_routes[0]
+        if next_intent in visited or next_intent == current_intent:
+            final_pack = pack
+            break
+
+        visited.add(current_intent)
+        reroute_chain.append(next_intent)
+        current_intent = next_intent
+
+    if final_pack is None:
+        final_pack = _build_context_pack(current_intent, state)
+
+    final_pack = ContextPack(
+        intent=final_pack.intent,
+        atoms=final_pack.atoms,
+        rendered_context=final_pack.rendered_context,
+        rerouted_to=reroute_chain,
+        required_routes=final_pack.required_routes,
+        block_current_intent=final_pack.block_current_intent,
+        block_reason=final_pack.block_reason,
+        next_step_hint=final_pack.next_step_hint,
+        diagnostics=final_pack.diagnostics,
+    )
+
+    if verbose:
+        return final_pack
+    return _compact_context_output(final_pack)

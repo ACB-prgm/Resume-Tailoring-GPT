@@ -9,8 +9,8 @@ Core Runtime Contract
 
 Router Output Rules
 - Treat `build_context(...)` as authoritative.
-- If `block_current_intent=true`, treat `rendered_context` as precondition-only guidance and run `required_routes` before retrying the original intent.
-- Do not load or use blocked-intent context until the required routes complete.
+- `build_context(...)` auto-reroutes preconditions in Python; do not manually execute `required_routes`.
+- Use the returned `rendered_context` directly as the next actionable context.
 - Use `rendered_context` as the operative policy context for the turn.
 - Do not hand-roll precondition logic outside the router.
 - Ignore diagnostics for policy decisions (diagnostics are for debugging only).

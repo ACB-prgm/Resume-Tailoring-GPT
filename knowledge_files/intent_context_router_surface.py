@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict, Union
 
 try:
     from intent_context_router_core import (
@@ -52,6 +52,11 @@ gpt_surface(ContextPack)
 
 
 @gpt_surface
-def build_context(intent: Intent, state: RuntimeState) -> ContextPack:
-    """When to use: build ordered atom context and precondition routes for one intent. Inputs: intent + runtime state. Outputs: ContextPack."""
-    return _build_context(intent, state)
+def build_context(
+    intent: Intent,
+    state: RuntimeState,
+    verbose: bool = False,
+    max_reroutes: int = 6,
+) -> Union[ContextPack, Dict[str, Any]]:
+    """When to use: build routed context for one intent. Inputs: intent + runtime state. Outputs: compact dict (default) or ContextPack (verbose)."""
+    return _build_context(intent, state, verbose=verbose, max_reroutes=max_reroutes)
