@@ -177,8 +177,36 @@ export. If markdown is not approved, block export and route back to drafting/rev
         source_ref="PDFExportGuidelines.md",
         title="PDF Renderer Pipeline",
         content="""\
-Use ResumeRenderer and ResumeTheme for export. Enforce page limits before render.
-Default max pages is 1; allow 2 only when explicitly approved for senior scope.
+Rules
+- Markdown formatting should adhere to /mnt/data/ResumeTemplate.md.
+- Use ResumeRenderer and ResumeTheme for export. 
+- Enforce page limits before render.
+    - Default max pages is 1; allow 2 only when explicitly approved for senior scope.
+    - if the agreed upon markdown is > max pages:
+        - Re-Route to INTENT_RESUME_DRAFTING and condense
+
+Output requirements
+- Format: A4 PDF.
+- File naming scheme: <User Name> Resume - <TargetRole> - <CompanyIfKnown>.pdf
+- Attach only the PDF artifact unless the users asks for the markdown.
+
+```Python
+from resume_renderer import ResumeRenderer
+from resume_theme import ResumeTheme
+
+theme = ResumeTheme()
+renderer = ResumeRenderer(theme)
+page_count = renderer.exceeds_one_page(markdown_text)
+
+max_pages = 1
+# Set max_pages = 2 only when senior scope is explicitly approved.
+
+if page_count > max_pages:
+    # Do not export yet; return to editing and shorten content.
+    ...
+else:
+    renderer.render(markdown_text, output_path)
+```
 """,
     ),
     AtomSpec(
@@ -348,7 +376,7 @@ Build workflow
         tags=frozenset({"resume"}),
         source_ref="ResumeBuildingGuidelines.md",
         title="Resume: User Acceptance",
-        content="""
+        content="""\
 1. Ask the user if they would like to make any changes or if they would like to export.
 2. if they approve or ask to export:
     - RuntimeState: approved_markdown_ready = true.
