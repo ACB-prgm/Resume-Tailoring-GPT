@@ -66,6 +66,34 @@ class IntentPreconditionRoutingTests(unittest.TestCase):
         self.assertEqual(pack.intent, Intent.INITIALIZATION_OR_SETUP)
         self.assertEqual(pack.rerouted_to, [Intent.INITIALIZATION_OR_SETUP])
 
+    def test_jd_with_existing_repo_and_corpus_reroutes_to_load_corpus(self) -> None:
+        """Test JD reroutes to load-corpus preflight when corpus exists but is not loaded."""
+        state = RuntimeState(
+            repo_exists=True,
+            runtime_initialized=True,
+            corpus_exists=True,
+            corpus_loaded=False,
+            corpus_valid=False,
+        )
+        pack = build_context(Intent.JD_ANALYSIS, state, verbose=True)
+        self.assertFalse(pack.block_current_intent)
+        self.assertEqual(pack.intent, Intent.LOAD_CORPUS)
+        self.assertEqual(pack.rerouted_to, [Intent.LOAD_CORPUS])
+
+    def test_load_corpus_requires_initialization_first(self) -> None:
+        """Test load-corpus intent enforces initialization precondition."""
+        state = RuntimeState(
+            repo_exists=False,
+            runtime_initialized=False,
+            corpus_exists=True,
+            corpus_loaded=False,
+            corpus_valid=False,
+        )
+        pack = build_context(Intent.LOAD_CORPUS, state, verbose=True)
+        self.assertFalse(pack.block_current_intent)
+        self.assertEqual(pack.intent, Intent.INITIALIZATION_OR_SETUP)
+        self.assertEqual(pack.rerouted_to, [Intent.INITIALIZATION_OR_SETUP])
+
 
 if __name__ == "__main__":
     unittest.main()

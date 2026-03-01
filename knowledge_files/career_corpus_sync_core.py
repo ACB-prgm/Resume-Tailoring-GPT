@@ -56,7 +56,7 @@ CreateMemoryRepoFn = Callable[[Dict[str, Any]], Dict[str, Any]]
 
 
 def gpt_core(obj: Any) -> Any:
-    """Gpt core."""
+    """Mark symbols as core-layer internals for tooling and audits."""
     obj.__gpt_layer__ = "core"
     obj.__gpt_core__ = True
     return obj
@@ -64,7 +64,7 @@ def gpt_core(obj: Any) -> Any:
 
 @dataclass
 class PushAttemptResult:
-    """Push Attempt Result."""
+    """Outcome of one low-level Git Data push attempt."""
     ok: bool
     error_code: Optional[str] = None
     reason: Optional[str] = None
@@ -113,7 +113,7 @@ class CareerCorpusSync:
         update_branch_ref: Optional[UpdateBranchRefFn] = None,
         max_retries: int = 1,
     ) -> None:
-        """Internal helper to init."""
+        """Wire store plus injected GitHub adapter callables."""
         self.store = store
         self._get_memory_repo = get_memory_repo
         self._get_branch_ref = get_branch_ref
@@ -127,7 +127,7 @@ class CareerCorpusSync:
         self._max_retries = max_retries
 
     def pull(self, force: bool = False) -> Dict[str, Any]:
-        """Pull."""
+        """Pull canonical split docs from GitHub and refresh local corpus state."""
         missing = self._missing_pull_adapters()
         if missing:
             return {
@@ -153,7 +153,7 @@ class CareerCorpusSync:
         return self.pull(force=False)
 
     def persist_memory_changes(self, message: str = "Update career corpus memory") -> Dict[str, Any]:
-        """Persist memory changes."""
+        """Convenience wrapper that persists via push()."""
         return self.push(message=message)
 
     @staticmethod
@@ -224,7 +224,7 @@ class CareerCorpusSync:
         user_git_fluency: str = "non_technical",
         technical_details_requested: bool = False,
     ) -> Dict[str, Any]:
-        """Push."""
+        """Validate, write, and verify canonical split docs via Git Data APIs."""
         result = self._base_result()
         before_snapshot = self._status_snapshot(self.store.status())
         if not self.store.is_loaded:
@@ -491,7 +491,7 @@ class CareerCorpusSync:
         self.store.set_onboarding_completion(completed, completed_utc=completed_utc)
 
     def _pull_split(self, force: bool = False) -> Dict[str, Any]:
-        """Internal helper to pull split."""
+        """Execute canonical split-document pull and local reassembly flow."""
         repo_response = self._get_memory_repo()
         if self._status_code(repo_response) == 404:
             return {"ok": False, "changed": False, "reason": "memory_repo_not_found", "error_code": "api_404"}
@@ -574,7 +574,7 @@ class CareerCorpusSync:
 
     @classmethod
     def _validate_canonical_split_docs(cls, docs: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
-        """Internal helper to validate canonical split docs."""
+        """Validate canonical CareerCorpus/ split layout and manifest integrity."""
         if not isinstance(docs, dict) or not docs:
             return {"ok": False, "error": "split_docs_missing"}
 
@@ -702,7 +702,7 @@ class CareerCorpusSync:
         changed_paths: List[str],
         deleted_paths: List[str],
     ) -> PushAttemptResult:
-        """Internal helper to attempt git push."""
+        """Perform one Git Data write attempt (blob/tree/commit/ref update)."""
         repo_response = self._get_memory_repo()
         if self._status_code(repo_response) == 404:
             return PushAttemptResult(ok=False, error_code="api_404", reason="memory_repo_not_found")
@@ -804,7 +804,7 @@ class CareerCorpusSync:
         changed_paths: List[str],
         deleted_paths: List[str],
     ) -> Dict[str, Any]:
-        """Internal helper to verify push result."""
+        """Verify changed/deleted paths and blob shas after push."""
         commit_response = self._get_git_commit(commit_sha)
         tree_sha = self._extract_nested(commit_response, ("tree", "sha"))
         if not tree_sha:
@@ -837,7 +837,7 @@ class CareerCorpusSync:
         }
 
     def _read_blob_json(self, blob_sha: str) -> Dict[str, Any]:
-        """Internal helper to read blob json."""
+        """Read one blob as JSON object, handling wrapper/raw response shapes."""
         blob_response = self._get_git_blob(blob_sha)
         status = self._status_code(blob_response)
         if status == 404:
@@ -856,7 +856,7 @@ class CareerCorpusSync:
         return obj
 
     def _read_blob_text(self, blob_sha: str) -> str:
-        """Internal helper to read blob text."""
+        """Read one blob as UTF-8 text and raise on not-found."""
         blob_response = self._get_git_blob(blob_sha)
         status = self._status_code(blob_response)
         if status == 404:
@@ -865,7 +865,7 @@ class CareerCorpusSync:
 
     @staticmethod
     def _blob_response_to_text(blob_response: Any) -> str:
-        """Internal helper to blob response to text."""
+        """Normalize supported blob response variants to UTF-8 text."""
         if isinstance(blob_response, str):
             return blob_response
         if isinstance(blob_response, (bytes, bytearray)):
@@ -892,7 +892,7 @@ class CareerCorpusSync:
 
     @staticmethod
     def _tree_path_to_blob_sha(tree_response: Dict[str, Any]) -> Dict[str, str]:
-        """Internal helper to tree path to blob sha."""
+        """Build a path->blob_sha map from recursive tree response entries."""
         entries = tree_response.get("tree")
         if not isinstance(entries, list):
             raise ValueError("Tree response missing 'tree' list.")
@@ -909,7 +909,7 @@ class CareerCorpusSync:
         return mapping
 
     def _missing_push_adapters(self) -> List[str]:
-        """Internal helper to missing push adapters."""
+        """Return missing adapter names required for push operations."""
         missing = []
         if self._get_memory_repo is None:
             missing.append("get_memory_repo")
@@ -932,7 +932,7 @@ class CareerCorpusSync:
         return missing
 
     def _missing_pull_adapters(self) -> List[str]:
-        """Internal helper to missing pull adapters."""
+        """Return missing adapter names required for pull operations."""
         missing = []
         if self._get_memory_repo is None:
             missing.append("get_memory_repo")
@@ -948,7 +948,7 @@ class CareerCorpusSync:
 
     @staticmethod
     def _status_code(response: Any) -> Optional[int]:
-        """Internal helper to status code."""
+        """Extract integer status_code from adapter responses when present."""
         if not isinstance(response, dict):
             return None
         status = response.get("status_code")
@@ -956,7 +956,7 @@ class CareerCorpusSync:
 
     @staticmethod
     def _extract_nested(response: Dict[str, Any], path: tuple[str, ...]) -> Optional[str]:
-        """Internal helper to extract nested."""
+        """Safely extract nested string values from response dicts."""
         node: Any = response
         for key in path:
             if not isinstance(node, dict):
@@ -965,7 +965,7 @@ class CareerCorpusSync:
         return node if isinstance(node, str) and node else None
 
     def _base_result(self) -> Dict[str, Any]:
-        """Internal helper to base result."""
+        """Create the standard push result payload skeleton."""
         return {
             "ok": False,
             "pushed": False,
@@ -990,7 +990,7 @@ class CareerCorpusSync:
 
     @staticmethod
     def _status_snapshot(status: Dict[str, Any]) -> Dict[str, Any]:
-        """Internal helper to status snapshot."""
+        """Capture status fields used to detect status-change signaling."""
         return {
             "dirty": status.get("dirty"),
             "local_hash": status.get("local_hash"),
@@ -1010,7 +1010,7 @@ class CareerCorpusSync:
         user_git_fluency: str,
         technical_details_requested: bool,
     ) -> Dict[str, Any]:
-        """Internal helper to finalize push result."""
+        """Attach status-change flag and user-facing message to final result."""
         after_snapshot = self._status_snapshot(self.store.status())
         result["status_changed"] = before_snapshot != after_snapshot
         result["user_message"] = self._build_user_message(
@@ -1026,7 +1026,7 @@ class CareerCorpusSync:
         user_git_fluency: str = "non_technical",
         technical_details_requested: bool = False,
     ) -> str:
-        """Internal helper to build user message."""
+        """Build user-facing persistence message from result and verbosity mode."""
         persisted = bool(result.get("persisted"))
         reason = result.get("reason")
         error_code = result.get("error_code")
@@ -1063,7 +1063,7 @@ class CareerCorpusSync:
         deleted_paths: List[str],
         target_sections: Set[str],
     ) -> Set[str]:
-        """Internal helper to disallowed changed paths."""
+        """Compute changed/deleted paths outside approved section scope."""
         allowed = cls._allowed_paths_for_sections(target_sections)
         disallowed: Set[str] = set()
         for path in changed_paths + deleted_paths:
@@ -1073,7 +1073,7 @@ class CareerCorpusSync:
 
     @classmethod
     def _allowed_paths_for_sections(cls, target_sections: Set[str]) -> Set[str]:
-        """Internal helper to allowed paths for sections."""
+        """Return exact canonical file paths allowed for approved sections."""
         mapping = {
             "profile": CareerCorpusStore.PROFILE_FILE,
             "certifications": CareerCorpusStore.CERTIFICATIONS_FILE,
@@ -1090,7 +1090,7 @@ class CareerCorpusSync:
 
     @staticmethod
     def _path_prefix_allowed(path: str, target_sections: Set[str]) -> bool:
-        """Internal helper to path prefix allowed."""
+        """Allow per-item experience/project paths when those sections are approved."""
         if "experience" in target_sections and path.startswith(CareerCorpusStore.EXPERIENCE_FILE_PREFIX):
             return True
         if "projects" in target_sections and path.startswith(CareerCorpusStore.PROJECT_FILE_PREFIX):

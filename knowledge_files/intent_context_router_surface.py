@@ -31,6 +31,24 @@ __all__ = [
 ]
 
 
+# RuntimeState field contract (GPT-facing)
+# Use these definitions when constructing RuntimeState for build_context(...).
+#
+# repo_exists: memory repository exists in user's GitHub.
+# runtime_initialized: runtime bootstrap/auth completed for this session.
+# corpus_exists: canonical corpus files exist in GitHub repo.
+# corpus_loaded: corpus has been pulled from GitHub and loaded locally.
+# corpus_valid: locally loaded corpus passed validation.
+# onboarding_complete: corpus metadata indicates onboarding is complete.
+# approved_markdown_ready: resume markdown is finalized and approved for export.
+# last_jd_analysis_present: a JD analysis result exists for current drafting flow.
+# last_operation_failed: most recent memory/runtime operation failed.
+# status_changed_since_last_emit: memory status changed since last status emission.
+# user_requested_memory_status: user explicitly asked for memory status this turn.
+# technical_detail_requested: user requested technical/debug-level response detail.
+# repo_create_attempted_this_turn: createMemoryRepo was already attempted this turn.
+
+
 def gpt_surface(obj: Any) -> Any:
     """When to use: mark a symbol as GPT-facing surface API."""
     obj.__gpt_layer__ = "surface"

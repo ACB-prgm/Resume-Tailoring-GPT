@@ -38,6 +38,7 @@ class Intent(str, Enum):
     FAILURE_RECOVERY = "INTENT_FAILURE_RECOVERY"
     PDF_EXPORT = "INTENT_PDF_EXPORT"
     MEMORY_PERSIST_UPDATE = "INTENT_MEMORY_PERSIST_UPDATE"
+    LOAD_CORPUS = "INTENT_LOAD_CORPUS"
     ONBOARDING_IMPORT_REPAIR = "INTENT_ONBOARDING_IMPORT_REPAIR"
     RESUME_DRAFTING = "INTENT_RESUME_DRAFTING"
     JD_ANALYSIS = "INTENT_JD_ANALYSIS"
@@ -48,7 +49,13 @@ class Intent(str, Enum):
 @gpt_core
 @dataclass(frozen=True)
 class RuntimeState:
-    """Immutable per-turn runtime snapshot used by atom predicates."""
+    """
+    Immutable per-turn runtime snapshot used by atom predicates.
+
+    Semantics:
+    - corpus_exists=True: canonical corpus exists in the GitHub repo.
+    - corpus_loaded=True: corpus has been pulled and loaded into local runtime state.
+    """
     repo_exists: bool = False
     runtime_initialized: bool = False
     corpus_exists: bool = False
@@ -250,7 +257,11 @@ def _memory_preflight_routes(state: RuntimeState) -> List[Intent]:
     if not state.runtime_initialized or not state.repo_exists:
         routes.append(Intent.INITIALIZATION_OR_SETUP)
     if not state.corpus_loaded:
-        routes.append(Intent.MEMORY_STATUS)
+        if state.corpus_exists:
+            routes.append(Intent.LOAD_CORPUS)
+        else:
+            routes.append(Intent.ONBOARDING_IMPORT_REPAIR)
+        return routes
     if (not state.corpus_exists) or (not state.corpus_valid):
         routes.append(Intent.ONBOARDING_IMPORT_REPAIR)
     return routes
@@ -280,14 +291,22 @@ def _derive_required_routes(intent: Intent, state: RuntimeState) -> Tuple[List[I
             required.append(Intent.RESUME_DRAFTING)
             reason = "PDF export requires user-approved frozen markdown."
 
+    elif intent == Intent.LOAD_CORPUS:
+        if (not state.runtime_initialized) or (not state.repo_exists):
+            required.append(Intent.INITIALIZATION_OR_SETUP)
+            reason = "Corpus load requires initialization/bootstrap first."
+        elif not state.corpus_exists:
+            required.append(Intent.ONBOARDING_IMPORT_REPAIR)
+            reason = "Corpus load requires an existing corpus in GitHub."
+
     elif intent == Intent.MEMORY_PERSIST_UPDATE:
         if (not state.runtime_initialized) or (not state.repo_exists):
             required.append(Intent.INITIALIZATION_OR_SETUP)
             reason = "Memory persistence requires initialization/bootstrap first."
         if not state.corpus_loaded:
-            required.append(Intent.MEMORY_STATUS)
+            required.append(Intent.LOAD_CORPUS)
             reason = reason or "Memory persistence requires corpus preflight/pull."
-        if (not state.corpus_exists) or (not state.corpus_valid):
+        if state.corpus_loaded and ((not state.corpus_exists) or (not state.corpus_valid)):
             required.append(Intent.ONBOARDING_IMPORT_REPAIR)
             reason = reason or "Memory persistence requires a valid corpus."
 

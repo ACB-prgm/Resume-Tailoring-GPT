@@ -17,15 +17,27 @@ from knowledge_files.intent_context_router_surface import Intent, RuntimeState, 
 # ---------------------------------------------------------------------------
 # Edit these values only.
 # ---------------------------------------------------------------------------
+# """Enum of supported runtime intents for atom context assembly."""
+#     CONVERSATION_ONLY = "INTENT_CONVERSATION_ONLY"
+#     FAILURE_RECOVERY = "INTENT_FAILURE_RECOVERY"
+#     PDF_EXPORT = "INTENT_PDF_EXPORT"
+#     MEMORY_PERSIST_UPDATE = "INTENT_MEMORY_PERSIST_UPDATE"
+#     LOAD_CORPUS = "INTENT_LOAD_CORPUS"
+#     ONBOARDING_IMPORT_REPAIR = "INTENT_ONBOARDING_IMPORT_REPAIR"
+#     RESUME_DRAFTING = "INTENT_RESUME_DRAFTING"
+#     JD_ANALYSIS = "INTENT_JD_ANALYSIS"
+#     MEMORY_STATUS = "INTENT_MEMORY_STATUS"
+#     INITIALIZATION_OR_SETUP = "INTENT_INITIALIZATION_OR_SETUP"
+
 INTENT = Intent.JD_ANALYSIS
 
 STATE_OVERRIDES = {
     # Example overrides:
-    "repo_exists": True,
     "runtime_initialized": True,
-    "corpus_loaded": True,
+    "repo_exists": True,
     "corpus_exists": True,
-    "corpus_valid": True,
+    # "corpus_loaded": True,
+    # "corpus_valid": True,
 }
 
 # Return full verbose ContextPack when True; compact model-facing output when False.
@@ -90,20 +102,13 @@ def main() -> None:
     state_data = {**default_state, **STATE_OVERRIDES}
     state = RuntimeState(**state_data)
     result = build_context(INTENT, state, verbose=VERBOSE)
-    if VERBOSE:
-        output: dict[str, Any] = {"context_pack": _pack_to_dict(result)}
-    else:
-        compact_text = str(result)
-        output = {
-            "context": compact_text.splitlines(),
-        }
     if INCLUDE_INPUT:
-        output["input"] = {
-            "intent": INTENT.value,
-            "runtime_state": state_data,
-        }
-    print(json.dumps(output, indent=2, sort_keys=True))
-
+        print("== INPUT ==")
+        print(
+            f"intent: {INTENT.value}",
+            f"runtime_state: {state_data}"
+        )
+    print(result)
 
 if __name__ == "__main__":
     main()
