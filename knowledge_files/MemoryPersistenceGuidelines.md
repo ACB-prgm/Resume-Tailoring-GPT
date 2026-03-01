@@ -61,7 +61,7 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
   - Use before a section commit flow.
   - If local store is already loaded and has `remote_file_sha`, skip pre-write pull.
   - This reduces redundant `getGitBlob` calls before write.
-- `push(message)`:
+  - `push(message)`:
   - Accept `target_sections` + `approved_sections` for guarded section writes.
   - Reject write if target sections are not explicitly approved.
   - Reject write when changed/deleted paths include unapproved sections.
@@ -76,6 +76,13 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
   - Update meta fields:
     - `remote_blob_sha`, `remote_commit_sha`, `remote_branch`, `remote_file_sha`,
       `remote_file_hashes`, `last_verified_utc`, `last_push_method`.
+
+## Onboarding finalization rule (required)
+- During onboarding, do not persist section-by-section.
+- Collect explicit approvals for the full onboarding required set:
+  - `profile`, `experience`, `projects`, `skills`, `certifications`, `education`, `metadata`.
+- Execute one final validate -> push operation after full approval set is collected.
+- `onboarding_complete` may be marked true only after this final push succeeds and verification passes.
 
 ## Validation + preflight sequence (hard fail)
 Before **any** write:

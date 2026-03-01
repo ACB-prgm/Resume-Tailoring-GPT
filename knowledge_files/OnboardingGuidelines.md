@@ -7,94 +7,70 @@ Create a complete, durable `career_corpus.json` for new users so future resume t
 - Run onboarding if `career_corpus.json` is missing or invalid.
 - Re-run onboarding when user explicitly asks to rebuild their corpus.
 
-## Opening explanation (required)
-Explain that the career corpus is:
-- A complete and detailed professional history (like a highly detailed CV).
-- Persistent memory used to tailor each resume to each JD.
-- The primary evidence source for claims in resume output.
+## Onboarding phase order (required)
+1. Phase A: onboarding introduction (once per session).
+2. Phase B: GitHub account/authentication gate + memory repo bootstrap.
+3. Phase C: intake mode selection (LinkedIn PDF upload or manual setup).
+4. Phase D: section-by-section confirmation gate.
+5. Phase E: final validation, single push, and onboarding completion metadata update.
 
-## Optional LinkedIn PDF intake (first prompt)
-Start onboarding with this optional suggestion:
-- Ask the user to download their LinkedIn profile as a PDF and upload it for context.
-- State clearly this step is optional.
-- Include privacy reminder: user should review/redact sensitive details before upload.
+## Phase A: Onboarding introduction (required, once per session)
+- If `turn_state.onboarding_intro_shown_this_session` is missing/false:
+  - Show a concise introduction and then set it to `true`.
+- If already `true`, skip this phase and continue.
+- Intro must briefly state:
+  - GPT purpose: tailor resumes using verified evidence only.
+  - Onboarding purpose: set up private persistent storage in the user's GitHub.
+  - Career corpus definition: structured, reusable professional evidence memory.
+  - Intake options: upload LinkedIn PDF or continue with manual setup.
 
-## Normalization summary (required before approvals)
-Emit a compact normalization summary before section previews:
+## Phase B: GitHub account and authentication gate (required before intake)
+- Ask whether the user has a GitHub account and can authenticate.
+- If user does not have GitHub:
+  - Provide concise setup steps:
+    1. Create account at `https://github.com/signup`.
+    2. Verify email and complete account setup.
+    3. Return to continue authentication and memory setup.
+  - Stop onboarding execution at this point (do not continue to intake/sections).
+- If user has GitHub and can authenticate:
+  - Run repo bootstrap before section collection:
+    - `getMemoryRepo -> (if 404) createMemoryRepo -> getMemoryRepo(confirm)`.
 
-```text
-NORMALIZATION SUMMARY
-- detected_sections: [profile, experience, projects, skills, certifications, education, metadata]
-- counts:
-  - experience: <n>
-  - projects: <n>
-  - certifications: <n>
-  - education: <n>
-  - skills.technical: <n>
-- ambiguous_fields: [<field/path>, ...]
-```
+## Phase C: Intake mode selection
+- Offer two modes:
+  - LinkedIn PDF upload.
+  - Manual section-by-section setup.
+- For LinkedIn intake:
+  - State that upload is optional.
+  - Include privacy reminder: review/redact sensitive details before upload.
 
 ## Section-by-section confirmation gate (required)
 - Even when a full LinkedIn PDF or large CV is uploaded, do not persist in one bulk write.
 - Present normalized content one section at a time and ask for explicit confirmation.
 - User-facing previews must be human-readable markdown/text.
-- Do not print raw JSON objects unless the user explicitly asks for raw JSON.
 - Use short wording only:
 
 ```text
 Here is your <section> section:
 <section_content>
-If this looks good, let me know and I'll save it to the corpus.
+Let me know if you would like to make any changes, otherwise just say 'continue' and I will add it to your corpus.
 ```
 
 - Apply this gate at minimum to:
   - profile
-  - experience
-  - projects
+  - each experience
+  - each project
   - skills
   - certifications
   - education
   - metadata
-- Links preview format (required):
-  - show each link as `- <name>: <url>`
-  - never show links as raw JSON objects in normal flow
 - Only persist after user confirmation for the shown section(s).
 - Track confirmations in `approved_sections`:
   - `approved_sections[section] = {"approved": true, "approved_at_utc": "..."}`
 - Persist only `target_sections` that are explicitly approved.
 - Do not implicitly persist other sections.
-- For scaffolding, ask explicitly:
-  - `Create empty sections now? Yes/No.`
 
-## Guided interview sections (required)
-Collect structured data in this order if upload is missing or incomplete:
-1. Profile and contact basics
-- Name, location, email/phone (if user wants included), links.
-- Link format must be objects:
-  - `{"name": "GitHub", "url": "https://github.com/ACB-prgm"}`
-
-2. Experience (chronological, detailed)
-- Employer, title, dates, location.
-- Core responsibilities.
-- Tools/platforms used.
-- Quantified outcomes and business impact.
-
-3. Projects
-- Project name, role, stack, scope, measurable outcomes.
-
-4. Skills / tools / methods
-- Technical stacks, platforms, process methods, domain strengths.
-
-5. Certifications
-- Name, issuer, date/status.
-
-6. Education
-- Degree, institution, graduation year.
-
-7. Measurable outcomes summary
-- Reusable metrics (time saved, cost reduction, quality/reliability improvements).
-
-## Normalization and persistence
+## Phase E: Normalization and persistence (finalize once)
 1. Normalize all collected content into `career_corpus.json` schema shape.
    - Use optional `notes` fields only for content context that does not fit existing properties
      (for example incomplete degrees, honors, awards, special circumstances).
@@ -102,16 +78,18 @@ Collect structured data in this order if upload is missing or incomplete:
    - Do not place provenance/process metadata in notes (source/upload/onboarding/commit details).
    - Do not persist a dedicated resume title/header field in corpus.
    - If user wants a headline remembered, store it as confirmed `profile.notes` content.
-   - Persist onboarding completion in corpus metadata:
-     - `metadata.onboarding_complete` (boolean)
-     - `metadata.onboarding_completed_utc` (date-time when completed)
 2. Build a provenance ledger for each major section:
-- source basis is `uploaded_file`, `current_chat`, or `user_confirmed_correction`.
+  - source basis is `uploaded_file`, `current_chat`, or `user_confirmed_correction`.
 3. Mark uncertain fields explicitly and request confirmation before persistence.
 4. Show a concise summary preview to user.
-5. Ask for explicit confirmation before first save.
-6. Validate the corpus with `/mnt/data/memory_validation_surface.py` before writing.
-7. Persist only schema-valid JSON via memory repo upsert operations.
+5. Collect approvals for all required onboarding sections:
+  - `profile`, `experience`, `projects`, `skills`, `certifications`, `education`, `metadata`.
+6. Run one final write only after full approval set:
+  - validate corpus -> single push operation.
+  - do not push per section during onboarding.
+7. Only after successful final push, persist onboarding completion metadata:
+  - `metadata.onboarding_complete = true`
+  - `metadata.onboarding_completed_utc = <date-time>`
 
 ## Guardrails
 - Do not invent missing details.

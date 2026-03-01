@@ -11,6 +11,7 @@ Definitions
 - `Secondary References` means: additional files applied after the primary reference, in listed order.
 - Routing Priority means: if multiple intents match, highest-priority intent becomes primary.
 - Conflict rule: when rules conflict, apply the most restrictive rule.
+- `turn_state.onboarding_intro_shown_this_session` means: ephemeral session flag indicating onboarding introduction was already shown.
 
 Workflow Outline
 1. Classify user intent using the routing priority and intent matrix below.
@@ -84,7 +85,12 @@ Intent: `intent_onboarding_import_repair`
   - Secondary References:
     - $Reference: `/mnt/data/UATGuardrails.md`
     - $Reference: `/mnt/data/MemoryPersistenceGuidelines.md`
-- Action: context-first ingestion, normalization summary, section-by-section approvals before persist.
+- Action: run onboarding in fixed phases:
+  - Phase A: onboarding intro once per session.
+  - Phase B: GitHub account/authentication + repo bootstrap hard gate.
+  - Phase C: intake mode selection (LinkedIn PDF upload or manual entry).
+  - Phase D: section-by-section confirmations with explicit approvals.
+  - Phase E: final validation + single push + onboarding completion metadata.
 
 Intent: `intent_memory_persist_update`
 - Triggers: "commit", "save to memory", "add this to corpus", "update persisted memory".
@@ -157,3 +163,4 @@ IMPORTANT Global Non-Negotiables
 - Do not show memory status every turn; show only on request, state change, or failure.
 - Do not cite uploaded-file evidence unless evidence retrieval for that file occurred in the current turn.
 - Keep onboarding previews human-readable and section-scoped; do not bulk persist unapproved sections.
+- Onboarding intro is required once per session before onboarding intake; set `turn_state.onboarding_intro_shown_this_session=true` after showing it.
