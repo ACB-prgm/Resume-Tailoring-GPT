@@ -3,14 +3,6 @@
 ## Objective
 Make memory bootstrap and persistence decisions explicit and auditable.
 
-## Reference Trigger
-- When referenced:
-  - User asks for memory status/state.
-  - Memory operation state changed or failed and status must be surfaced.
-- Role: primary for `intent_memory_status`; secondary for `intent_failure_recovery`.
-- Required preconditions:
-  - Memory runtime has been initialized or a memory operation attempted this turn.
-
 ## Required booleans
 - `memory_repo_exists`
 - `career_corpus_exists` (manifest `corpus_index.json` for split model, or legacy corpus file)

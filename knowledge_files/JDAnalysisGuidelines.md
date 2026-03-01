@@ -3,14 +3,6 @@
 ## Objective
 Treat the JD as a requirements document, not marketing copy. Extract constraints, weighted requirements, and the hiring risk model before writing resume content.
 
-## Reference Trigger
-- When referenced:
-  - User asks to analyze a job description or extract role requirements.
-  - Resume drafting intent is active but JD analysis output is missing.
-- Role: primary for `intent_jd_analysis`; secondary precursor for `intent_resume_drafting`.
-- Required preconditions:
-  - JD text is available in the current turn/context.
-
 ## Required workflow
 1) Extract Binary Gates (eligibility/location/travel/degree/years/platforms/certs).  
 Mark each gate as:

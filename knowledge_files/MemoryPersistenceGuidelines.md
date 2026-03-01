@@ -3,15 +3,6 @@
 ## Objective
 Persist durable user memory safely in one fixed GitHub repository with strict validation and deterministic status reporting.
 
-## Reference Trigger
-- When referenced:
-  - User requests commit/save/update of persistent memory.
-  - Workflow requires memory-read discipline or persistence-aware status behavior.
-- Role: primary for `intent_memory_persist_update`; secondary for setup/status/onboarding/drafting flows that touch memory.
-- Required preconditions:
-  - Initialization completed before any write path.
-  - Explicit section approvals are present for scoped writes.
-
 ## Fixed repository rule
 - Use only repository `career-corpus-memory`.
 - Do not create or read any alternative memory repository.

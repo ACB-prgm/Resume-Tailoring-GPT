@@ -3,15 +3,6 @@
 ## Objective
 Generate the final PDF from approved markdown without changing approved content.
 
-## Reference Trigger
-- When referenced:
-  - User explicitly requests PDF export/final render.
-  - Draft is approved and export is the active next step.
-- Role: primary for `intent_pdf_export`; secondary only for renderer/theme details.
-- Required preconditions:
-  - User has approved the final markdown draft.
-  - Export content is frozen (no concurrent content rewrite).
-
 ## Preconditions
 - User has confirmed final markdown draft in canvas.
 - Markdown is frozen for export.

@@ -3,15 +3,6 @@
 ## Objective
 Create a complete, durable `career_corpus.json` for new users so future resume tailoring is evidence-based and fast.
 
-## Reference Trigger
-- When referenced:
-  - Corpus is missing/invalid and repair or initial onboarding is required.
-  - User uploads LinkedIn/CV/corpus content for normalization into memory.
-- Role: primary for `intent_onboarding_import_repair`; secondary for resume workflows blocked by missing/invalid corpus.
-- Required preconditions:
-  - Upload or missing/invalid corpus signal is present.
-  - For persistence, pair with memory persistence + validation references.
-
 ## When onboarding runs
 - Run onboarding if `career_corpus.json` is missing or invalid.
 - Re-run onboarding when user explicitly asks to rebuild their corpus.
@@ -27,21 +18,6 @@ Start onboarding with this optional suggestion:
 - Ask the user to download their LinkedIn profile as a PDF and upload it for context.
 - State clearly this step is optional.
 - Include privacy reminder: user should review/redact sensitive details before upload.
-
-## Uploaded-source ingestion receipt (required)
-- If user uploads corpus text, resume text, or LinkedIn PDF-derived text, read it before assessment.
-- Default intake mode for user uploads is context-first:
-  - read/analyze uploaded content directly in model context first.
-  - use Python/regex extraction only when needed for reliability or when user requests it.
-- Emit this receipt before any quality claim:
-
-```text
-INGESTION RECEIPT
-- source: <filename>
-- read_confirmed: yes
-- sections_detected: [profile, experience, projects, skills, ...]
-- gaps_detected: [missing dates, missing metrics, unknown employer/location, ...]
-```
 
 ## Normalization summary (required before approvals)
 Emit a compact normalization summary before section previews:
