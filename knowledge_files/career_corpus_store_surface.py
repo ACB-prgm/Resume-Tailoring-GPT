@@ -34,11 +34,14 @@ def gpt_core(obj: Any) -> Any:
 class CareerCorpusStore:
     """Thin GPT-facing wrapper around corpus store core behavior."""
 
+    REMOTE_DIR = _CareerCorpusStoreCore.REMOTE_DIR
     INDEX_FILE = _CareerCorpusStoreCore.INDEX_FILE
     PROFILE_FILE = _CareerCorpusStoreCore.PROFILE_FILE
     CERTIFICATIONS_FILE = _CareerCorpusStoreCore.CERTIFICATIONS_FILE
     EDUCATION_FILE = _CareerCorpusStoreCore.EDUCATION_FILE
     METADATA_FILE = _CareerCorpusStoreCore.METADATA_FILE
+    EXPERIENCE_FILE_PREFIX = _CareerCorpusStoreCore.EXPERIENCE_FILE_PREFIX
+    PROJECT_FILE_PREFIX = _CareerCorpusStoreCore.PROJECT_FILE_PREFIX
     SPLIT_FORMAT_VERSION = _CareerCorpusStoreCore.SPLIT_FORMAT_VERSION
 
     @gpt_surface

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional, Set
@@ -77,6 +78,16 @@ class CareerCorpusSync:
     """Sync local corpus state with GitHub via injected tool-call adapters."""
 
     METHOD = "git_blob_utf8_split"
+    CANONICAL_DIR = CareerCorpusStore.REMOTE_DIR
+    EXPERIENCE_FILE_RE = re.compile(rf"^{re.escape(CANONICAL_DIR)}/corpus_experience_[^/]+\.json$")
+    PROJECT_FILE_RE = re.compile(rf"^{re.escape(CANONICAL_DIR)}/corpus_project_[^/]+\.json$")
+    FORBIDDEN_ROOT_FILES = {
+        "career_corpus.json",
+        "corpus_index.json",
+        "corpus_profile.json",
+        "corpus_experience.json",
+        "corpus_project.json",
+    }
     REQUIRED_ONBOARDING_SECTIONS = {
         "profile",
         "experience",
@@ -293,6 +304,21 @@ class CareerCorpusSync:
         result["local_saved"] = True
 
         docs = self.store.build_split_documents()
+        canonical_check = self._validate_canonical_split_docs(docs)
+        if not canonical_check["ok"]:
+            result.update(
+                {
+                    "ok": False,
+                    "pushed": False,
+                    "persisted": False,
+                    "reason": canonical_check["error"],
+                    "error_code": "canonical_layout_violation",
+                }
+            )
+            return self._finalize_push_result(
+                result, before_snapshot, user_git_fluency, technical_details_requested
+            )
+
         docs_text = {path: canonical_json_text(doc) for path, doc in docs.items()}
         local_hashes = {path: canonical_json_sha256(doc) for path, doc in docs.items()}
         result["payload_integrity"] = {
@@ -484,7 +510,13 @@ class CareerCorpusSync:
         path_to_blob = self._tree_path_to_blob_sha(tree_response)
         index_sha = path_to_blob.get(CareerCorpusStore.INDEX_FILE)
         if not index_sha:
-            return {"ok": True, "changed": False, "reason": "remote_missing", "error_code": "api_404"}
+            return {
+                "ok": False,
+                "changed": False,
+                "reason": f"canonical_layout_missing:{CareerCorpusStore.INDEX_FILE}",
+                "error_code": "canonical_layout_missing",
+                "repair_guidance": "Run onboarding/repair to create canonical split docs under CareerCorpus/.",
+            }
 
         status = self.store.status()
         if not force and status.get("remote_file_sha") == index_sha:
@@ -504,6 +536,17 @@ class CareerCorpusSync:
                 }
             split_docs[path] = self._read_blob_json(blob_sha)
 
+        canonical_docs = {CareerCorpusStore.INDEX_FILE: index_doc, **split_docs}
+        canonical_check = self._validate_canonical_split_docs(canonical_docs)
+        if not canonical_check["ok"]:
+            return {
+                "ok": False,
+                "changed": False,
+                "reason": canonical_check["error"],
+                "error_code": "canonical_layout_violation",
+                "repair_guidance": "Run onboarding/repair to rebuild canonical split docs under CareerCorpus/.",
+            }
+
         corpus = CareerCorpusStore.assemble_from_split_documents(index_doc, split_docs)
         file_hashes = index_doc.get("file_hashes")
         remote_hashes = file_hashes if isinstance(file_hashes, dict) else {}
@@ -521,6 +564,128 @@ class CareerCorpusSync:
             "remote_file_sha": index_sha,
             "dirty": self.store.status()["dirty"],
         }
+
+    @classmethod
+    def _validate_canonical_split_docs(cls, docs: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        if not isinstance(docs, dict) or not docs:
+            return {"ok": False, "error": "split_docs_missing"}
+
+        index_path = CareerCorpusStore.INDEX_FILE
+        if index_path not in docs:
+            return {"ok": False, "error": f"canonical_index_missing:{index_path}"}
+
+        forbidden_present = sorted(path for path in docs.keys() if path in cls.FORBIDDEN_ROOT_FILES)
+        if forbidden_present:
+            return {
+                "ok": False,
+                "error": "forbidden_root_paths_present:" + ",".join(forbidden_present),
+            }
+
+        canonical_prefix = f"{cls.CANONICAL_DIR}/"
+        for path in docs.keys():
+            if not isinstance(path, str) or not path.startswith(canonical_prefix):
+                return {"ok": False, "error": f"path_outside_canonical_dir:{path}"}
+            if not path.endswith(".json"):
+                return {"ok": False, "error": f"non_json_split_path:{path}"}
+
+        index_doc = docs.get(index_path)
+        if not isinstance(index_doc, dict):
+            return {"ok": False, "error": "canonical_index_shape_invalid"}
+
+        expected_core_files = {
+            "profile": CareerCorpusStore.PROFILE_FILE,
+            "certifications": CareerCorpusStore.CERTIFICATIONS_FILE,
+            "education": CareerCorpusStore.EDUCATION_FILE,
+            "metadata": CareerCorpusStore.METADATA_FILE,
+        }
+        core_files = index_doc.get("core_files")
+        if not isinstance(core_files, dict):
+            return {"ok": False, "error": "canonical_core_files_missing"}
+        if "skills" in core_files:
+            return {"ok": False, "error": "legacy_skills_core_file_forbidden"}
+        if core_files != expected_core_files:
+            return {"ok": False, "error": "canonical_core_files_mismatch"}
+
+        for required_path in expected_core_files.values():
+            if required_path not in docs:
+                return {"ok": False, "error": f"canonical_core_doc_missing:{required_path}"}
+
+        experience_entries = index_doc.get("experience_files")
+        if not isinstance(experience_entries, list):
+            return {"ok": False, "error": "experience_files_missing_or_invalid"}
+        project_entries = index_doc.get("project_files")
+        if not isinstance(project_entries, list):
+            return {"ok": False, "error": "project_files_missing_or_invalid"}
+
+        experience_paths_from_index: Set[str] = set()
+        for entry in experience_entries:
+            if not isinstance(entry, dict):
+                return {"ok": False, "error": "experience_entry_invalid"}
+            path = entry.get("path")
+            if not isinstance(path, str) or not cls.EXPERIENCE_FILE_RE.match(path):
+                return {"ok": False, "error": f"experience_path_invalid:{path}"}
+            if path in experience_paths_from_index:
+                return {"ok": False, "error": f"experience_path_duplicate:{path}"}
+            if path not in docs:
+                return {"ok": False, "error": f"experience_doc_missing:{path}"}
+            exp_doc = docs[path]
+            if not isinstance(exp_doc, dict) or "experience" not in exp_doc:
+                return {"ok": False, "error": f"experience_doc_shape_invalid:{path}"}
+            experience_paths_from_index.add(path)
+
+        project_paths_from_index: Set[str] = set()
+        for entry in project_entries:
+            if not isinstance(entry, dict):
+                return {"ok": False, "error": "project_entry_invalid"}
+            path = entry.get("path")
+            if not isinstance(path, str) or not cls.PROJECT_FILE_RE.match(path):
+                return {"ok": False, "error": f"project_path_invalid:{path}"}
+            if path in project_paths_from_index:
+                return {"ok": False, "error": f"project_path_duplicate:{path}"}
+            if path not in docs:
+                return {"ok": False, "error": f"project_doc_missing:{path}"}
+            project_doc = docs[path]
+            if not isinstance(project_doc, dict) or "project" not in project_doc:
+                return {"ok": False, "error": f"project_doc_shape_invalid:{path}"}
+            project_paths_from_index.add(path)
+
+        experience_paths_from_docs = {
+            path
+            for path in docs.keys()
+            if isinstance(path, str) and cls.EXPERIENCE_FILE_RE.match(path)
+        }
+        if experience_paths_from_docs != experience_paths_from_index:
+            return {"ok": False, "error": "experience_index_doc_mismatch"}
+
+        project_paths_from_docs = {
+            path
+            for path in docs.keys()
+            if isinstance(path, str) and cls.PROJECT_FILE_RE.match(path)
+        }
+        if project_paths_from_docs != project_paths_from_index:
+            return {"ok": False, "error": "project_index_doc_mismatch"}
+
+        allowed_paths = {index_path, *expected_core_files.values(), *experience_paths_from_index, *project_paths_from_index}
+        extra_paths = sorted(path for path in docs.keys() if path not in allowed_paths)
+        if extra_paths:
+            return {"ok": False, "error": "unexpected_split_paths:" + ",".join(extra_paths)}
+
+        file_hashes = index_doc.get("file_hashes")
+        if not isinstance(file_hashes, dict):
+            return {"ok": False, "error": "file_hashes_missing_or_invalid"}
+        expected_hashes = {
+            path: canonical_json_sha256(doc)
+            for path, doc in docs.items()
+            if path != index_path
+        }
+        if set(file_hashes.keys()) != set(expected_hashes.keys()):
+            return {"ok": False, "error": "file_hashes_path_mismatch"}
+        for path, expected in expected_hashes.items():
+            actual = file_hashes.get(path)
+            if not isinstance(actual, str) or actual != expected:
+                return {"ok": False, "error": f"file_hash_mismatch:{path}"}
+
+        return {"ok": True, "error": None}
 
     def _attempt_git_push(
         self,
@@ -886,25 +1051,23 @@ class CareerCorpusSync:
     @classmethod
     def _allowed_paths_for_sections(cls, target_sections: Set[str]) -> Set[str]:
         mapping = {
-            "profile": "corpus_profile.json",
-            "certifications": "corpus_certifications.json",
-            "education": "corpus_education.json",
-            "metadata": "corpus_metadata.json",
+            "profile": CareerCorpusStore.PROFILE_FILE,
+            "certifications": CareerCorpusStore.CERTIFICATIONS_FILE,
+            "education": CareerCorpusStore.EDUCATION_FILE,
+            "metadata": CareerCorpusStore.METADATA_FILE,
         }
         allowed = {CareerCorpusStore.INDEX_FILE}
         for section, path in mapping.items():
             if section in target_sections:
                 allowed.add(path)
-        # Skills now live under profile, but keep legacy skills file removable during migration pushes.
         if "profile" in target_sections or "skills" in target_sections:
-            allowed.add("corpus_profile.json")
-            allowed.add("corpus_skills.json")
+            allowed.add(CareerCorpusStore.PROFILE_FILE)
         return allowed
 
     @staticmethod
     def _path_prefix_allowed(path: str, target_sections: Set[str]) -> bool:
-        if "experience" in target_sections and path.startswith("corpus_experience_"):
+        if "experience" in target_sections and path.startswith(CareerCorpusStore.EXPERIENCE_FILE_PREFIX):
             return True
-        if "projects" in target_sections and path.startswith("corpus_project_"):
+        if "projects" in target_sections and path.startswith(CareerCorpusStore.PROJECT_FILE_PREFIX):
             return True
         return False

@@ -148,6 +148,9 @@ IMPORTANT Global Non-Negotiables
   - `getGitBlob` and `createGitBlob`: always use `Accept: application/vnd.github.raw`.
   - All other GitHub memory tool calls that include an `Accept` header: use `Accept: application/vnd.github+json`.
 - Apply this header map even if schema constraints are missing/relaxed; do not override, omit, or substitute these values.
+- Persistence writes must go through `CareerCorpusSync.push()` only; do not manually construct `createGitTree` path sets.
+- Canonical remote memory paths are fixed under `CareerCorpus/`; do not write split docs outside this directory.
+- Never write remote root `career_corpus.json`.
 - Never claim `validated=true` unless validation actually ran and passed.
 - Never claim `persisted=true` unless push and verification both succeeded.
 - Do not show memory status every turn; show only on request, state change, or failure.

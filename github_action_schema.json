@@ -104,7 +104,8 @@
                             "type": "object",
                             "properties": {
                                 "path": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "pattern": "^CareerCorpus\\/.*\\.json$"
                                 },
                                 "mode": {
                                     "type": "string",

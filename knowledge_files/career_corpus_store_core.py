@@ -57,11 +57,14 @@ def _default_schema_path() -> Path:
 class CareerCorpusStore:
     """In-memory editor + atomic persistence for `career_corpus.json`."""
 
-    INDEX_FILE = "corpus_index.json"
-    PROFILE_FILE = "corpus_profile.json"
-    CERTIFICATIONS_FILE = "corpus_certifications.json"
-    EDUCATION_FILE = "corpus_education.json"
-    METADATA_FILE = "corpus_metadata.json"
+    REMOTE_DIR = "CareerCorpus"
+    INDEX_FILE = f"{REMOTE_DIR}/corpus_index.json"
+    PROFILE_FILE = f"{REMOTE_DIR}/corpus_profile.json"
+    CERTIFICATIONS_FILE = f"{REMOTE_DIR}/corpus_certifications.json"
+    EDUCATION_FILE = f"{REMOTE_DIR}/corpus_education.json"
+    METADATA_FILE = f"{REMOTE_DIR}/corpus_metadata.json"
+    EXPERIENCE_FILE_PREFIX = f"{REMOTE_DIR}/corpus_experience_"
+    PROJECT_FILE_PREFIX = f"{REMOTE_DIR}/corpus_project_"
     SPLIT_FORMAT_VERSION = "1.0.0"
 
     ID_PREFIXES = {
@@ -190,14 +193,14 @@ class CareerCorpusStore:
         experience_files = []
         for exp in corpus.get("experience", []):
             exp_id = exp["id"]
-            path = f"corpus_experience_{exp_id}.json"
+            path = f"{self.EXPERIENCE_FILE_PREFIX}{exp_id}.json"
             docs[path] = {"experience": deepcopy(exp)}
             experience_files.append({"id": exp_id, "path": path})
 
         project_files = []
         for proj in corpus.get("projects", []):
             proj_id = proj["id"]
-            path = f"corpus_project_{proj_id}.json"
+            path = f"{self.PROJECT_FILE_PREFIX}{proj_id}.json"
             docs[path] = {"project": deepcopy(proj)}
             project_files.append({"id": proj_id, "path": path})
 

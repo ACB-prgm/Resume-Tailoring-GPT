@@ -1,7 +1,7 @@
 # Onboarding Guide
 
 ## Objective
-Create a complete, durable `career_corpus.json` for new users so future resume tailoring is evidence-based and fast.
+Create a complete, durable career corpus memory for new users so future resume tailoring is evidence-based and fast, persisted remotely as canonical split docs under `CareerCorpus/`.
 
 
 ## Key definitions (use consistently)
@@ -117,7 +117,9 @@ Scope control:
 
 6. Finalize:
    * Validate `draft_corpus` against schema
-   * Perform **one single push operation** to GitHub
+   * Perform **one single push operation** to GitHub using canonical split docs under `CareerCorpus/`
+   * Do not write a monolithic remote `career_corpus.json`
+   * Do not write aggregate section files like `experience.json` or `projects.json`
    * If push fails: do not mark onboarding complete; surface the error and keep the staged draft in-session.
 
 7. Only after successful push:

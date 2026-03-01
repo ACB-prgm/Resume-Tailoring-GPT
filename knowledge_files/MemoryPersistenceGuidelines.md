@@ -9,13 +9,18 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 
 ## Canonical memory files
 - Split corpus files (remote canonical):
-  - `corpus_index.json` (manifest)
-  - `corpus_profile.json`, `corpus_certifications.json`,
-    `corpus_education.json`, `corpus_metadata.json`
-  - `corpus_experience_<id>.json` (one file per experience)
-  - `corpus_project_<id>.json` (one file per project)
+  - `CareerCorpus/corpus_index.json` (manifest)
+  - `CareerCorpus/corpus_profile.json`, `CareerCorpus/corpus_certifications.json`,
+    `CareerCorpus/corpus_education.json`, `CareerCorpus/corpus_metadata.json`
+  - `CareerCorpus/corpus_experience_<id>.json` (one file per experience)
+  - `CareerCorpus/corpus_project_<id>.json` (one file per project)
 - Local corpus cache path: `/mnt/data/career_corpus.json`
 - Local sync metadata path: `/mnt/data/career_corpus.meta.json`
+
+## Forbidden remote writes
+- Do not write remote `career_corpus.json`.
+- Do not write split docs outside `CareerCorpus/`.
+- Do not write aggregate files such as `experience.json`, `projects.json`, `corpus_experience.json`, or `corpus_project.json`.
 
 ## Local-first runtime model (required)
 - Use `CareerCorpusStore` for all in-session reads/edits.
@@ -39,7 +44,7 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 3. Enforce `repo_create_attempted_this_turn` guard (no double create in same turn).
 4. Optionally call `setMemoryRepoTopics` with `["career-corpus-memory"]`; continue if topic call fails.
 5. Initialize store/sync objects.
-6. Check split corpus presence via manifest `corpus_index.json`.
+6. Check split corpus presence via manifest `CareerCorpus/corpus_index.json`.
 7. Emit memory status only when policy requires it:
 - user asks, state changes, or a memory operation fails.
 - Use the `MEMORY STATUS` code block from `MemoryStateModel.md`.
@@ -49,7 +54,7 @@ Persist durable user memory safely in one fixed GitHub repository with strict va
 
 ## Explicit sync behavior
 - `pull(force=False)`:
-  - Resolve branch head and load `corpus_index.json` from Git tree/blob APIs.
+  - Resolve branch head and load `CareerCorpus/corpus_index.json` from Git tree/blob APIs.
   - `Accept` header rule:
     - `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`
     - All other GitHub memory tool calls that include an `Accept` header: `Accept: application/vnd.github+json`
@@ -122,6 +127,7 @@ Before **any** write:
 
 ## Onboarding and repair triggers
 - If assembled corpus is missing/invalid or split manifest/files are missing/invalid, route to onboarding/repair before tailoring.
+- If canonical manifest `CareerCorpus/corpus_index.json` is missing, treat as non-canonical layout and route to onboarding/repair before tailoring.
 - Onboarding behavior is defined in `/mnt/data/OnboardingGuidelines.md`.
 
 ## Guardrails
