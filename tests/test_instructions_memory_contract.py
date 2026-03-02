@@ -34,6 +34,7 @@ class InstructionsMemoryContractTests(unittest.TestCase):
             "Skills` inside `profile.md`",
             "/mnt/data/CareerCorpusFormat.md",
             "user explicitly states a personal preference",
+            "GitHub memory is opt-out (default-on)",
         ]
         for term in required_terms:
             self.assertIn(term, self.text, term)

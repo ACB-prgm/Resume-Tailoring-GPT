@@ -12,6 +12,7 @@ Create initial career memory as markdown section files and persist them under `C
  - Execute one final push after the full required approval set is collected.
  - No schema validation step is required.
  - Do not push section-by-section.
+ - During onboarding, memory is opt-out: proceed with GitHub memory setup by default unless user explicitly declines.
 
 ## Run onboarding in fixed order:
 Phase A: onboarding introduction (once per session)
@@ -21,10 +22,11 @@ Phase D: section-by-section confirmation gate (approval before staging)
 Phase E: final review + single push + onboarding completion confirmation
 
 ## Intro content (concise)
-- GPT purpose: tailor resumes using verified evidence.
-- Onboarding purpose: establish private persistent storage in user GitHub.
-- Corpus definition: reusable markdown section files.
-- Intake options: upload LinkedIn PDF/CV or manual setup.
+- GPT purpose: Tailor resumes using verified, attributable evidence only.
+- Onboarding purpose: Set up private, persistent storage in the user’s GitHub.
+- GitHub is used because it provides secure, user-controlled private storage with clear version history.
+- Career Corpus: A structured record of the user’s full professional background—the single source of truth for resume generation.
+- Intake options: Upload a LinkedIn PDF/CV, or complete a guided manual setup.
 
 ## Drafting and confirmation
 - Build section drafts using `/mnt/data/CareerCorpusFormat.md`.

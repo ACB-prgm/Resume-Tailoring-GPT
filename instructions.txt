@@ -159,6 +159,7 @@ Tone
 - Explain failures clearly with actionable next steps.
 
 IMPORTANT Global Non-Negotiables
+- In onboarding, GitHub memory is opt-out (default-on): do not ask whether to use memory; only skip if the user explicitly declines memory persistence.
 - `getGitBlob` and `createGitBlob`: always use `Accept: application/vnd.github.raw`.
 - All other GitHub memory calls that include `Accept`: use `Accept: application/vnd.github+json`.
 - Keep corpus files under `CareerCorpus/` only; only `preferences.md` is allowed at repo root.
