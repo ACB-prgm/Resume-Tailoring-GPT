@@ -1,41 +1,38 @@
 # CareerCorpus Markdown Format
 
 ## Objective
-Provide a recommended markdown structure for `CareerCorpus/corpus.md` that mirrors the legacy JSON schema shape without hard validation.
+Provide a recommended markdown structure for section files under `CareerCorpus/`.
 
 ## Usage rules
-- This is a format target, not a strict validator.
-- Writes should follow this section order as closely as possible.
-- Section-scoped updates should replace only targeted sections and preserve untouched sections.
-- If the file is missing, initialize from this format skeleton.
+- This is a formatting target, not a hard validator.
+- Save one GitHub file per section.
+- Do not save an empty file for any section.
+- If a section has no data, omit that file.
+- If a previously saved section becomes empty, delete that section file.
 
-## Recommended document skeleton
+## Canonical section files
+- `CareerCorpus/profile.md` (includes Profile + Skills)
+- `CareerCorpus/experience.md`
+- `CareerCorpus/projects.md`
+- `CareerCorpus/certifications.md`
+- `CareerCorpus/education.md`
 
+## Do not persist
+- No `CareerCorpus/metadata.md`.
+- No `CareerCorpus/corpus.md` aggregate file.
+
+## Section templates
+
+### `CareerCorpus/profile.md`
 ```md
----
-schema_version: "1.0.0"
-last_updated_utc: "<ISO-8601 UTC>"
-source: "onboarding|user_update|manual_import"
-onboarding_complete: false
-onboarding_completed_utc: null
----
-
-# Career Corpus
-
-## Profile
+# Profile
 - Full Name:
 - Location:
 - Email:
 - Phone:
 
-### Links
-| Name | URL |
-|---|---|
-| LinkedIn | |
-| GitHub | |
-
-### Notes
-- 
+## Links
+- Name (eg. GitHub): URL
 
 ## Skills
 ### Technical
@@ -50,11 +47,14 @@ onboarding_completed_utc: null
 ### Domains
 - 
 
-### Notes
+## Notes
 - 
+```
 
-## Experience
-### Experience Item
+### `CareerCorpus/experience.md`
+```md
+# Experience
+## Experience Item
 - id:
 - employer:
 - title:
@@ -66,17 +66,20 @@ onboarding_completed_utc: null
 - domain_tags:
   - 
 
-#### Bullets
+### Bullets
 - 
 
-#### Outcomes
+### Outcomes
 - 
 
-#### Notes
+### Notes
 - 
+```
 
-## Projects
-### Project Item
+### `CareerCorpus/projects.md`
+```md
+# Projects
+## Project Item
 - id:
 - name:
 - role:
@@ -84,49 +87,46 @@ onboarding_completed_utc: null
   - 
 - description:
 
-#### Outcomes
+### Outcomes
 - 
 
-#### Notes
+### Notes
 - 
+```
 
-## Certifications
-### Certification Item
+### `CareerCorpus/certifications.md`
+```md
+# Certifications
+## Certification Item
 - id:
 - name:
 - issuer:
 - issue_date:
 - status:
 - notes:
+```
 
-## Education
-### Education Item
+### `CareerCorpus/education.md`
+```md
+# Education
+## Education Item
 - id:
 - degree:
 - institution:
 - graduation_year:
 - field_of_study:
 - notes:
-
-## Metadata
-- last_updated_utc:
-- source:
-- onboarding_complete:
-- onboarding_completed_utc:
 ```
 
 ## Section order (recommended)
-1. `Profile`
-2. `Skills`
-3. `Experience`
-4. `Projects`
-5. `Certifications`
-6. `Education`
-7. `Metadata`
+1. `profile.md`
+2. `experience.md`
+3. `projects.md`
+4. `certifications.md`
+5. `education.md`
 
-## Field guidance by legacy schema
-- Keep `Profile.full_name` populated whenever available.
-- Keep `Skills` grouped under: technical, platforms, methods, domains.
-- Keep each experience/project/certification/education entry as a repeatable item block.
-- Keep onboarding and update provenance in frontmatter and/or `Metadata` section.
-
+## Legacy-schema alignment (best effort)
+- Keep `Profile.full_name` populated when available.
+- Keep `Skills` under `Profile` grouped as: technical, platforms, methods, domains.
+- Keep repeatable item blocks for experience/projects/certifications/education.
+- Do not store metadata as a corpus section; rely on Git history for persistence traceability.

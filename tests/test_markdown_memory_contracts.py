@@ -21,40 +21,40 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
         for rel in removed:
             self.assertFalse((self.repo_root / rel).exists(), rel)
 
-    def test_memory_persistence_guide_is_markdown_only(self) -> None:
+    def test_memory_persistence_guide_uses_section_files(self) -> None:
         text = (self.repo_root / "knowledge_files/MemoryPersistenceGuidelines.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("CareerCorpus/corpus.md", text)
-        self.assertIn("/mnt/data/CareerCorpus/corpus.md", text)
-        self.assertIn("/mnt/data/CareerCorpusFormat.md", text)
-        self.assertIn("Replace only target section blocks", text)
-        self.assertNotIn("corpus_index.json", text)
-        self.assertNotIn("career_corpus.schema.json", text)
-        self.assertNotIn("build_split_documents", text)
-        self.assertNotIn("assemble_from_split_documents", text)
+        self.assertIn("CareerCorpus/profile.md", text)
+        self.assertIn("CareerCorpus/experience.md", text)
+        self.assertIn("CareerCorpus/projects.md", text)
+        self.assertIn("CareerCorpus/certifications.md", text)
+        self.assertIn("CareerCorpus/education.md", text)
+        self.assertIn("Do not save empty section files", text)
+        self.assertIn("Skills` must be inside `profile.md`", text)
+        self.assertNotIn("CareerCorpus/corpus.md", text)
+        self.assertNotIn("CareerCorpus/metadata.md", text)
 
-    def test_onboarding_uses_single_markdown_corpus_file(self) -> None:
+    def test_onboarding_uses_section_files(self) -> None:
         text = (self.repo_root / "knowledge_files/OnboardingGuidelines.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("CareerCorpus/corpus.md", text)
-        self.assertIn("/mnt/data/CareerCorpus/corpus.md", text)
-        self.assertIn("onboarding completion", text.lower())
+        self.assertIn("one file per non-empty section", text)
+        self.assertIn("Skills are always part of Profile", text)
+        self.assertIn("No Metadata section", text)
 
-    def test_career_corpus_format_exists_and_has_section_order(self) -> None:
+    def test_career_corpus_format_exists_and_matches_new_contract(self) -> None:
         path = self.repo_root / "knowledge_files/CareerCorpusFormat.md"
         self.assertTrue(path.exists())
         text = path.read_text(encoding="utf-8")
-        self.assertIn("CareerCorpus Markdown Format", text)
-        self.assertIn("## Section order (recommended)", text)
-        self.assertIn("Profile", text)
-        self.assertIn("Skills", text)
-        self.assertIn("Experience", text)
-        self.assertIn("Projects", text)
-        self.assertIn("Certifications", text)
-        self.assertIn("Education", text)
-        self.assertIn("Metadata", text)
+        self.assertIn("CareerCorpus/profile.md", text)
+        self.assertIn("CareerCorpus/experience.md", text)
+        self.assertIn("CareerCorpus/projects.md", text)
+        self.assertIn("CareerCorpus/certifications.md", text)
+        self.assertIn("CareerCorpus/education.md", text)
+        self.assertIn("Do not save an empty file", text)
+        self.assertIn("No `CareerCorpus/metadata.md`", text)
+        self.assertNotIn("## Metadata", text)
 
 
 if __name__ == "__main__":

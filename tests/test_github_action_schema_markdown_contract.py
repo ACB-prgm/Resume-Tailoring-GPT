@@ -14,7 +14,11 @@ class GithubActionSchemaMarkdownContractTests(unittest.TestCase):
         pattern = (
             self.schema["components"]["schemas"]["CreateGitTreeRequest"]["properties"]["tree"]["items"]["properties"]["path"]["pattern"]
         )
-        self.assertEqual(pattern, "^CareerCorpus\\/.*\\.md$")
+        self.assertEqual(
+            pattern,
+            "^CareerCorpus\\/(profile|experience|projects|certifications|education)\\.md$",
+        )
+        self.assertNotIn("metadata", pattern)
         self.assertNotIn(".json", pattern)
 
     def test_blob_accept_headers_remain_raw(self) -> None:

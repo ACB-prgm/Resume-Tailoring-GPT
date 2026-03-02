@@ -10,7 +10,7 @@ Run deterministic startup for direct GitHub markdown memory operations.
 4. `getMemoryRepo(owner)`.
 5. If `404`, `createMemoryRepo` once, then confirm with `getMemoryRepo(owner)`.
 6. Resolve branch/head references with `getBranchRef` and `getGitCommit` when memory read/write is requested.
-7. Load format guide `/mnt/data/CareerCorpusFormat.md` before any corpus write operation.
+7. Load format guide `/mnt/data/CareerCorpusFormat.md` before corpus writes.
 
 ## No-GitHub branch
 - If account/auth is not ready, stop memory flow and give concise setup steps.
@@ -30,5 +30,6 @@ INITIALIZATION STATUS
 
 ## Architecture lock
 - Use direct GitHub tool-call workflow only.
-- Do not rely on Python store/sync/validation modules.
-- Corpus writes are section-scoped updates within `CareerCorpus/corpus.md`.
+- Corpus persistence is section-scoped files under `CareerCorpus/`.
+- Do not write empty section files.
+- Keep skills in `profile.md`.

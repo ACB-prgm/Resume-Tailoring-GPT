@@ -1,54 +1,53 @@
 # Memory Persistence Guide
 
 ## Objective
-Persist and retrieve memory using one markdown file in GitHub with a local mirror copy.
+Persist and retrieve memory as markdown section files in GitHub.
 
 ## Fixed repository rule
 - Use only repository `career-corpus-memory`.
-- Do not create or read alternative memory repositories.
 
-## Canonical memory files
-- Remote canonical: `CareerCorpus/corpus.md`
-- Local mirror: `/mnt/data/CareerCorpus/corpus.md`
+## Canonical section files
+- `CareerCorpus/profile.md` (includes skills)
+- `CareerCorpus/experience.md`
+- `CareerCorpus/projects.md`
+- `CareerCorpus/certifications.md`
+- `CareerCorpus/education.md`
+- Local mirror path prefix: `/mnt/data/CareerCorpus/`
 - Format reference: `/mnt/data/CareerCorpusFormat.md`
+
+## Rules
+- One file per section.
+- Do not save empty section files.
+- If a section is empty, skip that file; if it previously existed, delete it in the same commit.
+- `Skills` must be inside `profile.md`.
+- Do not persist a metadata section/file.
 
 ## Direct read flow
 1. Resolve owner: `getAuthenticatedUser`.
 2. Ensure repo exists: `getMemoryRepo`, optional `createMemoryRepo`, confirm `getMemoryRepo`.
 3. Resolve head: `getBranchRef` -> `getGitCommit` -> `getGitTree(recursive=1)`.
-4. Locate `CareerCorpus/corpus.md`.
-5. If found, read with `getGitBlob` and overwrite local mirror.
-6. If not found, treat corpus as missing and route to onboarding/import.
+4. Discover canonical section files in `CareerCorpus/`.
+5. Read discovered files with `getGitBlob`.
+6. Mirror them to `/mnt/data/CareerCorpus/`.
 
 ## Direct write flow
 1. Ensure repo exists.
-2. Load current corpus markdown (local mirror first, then remote if needed).
-3. Determine target section(s) for this write:
-   - `Profile`, `Skills`, `Experience`, `Projects`, `Certifications`, `Education`, `Metadata`.
-4. Replace only target section blocks and preserve all non-target sections.
-5. Reorder/normalize headings to match `/mnt/data/CareerCorpusFormat.md` as much as possible.
-6. Build final markdown corpus text.
-7. `createGitBlob` for markdown text.
-8. `createGitTree` path `CareerCorpus/corpus.md`.
-9. `createGitCommit`.
-10. `updateBranchRef`.
-11. Only after successful ref update, overwrite local mirror.
+2. Determine target section(s).
+3. Build section markdown from `/mnt/data/CareerCorpusFormat.md`.
+4. For each target section:
+   - non-empty content -> write/update file.
+   - empty content -> do not write; delete existing file if present.
+5. `createGitBlob` for non-empty section files.
+6. `createGitTree` with changed section paths.
+7. `createGitCommit`.
+8. `updateBranchRef`.
+9. On success, mirror changed files locally.
 
 ## Header contract
 - `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`
 - All other memory calls that include `Accept`: `Accept: application/vnd.github+json`
 
-## Simplification rules
-- No schema validation.
-- No manifest/index file.
-- No split-doc assembly logic.
-- No section approval or validation gates in the write path.
-- Format adherence is best-effort against `/mnt/data/CareerCorpusFormat.md`.
-
 ## Retry and failure handling
 - One deterministic retry for retryable write failures.
 - If retry fails, return explicit failure and next manual step.
 - Do not claim persistence success when ref update fails.
-
-## Onboarding completion storage
-- Keep onboarding completion state inside `CareerCorpus/corpus.md` (frontmatter or explicit metadata section).

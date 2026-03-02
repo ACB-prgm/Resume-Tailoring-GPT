@@ -9,7 +9,7 @@ class InstructionsMemoryContractTests(unittest.TestCase):
         self.repo_root = Path(__file__).resolve().parents[1]
         self.text = (self.repo_root / "instructions.txt").read_text(encoding="utf-8")
 
-    def test_instructions_define_direct_read_and_write_flows(self) -> None:
+    def test_instructions_define_section_file_read_and_write_flows(self) -> None:
         required_terms = [
             "Direct Memory Read Flow",
             "getAuthenticatedUser",
@@ -18,29 +18,32 @@ class InstructionsMemoryContractTests(unittest.TestCase):
             "getGitCommit",
             "getGitTree(recursive=1)",
             "getGitBlob",
-            "Direct Memory Write Flow",
+            "Direct Memory Write Flow (Section Scoped)",
             "createGitBlob",
             "createGitTree",
             "createGitCommit",
             "updateBranchRef",
-            "CareerCorpus/corpus.md",
-            "/mnt/data/CareerCorpus/corpus.md",
+            "CareerCorpus/profile.md",
+            "CareerCorpus/experience.md",
+            "CareerCorpus/projects.md",
+            "CareerCorpus/certifications.md",
+            "CareerCorpus/education.md",
+            "Do not write empty section files",
+            "Skills` inside `profile.md`",
             "/mnt/data/CareerCorpusFormat.md",
-            "Update only the targeted section blocks",
         ]
         for term in required_terms:
             self.assertIn(term, self.text, term)
 
-    def test_instructions_remove_legacy_runtime_stack_references(self) -> None:
+    def test_instructions_remove_aggregate_and_metadata_file_model(self) -> None:
         forbidden_terms = [
+            "CareerCorpus/corpus.md",
+            "CareerCorpus/metadata.md",
             "career_corpus_store_surface.py",
             "career_corpus_sync_surface.py",
             "memory_validation_surface.py",
             "career_corpus.schema.json",
-            "build_split_documents",
-            "assemble_from_split_documents",
             "corpus_index.json",
-            "validated=true",
         ]
         for term in forbidden_terms:
             self.assertNotIn(term, self.text, term)

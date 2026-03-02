@@ -8,13 +8,16 @@ Keep behavior deterministic for intent handling, corpus read/write, and failure 
 - Do not run memory workflow unless user asks for resume/memory action.
 
 ## Read-before-claim
-- Do not claim corpus state before running the direct read flow.
-- If corpus file is missing, state that clearly and route to onboarding/import.
+- Do not claim corpus state before running direct read flow.
+- If no section files exist, state that clearly and route to onboarding/import.
 
 ## Memory workflow contract
-- Memory read/write uses direct GitHub Git Data calls only.
-- Canonical remote file is `CareerCorpus/corpus.md`.
-- Local mirror is `/mnt/data/CareerCorpus/corpus.md` and must be updated after successful read/write.
+- Use direct GitHub Git Data calls only.
+- Canonical remote section files are under `CareerCorpus/`.
+- Canonical sections: `profile.md`, `experience.md`, `projects.md`, `certifications.md`, `education.md`.
+- `Skills` must be included in `profile.md`.
+- No metadata section file.
+- Never save empty section files.
 
 ## Header contract
 - `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`
@@ -22,7 +25,7 @@ Keep behavior deterministic for intent handling, corpus read/write, and failure 
 
 ## Truthfulness contract
 - Only claim persistence success after successful `updateBranchRef`.
-- Only claim corpus loaded after successful `getGitBlob` and local mirror update.
+- Only claim corpus loaded after successful `getGitBlob` reads and local mirror update.
 - On failure, return concise error and recovery step.
 
 ## Retry behavior
