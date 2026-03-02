@@ -9,37 +9,24 @@ class InstructionsMemoryContractTests(unittest.TestCase):
         self.repo_root = Path(__file__).resolve().parents[1]
         self.text = (self.repo_root / "instructions.txt").read_text(encoding="utf-8")
 
-    def test_instructions_define_section_file_read_and_write_flows(self) -> None:
+    def test_instructions_define_routing_and_memory_contracts(self) -> None:
         required_terms = [
-            "Direct Memory Read Flow",
-            "getAuthenticatedUser",
-            "getMemoryRepo",
-            "getBranchRef",
-            "getGitCommit",
-            "getGitTree(recursive=1)",
-            "getGitBlob",
-            "Direct Memory Write Flow (Section Scoped + Preferences)",
-            "createGitBlob",
-            "createGitTree",
-            "createGitCommit",
-            "updateBranchRef",
-            "CareerCorpus/profile.md",
-            "CareerCorpus/experience.md",
-            "CareerCorpus/projects.md",
-            "CareerCorpus/certifications.md",
-            "CareerCorpus/education.md",
-            "preferences.md",
-            "/mnt/data/preferences.md",
-            "Do not write empty section files",
-            "Skills` inside `profile.md`",
-            "/mnt/data/CareerCorpusFormat.md",
+            "Reference Trigger Clauses",
+            "Intent Matrix",
+            "intent_memory_persist_update",
+            "intent_onboarding_import_repair",
+            "$Ref: `/mnt/data/MemoryPersistenceGuidelines.md`",
+            "$Ref: `/mnt/data/OnboardingGuidelines.md`",
+            "$Ref: `/mnt/data/CareerCorpusFormat.md`",
+            "$Ref: `/mnt/data/github_action_schema.json`",
             "user explicitly states a personal preference",
             "GitHub memory is opt-out (default-on)",
-            "Onboarding Approval Gate",
-            "Default review mode is section-by-section",
-            "full corpus at once",
-            "write draft corpus to canvas",
-            "Do not run `createGitBlob`/`createGitTree`/`createGitCommit`/`updateBranchRef` until the approval flow is complete",
+            "OnboardingGuidelines.md",
+            "getGitBlob` and `createGitBlob`: always use `Accept: application/vnd.github.raw`",
+            "All other GitHub memory calls that include `Accept`: use `Accept: application/vnd.github+json`",
+            "Keep corpus files under `CareerCorpus/` only; only `preferences.md` is allowed at repo root.",
+            "Do not write empty section files.",
+            "Never claim persisted success unless `updateBranchRef` succeeds.",
         ]
         for term in required_terms:
             self.assertIn(term, self.text, term)
