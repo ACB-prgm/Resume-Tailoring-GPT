@@ -10,6 +10,18 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 - If a section has no data, omit that file.
 - If a previously saved section becomes empty, delete that section file.
 
+## Section boundary contract (explicit)
+- Treat each file as one numbered section boundary.
+- Do not merge boundaries across files.
+- Use this order for boundaries:
+  1. `CareerCorpus/profile.md`
+  2. `CareerCorpus/experience.md`
+  3. `CareerCorpus/projects.md`
+  4. `CareerCorpus/certifications.md`
+  5. `CareerCorpus/education.md`
+- Within each file, keep the numbered subsection headers so boundaries remain easy to parse.
+- If a subsection has no content yet, keep the header and leave list items blank.
+
 ## Canonical section files
 - `CareerCorpus/profile.md` (includes Profile + Skills)
 - `CareerCorpus/experience.md`
@@ -31,36 +43,39 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 
 ### `CareerCorpus/profile.md`
 ```md
-# Profile
+<!-- START SECTION 1: PROFILE -->
+# 1) Profile
 - Full Name:
 - Location:
 - Email:
 - Phone:
 
-## Links
+## 1.1) Links
 - Name (eg. GitHub): URL
 
-## Skills
-### Technical
+## 1.2) Skills
+### 1.2.1) Technical
 - 
 
-### Platforms
+### 1.2.2) Platforms
 - 
 
-### Methods
+### 1.2.3) Methods
 - 
 
-### Domains
+### 1.2.4) Domains
 - 
 
-## Notes
+## 1.3) Notes
 - 
+<!-- END SECTION 1: PROFILE -->
 ```
 
 ### `CareerCorpus/experience.md`
 ```md
-# Experience
-## Experience Item
+<!-- START SECTION 2: EXPERIENCE -->
+# 2) Experience
+## 2.1) Experience Item
 - id:
 - employer:
 - title:
@@ -72,20 +87,23 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 - domain_tags:
   - 
 
-### Bullets
+### 2.1.1) Bullets
 - 
 
-### Outcomes
+### 2.1.2) Outcomes
 - 
 
-### Notes
+### 2.1.3) Notes
 - 
+<!-- Repeat 2.1 blocks for additional experience items -->
+<!-- END SECTION 2: EXPERIENCE -->
 ```
 
 ### `CareerCorpus/projects.md`
 ```md
-# Projects
-## Project Item
+<!-- START SECTION 3: PROJECTS -->
+# 3) Projects
+## 3.1) Project Item
 - id:
 - name:
 - role:
@@ -93,35 +111,43 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
   - 
 - description:
 
-### Outcomes
+### 3.1.1) Outcomes
 - 
 
-### Notes
+### 3.1.2) Notes
 - 
+<!-- Repeat 3.1 blocks for additional project items -->
+<!-- END SECTION 3: PROJECTS -->
 ```
 
 ### `CareerCorpus/certifications.md`
 ```md
-# Certifications
-## Certification Item
+<!-- START SECTION 4: CERTIFICATIONS -->
+# 4) Certifications
+## 4.1) Certification Item
 - id:
 - name:
 - issuer:
 - issue_date:
 - status:
 - notes:
+<!-- Repeat 4.1 blocks for additional certification items -->
+<!-- END SECTION 4: CERTIFICATIONS -->
 ```
 
 ### `CareerCorpus/education.md`
 ```md
-# Education
-## Education Item
+<!-- START SECTION 5: EDUCATION -->
+# 5) Education
+## 5.1) Education Item
 - id:
 - degree:
 - institution:
 - graduation_year:
 - field_of_study:
 - notes:
+<!-- Repeat 5.1 blocks for additional education items -->
+<!-- END SECTION 5: EDUCATION -->
 ```
 
 ## Section order (recommended)

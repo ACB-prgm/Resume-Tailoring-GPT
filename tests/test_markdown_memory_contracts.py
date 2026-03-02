@@ -43,8 +43,11 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
         self.assertIn("one file per non-empty section", text)
         self.assertIn("Skills are always part of Profile", text)
         self.assertIn("No Metadata section", text)
-        self.assertIn("GitHub memory is default-on during onboarding", text)
-        self.assertIn("Only skip GitHub memory setup/persistence if the user explicitly says not to use it", text)
+        self.assertIn("memory is opt-out", text)
+        self.assertIn("Default approval behavior is section-by-section review", text)
+        self.assertIn("full corpus at once", text)
+        self.assertIn("write the complete corpus draft to canvas", text)
+        self.assertIn("Push once only after final approval", text)
 
     def test_career_corpus_format_exists_and_matches_new_contract(self) -> None:
         path = self.repo_root / "knowledge_files/CareerCorpusFormat.md"

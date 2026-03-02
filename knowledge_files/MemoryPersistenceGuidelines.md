@@ -25,6 +25,9 @@ Persist and retrieve memory as markdown section files in GitHub.
 - Write `preferences.md` only when the user explicitly states a preference to remember.
 - `preferences.md` has no strict schema/template requirement.
 - Do not create or keep an empty `preferences.md`.
+- For onboarding, default approval mode is section-by-section.
+- If user chooses full-corpus approval, review full draft in canvas and collect explicit final approval.
+- In onboarding, push exactly once after approvals; do not push during draft review.
 
 ## Direct read flow
 1. Resolve owner: `getAuthenticatedUser`.

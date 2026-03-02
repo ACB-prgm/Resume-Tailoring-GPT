@@ -13,13 +13,19 @@ Create initial career memory as markdown section files and persist them under `C
  - No schema validation step is required.
  - Do not push section-by-section.
  - During onboarding, memory is opt-out: proceed with GitHub memory setup by default unless user explicitly declines.
+ - Default approval behavior is section-by-section review.
+ - Ask user to choose approval mode before review:
+   - section-by-section (default)
+   - full corpus at once
+ - Never push any corpus files until approval flow is complete and the user gives explicit final approval.
 
 ## Run onboarding in fixed order:
 Phase A: onboarding introduction (once per session)
 Phase B: GitHub account/authentication gate + memory repo bootstrap
 Phase C: intake mode selection (LinkedIn PDF/CV upload OR manual setup)
-Phase D: section-by-section confirmation gate (approval before staging)
-Phase E: final review + single push + onboarding completion confirmation
+Phase D: approval mode selection (default section-by-section, optional full corpus)
+Phase E: approval flow execution (stage only approved content)
+Phase F: final review + single push + onboarding completion confirmation
 
 ## Intro content (concise)
 - GPT purpose: Tailor resumes using verified, attributable evidence only.
@@ -30,8 +36,16 @@ Phase E: final review + single push + onboarding completion confirmation
 
 ## Drafting and confirmation
 - Build section drafts using `/mnt/data/CareerCorpusFormat.md`.
-- Confirm section by section.
-- Stage approved sections.
+- Ask user to choose review mode:
+  - section-by-section (default)
+  - full corpus at once
+- For section-by-section mode:
+  - present one section at a time and request approve/edit.
+  - only stage approved sections locally.
+- For full-corpus mode:
+  - write the complete corpus draft to canvas.
+  - ask the user to suggest edits directly from the full draft.
+  - request explicit approval of the full corpus before staging.
 - Skills are always part of Profile.
 - No Metadata section.
 - If the user explicitly shares personal preferences to remember, stage top-level `preferences.md` as free-form markdown.
@@ -41,7 +55,9 @@ Phase E: final review + single push + onboarding completion confirmation
 2. Write one file per non-empty section under `CareerCorpus/`.
 3. Skip empty sections; delete previously existing file if section is now empty.
 4. If user preferences were explicitly provided, write top-level `preferences.md` (do not create empty file).
-5. On success, mirror updated corpus files under `/mnt/data/CareerCorpus/` and `preferences.md` to `/mnt/data/preferences.md` when updated.
+5. Confirm explicit final user approval (section-by-section completion or full-corpus approval).
+6. Push once only after final approval.
+7. On success, mirror updated corpus files under `/mnt/data/CareerCorpus/` and `preferences.md` to `/mnt/data/preferences.md` when updated.
 
 ## Guardrails
 - Do not invent missing details.

@@ -35,6 +35,11 @@ class InstructionsMemoryContractTests(unittest.TestCase):
             "/mnt/data/CareerCorpusFormat.md",
             "user explicitly states a personal preference",
             "GitHub memory is opt-out (default-on)",
+            "Onboarding Approval Gate",
+            "Default review mode is section-by-section",
+            "full corpus at once",
+            "write draft corpus to canvas",
+            "Do not run `createGitBlob`/`createGitTree`/`createGitCommit`/`updateBranchRef` until the approval flow is complete",
         ]
         for term in required_terms:
             self.assertIn(term, self.text, term)

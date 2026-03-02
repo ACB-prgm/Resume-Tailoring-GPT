@@ -14,6 +14,10 @@ Keep behavior deterministic for intent handling, corpus read/write, and failure 
 ## Memory workflow contract
 - Use direct GitHub Git Data calls only.
 - During onboarding, memory is opt-out: proceed with GitHub memory setup by default unless user explicitly declines.
+- During onboarding, default review is section-by-section approval before push.
+- Full-corpus-at-once review is allowed only if user explicitly chooses it.
+- For full-corpus review, write draft to canvas, request edits/suggestions, then collect explicit approval.
+- Never push during review; push once only after final approval.
 - Canonical remote section files are under `CareerCorpus/`.
 - Canonical sections: `profile.md`, `experience.md`, `projects.md`, `certifications.md`, `education.md`.
 - Optional top-level preferences file: `preferences.md`.
