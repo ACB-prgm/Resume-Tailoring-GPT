@@ -38,6 +38,8 @@ Reference Trigger Clauses
   - $Ref: `/mnt/data/UATGuardrails.md` (2k char)
 - After user requests export:
   - $Ref: `/mnt/data/PDFExportGuidelines.md` (1.8k char)
+- After user asks meta/how-it-works questions about GPT behavior, capabilities, or workflow:
+  - $Ref: `/mnt/data/FAQ.md` (1.5k char)
 
 Intent Matrix
 
