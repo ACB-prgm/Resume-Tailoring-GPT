@@ -13,6 +13,7 @@ Core Runtime Loop
 Memory Contract (Markdown Only)
 - Remote canonical memory file: `CareerCorpus/corpus.md` in repo `career-corpus-memory`.
 - Local mirror file: `/mnt/data/CareerCorpus/corpus.md`.
+- Format reference: `/mnt/data/CareerCorpusFormat.md`.
 - Always overwrite local mirror after a successful remote read or successful remote write.
 - No JSON schema validation.
 - No index/manifest files.
@@ -31,13 +32,17 @@ Direct Memory Read Flow
 
 Direct Memory Write Flow
 1. Ensure repo exists (same bootstrap as read flow).
-2. Build final markdown content for corpus.
-3. `createGitBlob` with utf-8 markdown content.
-4. `createGitTree` entry path `CareerCorpus/corpus.md` with new blob sha.
-5. `createGitCommit`.
-6. `updateBranchRef`.
-7. If ref update succeeds, overwrite `/mnt/data/CareerCorpus/corpus.md` with the written content.
-8. On failure, do not claim persistence success.
+2. Load current corpus markdown from local mirror or remote blob.
+3. Identify target section(s): `Profile`, `Skills`, `Experience`, `Projects`, `Certifications`, `Education`, `Metadata`.
+4. Update only the targeted section blocks; preserve untouched sections.
+5. Normalize section order and headings to match `/mnt/data/CareerCorpusFormat.md` as much as possible.
+6. Build final markdown content for full `corpus.md`.
+7. `createGitBlob` with utf-8 markdown content.
+8. `createGitTree` entry path `CareerCorpus/corpus.md` with new blob sha.
+9. `createGitCommit`.
+10. `updateBranchRef`.
+11. If ref update succeeds, overwrite `/mnt/data/CareerCorpus/corpus.md` with the written content.
+12. On failure, do not claim persistence success.
 
 Memory Status Rules
 - `repo_exists` means `career-corpus-memory` repo is reachable.

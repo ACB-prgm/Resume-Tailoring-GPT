@@ -21,14 +21,16 @@ Create initial career memory as markdown and persist it to `CareerCorpus/corpus.
 - If ready, bootstrap repo before intake/write.
 
 ## Drafting and confirmation
-- Build one markdown corpus draft.
-- Present readable markdown preview.
-- Apply user corrections before final write.
+- Build the corpus using section order from `/mnt/data/CareerCorpusFormat.md`.
+- Present readable markdown preview section by section.
+- Apply user corrections to the requested section only.
+- Preserve already-confirmed sections while updating the target section.
 
 ## Finalize
-1. Write `CareerCorpus/corpus.md` via Git Data flow.
-2. On success, overwrite `/mnt/data/CareerCorpus/corpus.md`.
-3. Mark onboarding completion inside corpus content (frontmatter or explicit metadata section).
+1. Build final markdown in recommended section order (`Profile`, `Skills`, `Experience`, `Projects`, `Certifications`, `Education`, `Metadata`).
+2. Write `CareerCorpus/corpus.md` via Git Data flow.
+3. On success, overwrite `/mnt/data/CareerCorpus/corpus.md`.
+4. Mark onboarding completion inside corpus content (frontmatter or explicit metadata section).
 
 ## Guardrails
 - Do not invent missing details.

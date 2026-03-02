@@ -10,6 +10,7 @@ Persist and retrieve memory using one markdown file in GitHub with a local mirro
 ## Canonical memory files
 - Remote canonical: `CareerCorpus/corpus.md`
 - Local mirror: `/mnt/data/CareerCorpus/corpus.md`
+- Format reference: `/mnt/data/CareerCorpusFormat.md`
 
 ## Direct read flow
 1. Resolve owner: `getAuthenticatedUser`.
@@ -21,12 +22,17 @@ Persist and retrieve memory using one markdown file in GitHub with a local mirro
 
 ## Direct write flow
 1. Ensure repo exists.
-2. Build markdown corpus text.
-3. `createGitBlob` for markdown text.
-4. `createGitTree` path `CareerCorpus/corpus.md`.
-5. `createGitCommit`.
-6. `updateBranchRef`.
-7. Only after successful ref update, overwrite local mirror.
+2. Load current corpus markdown (local mirror first, then remote if needed).
+3. Determine target section(s) for this write:
+   - `Profile`, `Skills`, `Experience`, `Projects`, `Certifications`, `Education`, `Metadata`.
+4. Replace only target section blocks and preserve all non-target sections.
+5. Reorder/normalize headings to match `/mnt/data/CareerCorpusFormat.md` as much as possible.
+6. Build final markdown corpus text.
+7. `createGitBlob` for markdown text.
+8. `createGitTree` path `CareerCorpus/corpus.md`.
+9. `createGitCommit`.
+10. `updateBranchRef`.
+11. Only after successful ref update, overwrite local mirror.
 
 ## Header contract
 - `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`
@@ -37,6 +43,7 @@ Persist and retrieve memory using one markdown file in GitHub with a local mirro
 - No manifest/index file.
 - No split-doc assembly logic.
 - No section approval or validation gates in the write path.
+- Format adherence is best-effort against `/mnt/data/CareerCorpusFormat.md`.
 
 ## Retry and failure handling
 - One deterministic retry for retryable write failures.

@@ -27,6 +27,8 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
         )
         self.assertIn("CareerCorpus/corpus.md", text)
         self.assertIn("/mnt/data/CareerCorpus/corpus.md", text)
+        self.assertIn("/mnt/data/CareerCorpusFormat.md", text)
+        self.assertIn("Replace only target section blocks", text)
         self.assertNotIn("corpus_index.json", text)
         self.assertNotIn("career_corpus.schema.json", text)
         self.assertNotIn("build_split_documents", text)
@@ -39,6 +41,20 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
         self.assertIn("CareerCorpus/corpus.md", text)
         self.assertIn("/mnt/data/CareerCorpus/corpus.md", text)
         self.assertIn("onboarding completion", text.lower())
+
+    def test_career_corpus_format_exists_and_has_section_order(self) -> None:
+        path = self.repo_root / "knowledge_files/CareerCorpusFormat.md"
+        self.assertTrue(path.exists())
+        text = path.read_text(encoding="utf-8")
+        self.assertIn("CareerCorpus Markdown Format", text)
+        self.assertIn("## Section order (recommended)", text)
+        self.assertIn("Profile", text)
+        self.assertIn("Skills", text)
+        self.assertIn("Experience", text)
+        self.assertIn("Projects", text)
+        self.assertIn("Certifications", text)
+        self.assertIn("Education", text)
+        self.assertIn("Metadata", text)
 
 
 if __name__ == "__main__":

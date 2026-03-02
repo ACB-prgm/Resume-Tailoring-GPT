@@ -6,6 +6,7 @@ Convert JD analysis plus verified corpus evidence into a tailored, ATS-safe resu
 ## Inputs required
 - JD analysis output
 - Corpus markdown from `CareerCorpus/corpus.md` (remote or local mirror)
+- Section order reference from `/mnt/data/CareerCorpusFormat.md`
 - Current user-provided chat facts
 - Resume template markdown from `/mnt/data/ResumeTemplate.md`
 

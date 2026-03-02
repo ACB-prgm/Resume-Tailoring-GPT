@@ -25,6 +25,8 @@ class InstructionsMemoryContractTests(unittest.TestCase):
             "updateBranchRef",
             "CareerCorpus/corpus.md",
             "/mnt/data/CareerCorpus/corpus.md",
+            "/mnt/data/CareerCorpusFormat.md",
+            "Update only the targeted section blocks",
         ]
         for term in required_terms:
             self.assertIn(term, self.text, term)

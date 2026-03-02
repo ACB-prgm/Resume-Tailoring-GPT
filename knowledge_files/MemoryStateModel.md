@@ -31,3 +31,4 @@ MEMORY STATUS
 ## Status display policy
 - Show status only when requested, when state changes, or when a memory operation fails.
 - `last_written` comes from the most recent successful write to `CareerCorpus/corpus.md`.
+- Corpus content should follow `/mnt/data/CareerCorpusFormat.md` section order when possible.
