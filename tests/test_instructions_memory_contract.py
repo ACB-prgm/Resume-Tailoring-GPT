@@ -13,8 +13,8 @@ class InstructionsMemoryContractTests(unittest.TestCase):
         required_terms = [
             "Reference Trigger Clauses",
             "Intent Matrix",
-            "intent_memory_persist_update",
-            "intent_onboarding_import_repair",
+            "memory_persist_update",
+            "onboarding_import_repair",
             "$Ref: `/mnt/data/MemoryPersistenceGuidelines.md`",
             "$Ref: `/mnt/data/OnboardingGuidelines.md`",
             "$Ref: `/mnt/data/CareerCorpusFormat.md`",
