@@ -7,6 +7,8 @@ Keep memory state decisions simple and explicit for markdown section-file memory
 - `memory_repo_exists`: GH tool call has been used to confirm existence of memory repo.
 - `corpus_exists`: at least one canonical non-empty section file exists remotely.
 - `corpus_loaded`: The corpus has been fetched from GH and stored locally.
+- `preferences_exists`: top-level `preferences.md` exists remotely.
+- `preferences_loaded`: `preferences.md` has been fetched and mirrored locally.
 
 ## States
 - `NO_REPO`: repo missing.
@@ -21,6 +23,8 @@ MEMORY STATUS
 - memory_repo_exists: <✅|❌>
 - corpus_exists: <✅|❌>
 - corpus_loaded: <✅|❌>
+- preferences_exists: <✅|❌>
+- preferences_loaded: <✅|❌>
 - last_written: <timestamp (%m/%d/%y %I:%M %p Local time)| Unknown | Never>
 ```
 

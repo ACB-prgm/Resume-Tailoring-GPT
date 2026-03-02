@@ -16,8 +16,9 @@ class GithubActionSchemaMarkdownContractTests(unittest.TestCase):
         )
         self.assertEqual(
             pattern,
-            "^CareerCorpus\\/(profile|experience|projects|certifications|education)\\.md$",
+            "^(CareerCorpus\\/(profile|experience|projects|certifications|education)\\.md|preferences\\.md)$",
         )
+        self.assertIn("preferences", pattern)
         self.assertNotIn("metadata", pattern)
         self.assertNotIn(".json", pattern)
 

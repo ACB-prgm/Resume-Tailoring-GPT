@@ -21,6 +21,12 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 - No `CareerCorpus/metadata.md`.
 - No `CareerCorpus/corpus.md` aggregate file.
 
+## User preferences file (separate from corpus)
+- Use top-level `preferences.md` for personal user preferences.
+- `preferences.md` is free-form markdown (no strict schema/template).
+- Only write `preferences.md` when user explicitly states a preference they want remembered.
+- Do not create an empty `preferences.md`.
+
 ## Section templates
 
 ### `CareerCorpus/profile.md`

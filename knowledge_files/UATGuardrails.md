@@ -15,9 +15,11 @@ Keep behavior deterministic for intent handling, corpus read/write, and failure 
 - Use direct GitHub Git Data calls only.
 - Canonical remote section files are under `CareerCorpus/`.
 - Canonical sections: `profile.md`, `experience.md`, `projects.md`, `certifications.md`, `education.md`.
+- Optional top-level preferences file: `preferences.md`.
 - `Skills` must be included in `profile.md`.
 - No metadata section file.
 - Never save empty section files.
+- Write `preferences.md` only when the user explicitly asks to remember a personal preference.
 
 ## Header contract
 - `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`
@@ -26,6 +28,7 @@ Keep behavior deterministic for intent handling, corpus read/write, and failure 
 ## Truthfulness contract
 - Only claim persistence success after successful `updateBranchRef`.
 - Only claim corpus loaded after successful `getGitBlob` reads and local mirror update.
+- Only claim preferences loaded after successful `getGitBlob` read of `preferences.md` and local mirror update.
 - On failure, return concise error and recovery step.
 
 ## Retry behavior

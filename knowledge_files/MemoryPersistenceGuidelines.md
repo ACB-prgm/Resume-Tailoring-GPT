@@ -12,6 +12,7 @@ Persist and retrieve memory as markdown section files in GitHub.
 - `CareerCorpus/projects.md`
 - `CareerCorpus/certifications.md`
 - `CareerCorpus/education.md`
+- `preferences.md` (top-level repo file for user preferences, free-form markdown)
 - Local mirror path prefix: `/mnt/data/CareerCorpus/`
 - Format reference: `/mnt/data/CareerCorpusFormat.md`
 
@@ -21,6 +22,9 @@ Persist and retrieve memory as markdown section files in GitHub.
 - If a section is empty, skip that file; if it previously existed, delete it in the same commit.
 - `Skills` must be inside `profile.md`.
 - Do not persist a metadata section/file.
+- Write `preferences.md` only when the user explicitly states a preference to remember.
+- `preferences.md` has no strict schema/template requirement.
+- Do not create or keep an empty `preferences.md`.
 
 ## Direct read flow
 1. Resolve owner: `getAuthenticatedUser`.
@@ -28,7 +32,8 @@ Persist and retrieve memory as markdown section files in GitHub.
 3. Resolve head: `getBranchRef` -> `getGitCommit` -> `getGitTree(recursive=1)`.
 4. Discover canonical section files in `CareerCorpus/`.
 5. Read discovered files with `getGitBlob`.
-6. Mirror them to `/mnt/data/CareerCorpus/`.
+6. If top-level `preferences.md` exists, read it with `getGitBlob`.
+7. Mirror section files to `/mnt/data/CareerCorpus/` and `preferences.md` to `/mnt/data/preferences.md`.
 
 ## Direct write flow
 1. Ensure repo exists.
@@ -37,11 +42,14 @@ Persist and retrieve memory as markdown section files in GitHub.
 4. For each target section:
    - non-empty content -> write/update file.
    - empty content -> do not write; delete existing file if present.
-5. `createGitBlob` for non-empty section files.
-6. `createGitTree` with changed section paths.
-7. `createGitCommit`.
-8. `updateBranchRef`.
-9. On success, mirror changed files locally.
+5. For preferences:
+   - if user explicitly provided a preference note, write/update top-level `preferences.md`.
+   - if resulting preference content is empty, do not write it.
+6. `createGitBlob` for non-empty changed files.
+7. `createGitTree` with changed paths.
+8. `createGitCommit`.
+9. `updateBranchRef`.
+10. On success, mirror changed section files locally and mirror `preferences.md` to `/mnt/data/preferences.md` when changed.
 
 ## Header contract
 - `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`

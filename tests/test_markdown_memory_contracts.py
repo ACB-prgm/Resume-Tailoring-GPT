@@ -30,6 +30,7 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
         self.assertIn("CareerCorpus/projects.md", text)
         self.assertIn("CareerCorpus/certifications.md", text)
         self.assertIn("CareerCorpus/education.md", text)
+        self.assertIn("preferences.md", text)
         self.assertIn("Do not save empty section files", text)
         self.assertIn("Skills` must be inside `profile.md`", text)
         self.assertNotIn("CareerCorpus/corpus.md", text)
@@ -52,9 +53,17 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
         self.assertIn("CareerCorpus/projects.md", text)
         self.assertIn("CareerCorpus/certifications.md", text)
         self.assertIn("CareerCorpus/education.md", text)
+        self.assertIn("preferences.md", text)
         self.assertIn("Do not save an empty file", text)
         self.assertIn("No `CareerCorpus/metadata.md`", text)
         self.assertNotIn("## Metadata", text)
+
+    def test_initialization_loads_preferences_file_when_present(self) -> None:
+        text = (self.repo_root / "knowledge_files/InitializationGuidelines.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("preferences.md", text)
+        self.assertIn("/mnt/data/preferences.md", text)
 
 
 if __name__ == "__main__":

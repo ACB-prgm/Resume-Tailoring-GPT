@@ -18,7 +18,7 @@ class InstructionsMemoryContractTests(unittest.TestCase):
             "getGitCommit",
             "getGitTree(recursive=1)",
             "getGitBlob",
-            "Direct Memory Write Flow (Section Scoped)",
+            "Direct Memory Write Flow (Section Scoped + Preferences)",
             "createGitBlob",
             "createGitTree",
             "createGitCommit",
@@ -28,9 +28,12 @@ class InstructionsMemoryContractTests(unittest.TestCase):
             "CareerCorpus/projects.md",
             "CareerCorpus/certifications.md",
             "CareerCorpus/education.md",
+            "preferences.md",
+            "/mnt/data/preferences.md",
             "Do not write empty section files",
             "Skills` inside `profile.md`",
             "/mnt/data/CareerCorpusFormat.md",
+            "user explicitly states a personal preference",
         ]
         for term in required_terms:
             self.assertIn(term, self.text, term)
