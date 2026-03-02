@@ -60,10 +60,7 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 ### 1.2.2) Platforms
 - 
 
-### 1.2.3) Methods
-- 
-
-### 1.2.4) Domains
+### 1.2.3) Domains
 - 
 
 ## 1.3) Notes
@@ -75,8 +72,7 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 ```md
 <!-- START SECTION 2: EXPERIENCE -->
 # 2) Experience
-## 2.1) Experience Item
-- id:
+## 2.1) Experience Title
 - employer:
 - title:
 - start_date:
@@ -103,8 +99,7 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 ```md
 <!-- START SECTION 3: PROJECTS -->
 # 3) Projects
-## 3.1) Project Item
-- id:
+## 3.1) Project Title
 - name:
 - role:
 - stack:
@@ -124,12 +119,11 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 ```md
 <!-- START SECTION 4: CERTIFICATIONS -->
 # 4) Certifications
-## 4.1) Certification Item
-- id:
-- name:
+## 4.1) Certification Title
 - issuer:
 - issue_date:
 - status:
+- url: 
 - notes:
 <!-- Repeat 4.1 blocks for additional certification items -->
 <!-- END SECTION 4: CERTIFICATIONS -->
@@ -139,8 +133,7 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 ```md
 <!-- START SECTION 5: EDUCATION -->
 # 5) Education
-## 5.1) Education Item
-- id:
+## 5.1) Education Title
 - degree:
 - institution:
 - graduation_year:
@@ -156,9 +149,3 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 3. `projects.md`
 4. `certifications.md`
 5. `education.md`
-
-## Legacy-schema alignment (best effort)
-- Keep `Profile.full_name` populated when available.
-- Keep `Skills` under `Profile` grouped as: technical, platforms, methods, domains.
-- Keep repeatable item blocks for experience/projects/certifications/education.
-- Do not store metadata as a corpus section; rely on Git history for persistence traceability.
