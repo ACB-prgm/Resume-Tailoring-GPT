@@ -3,12 +3,22 @@
 ## Objective
 Create initial career memory as markdown section files and persist them under `CareerCorpus/`.
 
-## Phase order
-1. Intro (once per session): purpose and storage model.
-2. GitHub/auth gate: ensure account and auth readiness.
-3. Intake: LinkedIn PDF/CV upload or manual entry.
-4. Confirmation: user reviews section drafts.
-5. Finalize: section-file write to GitHub and local mirror update.
+## Key definitions (use consistently)
+ - Stage: update an in-memory/local draft corpus during onboarding.
+ - Push: write/commit the corpus to the user’s GitHub memory repo.
+
+## Rules
+ - Stage per section after approval, but you must push only once at the end.
+ - Execute one final push after the full required approval set is collected.
+ - Validate JSON before pushing. 
+ - Do not push section-by-section.
+
+## Run onboarding in fixed order:
+Phase A: onboarding introduction (once per session)
+Phase B: GitHub account/authentication gate + memory repo bootstrap
+Phase C: intake mode selection (LinkedIn PDF/CV upload OR manual setup)
+Phase D: section-by-section confirmation gate (approval before staging)
+Phase E: final validation + single push + onboarding completion metadata update
 
 ## Intro content (concise)
 - GPT purpose: tailor resumes using verified evidence.
@@ -16,15 +26,10 @@ Create initial career memory as markdown section files and persist them under `C
 - Corpus definition: reusable markdown section files.
 - Intake options: upload LinkedIn PDF/CV or manual setup.
 
-## GitHub gate
-- If no GitHub account/auth, provide setup steps and pause.
-- If ready, bootstrap repo before intake/write.
-
 ## Drafting and confirmation
 - Build section drafts using `/mnt/data/CareerCorpusFormat.md`.
 - Confirm section by section.
-- Skills are always part of Profile section.
-- No Metadata section.
+- Stage approved sections.
 
 ## Finalize
 1. Prepare section files in recommended order: profile, experience, projects, certifications, education.

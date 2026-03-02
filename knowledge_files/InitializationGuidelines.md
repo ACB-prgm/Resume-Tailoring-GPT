@@ -15,15 +15,6 @@ Run deterministic startup for direct GitHub markdown memory operations.
 ## No-GitHub branch
 - If account/auth is not ready, stop memory flow and give concise setup steps.
 
-## Required initialization status block
-```text
-INITIALIZATION STATUS
-- owner_resolved: <true|false>
-- github_account_ready: <true|false>
-- repo_exists: <true|false>
-- repo_created_this_turn: <true|false>
-```
-
 ## Header contract
 - `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`
 - All other calls that include `Accept`: `Accept: application/vnd.github+json`

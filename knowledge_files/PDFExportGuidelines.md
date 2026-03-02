@@ -40,16 +40,8 @@ else:
 
 ## Output requirements
 - Format: A4 PDF.
-- Page target: 1 page by default; up to 2 pages only for approved senior-scope roles or CV requests.
-- File naming:
-  - `Aaron Bastian Resume - <TargetRole> - <CompanyIfKnown>.pdf`
-  - If company unknown: `Aaron Bastian Resume - <TargetRole>.pdf`
+- File naming scheme: <User Name> Resume - <TargetRole> - <CompanyIfKnown>.pdf
 - Attach only the PDF artifact unless the users asks for the markdown.
-- Include a brief Change Log in chat:
-  - Top targeted keywords
-  - Roles/projects emphasized
-  - Exclusions due to missing evidence
-  - Explicit assumptions (ideally none)
 
 ## Guardrails
 - format should strictly adhere to `ResumeTemplate.md`.

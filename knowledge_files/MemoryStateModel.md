@@ -4,8 +4,9 @@
 Keep memory state decisions simple and explicit for markdown section-file memory.
 
 ## Required booleans
-- `memory_repo_exists`
-- `career_corpus_exists` (at least one canonical non-empty section file exists remotely)
+- `memory_repo_exists`: GH tool call has been used to confirm existence of memory repo.
+- `corpus_exists`: at least one canonical non-empty section file exists remotely.
+- `corpus_loaded`: The corpus has been fetched from GH and stored locally.
 
 ## States
 - `NO_REPO`: repo missing.
@@ -13,19 +14,15 @@ Keep memory state decisions simple and explicit for markdown section-file memory
 - `CORPUS_READY`: repo and one or more canonical section files exist.
 - `PERSIST_FAILED`: write failed after retry.
 
-## Required status block
+## Required memory status plain text code block
+- KEY: ✅ = true, ❌ = false
 ```text
 MEMORY STATUS
-- repo_exists: <true|false>
-- corpus_exists: <true|false>
-- sections_present: <comma-separated section files | none>
-- last_written: <friendly timestamp | Never>
+- memory_repo_exists: <✅|❌>
+- corpus_exists: <✅|❌>
+- corpus_loaded: <✅|❌>
+- last_written: <timestamp (%m/%d/%y %I:%M %p Local time)| Unknown | Never>
 ```
-
-## Optional fields (show only when relevant)
-- `persisted`
-- `retry_count`
-- `method`
 
 ## Status display policy
 - Show status only when requested, when state changes, or when a memory operation fails.
