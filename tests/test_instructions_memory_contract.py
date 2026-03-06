@@ -27,6 +27,9 @@ class InstructionsMemoryContractTests(unittest.TestCase):
             "Keep corpus files under `CareerCorpus/` only; only `preferences.md` is allowed at repo root.",
             "Do not write empty section files.",
             "Never claim persisted success unless `updateBranchRef` succeeds.",
+            "Use GitHub section files as the working memory source.",
+            "Read and write section files directly by intent/context.",
+            "Use on-demand remote reads by intent",
         ]
         for term in required_terms:
             self.assertIn(term, self.text, term)

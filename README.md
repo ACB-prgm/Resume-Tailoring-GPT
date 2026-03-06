@@ -8,6 +8,8 @@ Repository: https://github.com/ACB-prgm/Resume-Tailoring-GPT/tree/main
 - Runs intent-based routing from `instructions.txt`.
 - Uses focused knowledge files for onboarding, persistence, JD analysis, resume drafting, and PDF export.
 - Stores career memory as markdown section files in the user's private GitHub repo.
+- Uses remote-first memory reads/writes.
+- Uses direct section-target reads/writes by intent/context.
 - Supports optional user preference memory in `preferences.md`.
 
 ## Core Files

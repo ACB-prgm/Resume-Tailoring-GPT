@@ -1,14 +1,17 @@
 # Memory State Model
 
 ## Objective
-Keep memory state decisions simple and explicit for markdown section-file memory.
+Keep memory state decisions simple and explicit for remote-only markdown section-file memory.
 
 ## Required booleans
 - `memory_repo_exists`: GH tool call has been used to confirm existence of memory repo.
 - `corpus_exists`: at least one canonical non-empty section file exists remotely.
-- `corpus_loaded`: The corpus has been fetched from GH and stored locally.
 - `preferences_exists`: top-level `preferences.md` exists remotely.
-- `preferences_loaded`: `preferences.md` has been fetched and mirrored locally.
+
+## Required status fields
+- `last_written`: timestamp of most recent successful write operation.
+- `last_remote_read_utc`: timestamp of most recent successful remote blob read.
+- `last_remote_read_scope`: optional list/string of sections read in the most recent remote read.
 
 ## States
 - `NO_REPO`: repo missing.
@@ -22,12 +25,12 @@ Keep memory state decisions simple and explicit for markdown section-file memory
 MEMORY STATUS
 - memory_repo_exists: <✅|❌>
 - corpus_exists: <✅|❌>
-- corpus_loaded: <✅|❌>
 - preferences_exists: <✅|❌>
-- preferences_loaded: <✅|❌>
 - last_written: <timestamp (%m/%d/%y %I:%M %p Local time)| Unknown | Never>
+- last_remote_read_utc: <timestamp (%m/%d/%y %I:%M %p Local time)| Unknown | Never>
 ```
 
 ## Status display policy
 - Show status only when requested, when state changes, or when a memory operation fails.
-- `last_written` comes from the most recent successful write operation.
+- Required status output: `memory_repo_exists`, `corpus_exists`, `preferences_exists`, `last_written`.
+- Optional fields when relevant: `last_remote_read_utc`, `last_remote_read_scope`, `persisted`, `retry_count`, `verification`.

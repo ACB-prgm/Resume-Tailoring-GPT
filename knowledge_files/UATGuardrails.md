@@ -13,6 +13,7 @@ Keep behavior deterministic for intent handling, corpus read/write, and failure 
 
 ## Memory workflow contract
 - Use direct GitHub Git Data calls only.
+- Read and write corpus section files directly by intent/context.
 - During onboarding, memory is opt-out: proceed with GitHub memory setup by default unless user explicitly declines.
 - During onboarding, default review is section-by-section approval before push.
 - Full-corpus-at-once review is allowed only if user explicitly chooses it.
@@ -32,8 +33,8 @@ Keep behavior deterministic for intent handling, corpus read/write, and failure 
 
 ## Truthfulness contract
 - Only claim persistence success after successful `updateBranchRef`.
-- Only claim corpus loaded after successful `getGitBlob` reads and local mirror update.
-- Only claim preferences loaded after successful `getGitBlob` read of `preferences.md` and local mirror update.
+- Only claim corpus read success after successful remote `getGitBlob` reads for required sections.
+- Only claim preferences read success after successful remote `getGitBlob` read of `preferences.md` when requested.
 - On failure, return concise error and recovery step.
 
 ## Retry behavior

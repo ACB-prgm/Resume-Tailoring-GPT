@@ -4,7 +4,7 @@
 Create initial career memory as markdown section files and persist them under `CareerCorpus/`.
 
 ## Key definitions (use consistently)
- - Stage: update an in-memory/local draft corpus during onboarding.
+ - Stage: update a canvas/session draft corpus during onboarding.
  - Push: write/commit the corpus to the user’s GitHub memory repo.
 
 ## Rules
@@ -24,7 +24,7 @@ Phase A: onboarding introduction (once per session)
 Phase B: GitHub account/authentication gate + memory repo bootstrap
 Phase C: intake mode selection (LinkedIn PDF/CV upload OR manual setup)
 Phase D: approval mode selection (default section-by-section, optional full corpus)
-Phase E: approval flow execution (stage only approved content)
+Phase E: approval flow execution (stage only approved content in canvas/session draft)
 Phase F: final review + single push + onboarding completion confirmation
 
 ## Intro content (concise)
@@ -41,11 +41,11 @@ Phase F: final review + single push + onboarding completion confirmation
   - full corpus at once
 - For section-by-section mode:
   - present one section at a time and request approve/edit.
-  - only stage approved sections locally.
+  - only stage approved sections in canvas/session draft.
 - For full-corpus mode:
   - write the complete corpus draft to canvas.
   - ask the user to suggest edits directly from the full draft.
-  - request explicit approval of the full corpus before staging.
+  - request explicit approval of the full corpus before staging in canvas/session draft.
 - Skills are always part of Profile.
 - No Metadata section.
 - If the user explicitly shares personal preferences to remember, stage top-level `preferences.md` as free-form markdown.
@@ -57,7 +57,7 @@ Phase F: final review + single push + onboarding completion confirmation
 4. If user preferences were explicitly provided, write top-level `preferences.md` (do not create empty file).
 5. Confirm explicit final user approval (section-by-section completion or full-corpus approval).
 6. Push once only after final approval.
-7. On success, mirror updated corpus files under `/mnt/data/CareerCorpus/` and `preferences.md` to `/mnt/data/preferences.md` when updated.
+7. Use the updated remote section files as the source for subsequent onboarding reads.
 
 ## Guardrails
 - Do not invent missing details.

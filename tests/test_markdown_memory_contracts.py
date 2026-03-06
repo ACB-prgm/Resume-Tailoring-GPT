@@ -33,6 +33,8 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
         self.assertIn("preferences.md", text)
         self.assertIn("Do not save empty section files", text)
         self.assertIn("Skills` must be inside `profile.md`", text)
+        self.assertIn("Use GitHub section files as the active working source", text)
+        self.assertIn("Read and write section files directly by intent", text)
         self.assertNotIn("CareerCorpus/corpus.md", text)
         self.assertNotIn("CareerCorpus/metadata.md", text)
 
@@ -48,6 +50,7 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
         self.assertIn("full corpus at once", text)
         self.assertIn("write the complete corpus draft to canvas", text)
         self.assertIn("Push once only after final approval", text)
+        self.assertIn("canvas/session draft", text)
 
     def test_career_corpus_format_exists_and_matches_new_contract(self) -> None:
         path = self.repo_root / "knowledge_files/CareerCorpusFormat.md"
@@ -63,12 +66,13 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
         self.assertIn("No `CareerCorpus/metadata.md`", text)
         self.assertNotIn("## Metadata", text)
 
-    def test_initialization_loads_preferences_file_when_present(self) -> None:
+    def test_initialization_uses_remote_readiness_process(self) -> None:
         text = (self.repo_root / "knowledge_files/InitializationGuidelines.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("preferences.md", text)
-        self.assertIn("/mnt/data/preferences.md", text)
+        self.assertIn("remote repo/account readiness and file discovery", text)
+        self.assertIn("Read and write section files directly by intent/context", text)
+        self.assertNotIn("mirror to /mnt/data/preferences.md", text)
 
 
 if __name__ == "__main__":

@@ -11,8 +11,8 @@ Run deterministic startup for direct GitHub markdown memory operations.
 5. If `404`, `createMemoryRepo` once, then confirm with `getMemoryRepo(owner)`.
 6. Resolve branch/head references with `getBranchRef` and `getGitCommit`.
 7. Get repo tree with `getGitTree(recursive=1)` to discover existing memory files.
-8. If top-level `preferences.md` exists, load it with `getGitBlob` and mirror to `/mnt/data/preferences.md`.
-9. Load format guide `/mnt/data/CareerCorpusFormat.md` before corpus writes.
+8. Load format guide `/mnt/data/CareerCorpusFormat.md` before corpus writes.
+9. Keep initialization focused on remote repo/account readiness and file discovery.
 
 ## No-GitHub branch
 - If account/auth is not ready, stop memory flow and give concise setup steps.
@@ -25,5 +25,6 @@ Run deterministic startup for direct GitHub markdown memory operations.
 - Use direct GitHub tool-call workflow only.
 - Corpus persistence is section-scoped files under `CareerCorpus/`.
 - User preferences persist in top-level `preferences.md` (free-form markdown).
+- Read and write section files directly by intent/context.
 - Do not write empty section files.
 - Keep skills in `profile.md`.

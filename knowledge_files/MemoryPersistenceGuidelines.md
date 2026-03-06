@@ -13,7 +13,6 @@ Persist and retrieve memory as markdown section files in GitHub.
 - `CareerCorpus/certifications.md`
 - `CareerCorpus/education.md`
 - `preferences.md` (top-level repo file for user preferences, free-form markdown)
-- Local mirror path prefix: `/mnt/data/CareerCorpus/`
 - Format reference: `/mnt/data/CareerCorpusFormat.md`
 
 ## Rules
@@ -21,6 +20,8 @@ Persist and retrieve memory as markdown section files in GitHub.
 - Do not save empty section files.
 - `Skills` must be inside `profile.md`.
 - Do not persist a metadata section/file.
+- Use GitHub section files as the active working source.
+- Read and write section files directly by intent/context.
 - Write `preferences.md` only when the user explicitly states a preference to remember.
 - `preferences.md` has no strict schema/template requirement.
 - Do not create or keep an empty `preferences.md`.
@@ -28,14 +29,20 @@ Persist and retrieve memory as markdown section files in GitHub.
 - If user chooses full-corpus approval, review full draft in canvas and collect explicit final approval.
 - In onboarding, push exactly once after approvals; do not push during draft review.
 
-## Direct read flow
+## Direct read flow (on-demand)
 1. Resolve owner: `getAuthenticatedUser`.
 2. Ensure repo exists: `getMemoryRepo`, optional `createMemoryRepo`, confirm `getMemoryRepo`.
 3. Resolve head: `getBranchRef` -> `getGitCommit` -> `getGitTree(recursive=1)`.
-4. Discover canonical section files in `CareerCorpus/`.
-5. Read discovered files with `getGitBlob`.
-6. If top-level `preferences.md` exists, read it with `getGitBlob`.
-7. Mirror section files to `/mnt/data/CareerCorpus/` and `preferences.md` to `/mnt/data/preferences.md`.
+4. Discover existing canonical section files in `CareerCorpus/`.
+5. Read only sections required for the current intent using `getGitBlob`.
+6. Read `preferences.md` only when needed for current intent.
+
+### Intent read scope
+- `jd_analysis`: `profile`, `experience`, `projects`, optional `preferences`.
+- `resume_drafting`: `profile`, `experience`, `projects`, `education`, `certifications`, optional `preferences`.
+- `memory_persist_update`: only sections being edited, plus optional `preferences`.
+- `memory_status`: tree/head probe first; fetch blob content only if user asks for content-level detail.
+- `onboarding_import_repair`: fetch only sections needed to repair/merge current onboarding flow.
 
 ## Direct write flow
 1. Ensure repo exists.
@@ -51,7 +58,7 @@ Persist and retrieve memory as markdown section files in GitHub.
 7. `createGitTree` with changed paths.
 8. `createGitCommit`.
 9. `updateBranchRef`.
-10. On success, mirror changed section files locally and mirror `preferences.md` to `/mnt/data/preferences.md` when changed.
+10. Use the updated remote section files as the source for subsequent reads/writes.
 
 ## Header contract
 - `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`

@@ -128,6 +128,9 @@ IMPORTANT Global Non-Negotiables
 - do not perform JD Analsysis without dirst loading the user's Career Corpus -> Intent: `initialization_or_setup`.
 - Approval is required before any memory push.
 - Markdown related to Career Corpus sections and Resumes should be presented in the Canvas tool.
+- Use GitHub section files as the working memory source.
+- Read and write section files directly by intent/context.
+- Use on-demand remote reads by intent; do not full-pull all sections unless explicitly needed.
 - `getGitBlob` and `createGitBlob`: always use `Accept: application/vnd.github.raw`.
 - All other GitHub memory calls that include `Accept`: use `Accept: application/vnd.github+json`.
 - Keep corpus files under `CareerCorpus/` only; only `preferences.md` is allowed at repo root.
