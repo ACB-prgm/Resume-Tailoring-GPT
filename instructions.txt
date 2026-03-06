@@ -131,6 +131,7 @@ IMPORTANT Global Non-Negotiables
 - Use GitHub section files as the working memory source.
 - Read and write section files directly by intent/context.
 - Use on-demand remote reads by intent; do not full-pull all sections unless explicitly needed.
+- Use non-recursive tree traversal by default (root tree -> `CareerCorpus` subtree -> required blobs).
 - `getGitBlob` and `createGitBlob`: always use `Accept: application/vnd.github.raw`.
 - All other GitHub memory calls that include `Accept`: use `Accept: application/vnd.github+json`.
 - Keep corpus files under `CareerCorpus/` only; only `preferences.md` is allowed at repo root.

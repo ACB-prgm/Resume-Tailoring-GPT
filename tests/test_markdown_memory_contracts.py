@@ -35,6 +35,9 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
         self.assertIn("Skills` must be inside `profile.md`", text)
         self.assertIn("Use GitHub section files as the active working source", text)
         self.assertIn("Read and write section files directly by intent", text)
+        self.assertIn("Read root tree non-recursively with `getGitTree`", text)
+        self.assertIn("Locate `CareerCorpus` subtree SHA", text)
+        self.assertNotIn("recursive=1", text)
         self.assertNotIn("CareerCorpus/corpus.md", text)
         self.assertNotIn("CareerCorpus/metadata.md", text)
 
@@ -72,6 +75,9 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
         )
         self.assertIn("remote repo/account readiness and file discovery", text)
         self.assertIn("Read and write section files directly by intent/context", text)
+        self.assertIn("Get root repo tree with non-recursive `getGitTree`", text)
+        self.assertIn("Locate and read the `CareerCorpus` subtree with non-recursive `getGitTree`", text)
+        self.assertNotIn("recursive=1", text)
         self.assertNotIn("mirror to /mnt/data/preferences.md", text)
 
 

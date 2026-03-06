@@ -32,6 +32,11 @@ class GithubActionSchemaMarkdownContractTests(unittest.TestCase):
         self.assertEqual(get_accept["schema"]["const"], "application/vnd.github.raw")
         self.assertEqual(post_accept["schema"]["const"], "application/vnd.github.raw")
 
+    def test_get_git_tree_has_no_recursive_parameter(self) -> None:
+        params = self.schema["paths"]["/repos/{owner}/career-corpus-memory/git/trees/{tree_sha}"]["get"]["parameters"]
+        names = [p.get("name") for p in params]
+        self.assertNotIn("recursive", names)
+
 
 if __name__ == "__main__":
     unittest.main()

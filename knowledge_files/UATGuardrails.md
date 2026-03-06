@@ -10,6 +10,7 @@ Keep behavior deterministic for intent handling, corpus read/write, and failure 
 ## Read-before-claim
 - Do not claim corpus state before running direct read flow.
 - If no section files exist, state that clearly and route to onboarding/import.
+- Use non-recursive tree traversal as default: root tree, then `CareerCorpus` subtree, then required blobs.
 
 ## Memory workflow contract
 - Use direct GitHub Git Data calls only.

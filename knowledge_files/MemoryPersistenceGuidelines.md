@@ -30,12 +30,13 @@ Persist and retrieve memory as markdown section files in GitHub.
 - In onboarding, push exactly once after approvals; do not push during draft review.
 
 ## Direct read flow (on-demand)
-1. Resolve owner: `getAuthenticatedUser`.
-2. Ensure repo exists: `getMemoryRepo`, optional `createMemoryRepo`, confirm `getMemoryRepo`.
-3. Resolve head: `getBranchRef` -> `getGitCommit` -> `getGitTree(recursive=1)`.
-4. Discover existing canonical section files in `CareerCorpus/`.
-5. Read only sections required for the current intent using `getGitBlob`.
-6. Read `preferences.md` only when needed for current intent.
+1. Resolve owner: `getAuthenticatedUser` (if not already known).
+2. Ensure repo exists: `getMemoryRepo`, optional `createMemoryRepo` (if not already exists), confirm `getMemoryRepo`.
+3. Resolve head: `getBranchRef` -> `getGitCommit`.
+4. Read root tree non-recursively with `getGitTree`.
+5. Locate `CareerCorpus` subtree SHA and read that subtree non-recursively with `getGitTree`.
+6. Read only sections required for the current intent using `getGitBlob`.
+7. Read `preferences.md` only when needed for current intent.
 
 ### Intent read scope
 - `jd_analysis`: `profile`, `experience`, `projects`, optional `preferences`.

@@ -10,9 +10,11 @@ Run deterministic startup for direct GitHub markdown memory operations.
 4. `getMemoryRepo(owner)`.
 5. If `404`, `createMemoryRepo` once, then confirm with `getMemoryRepo(owner)`.
 6. Resolve branch/head references with `getBranchRef` and `getGitCommit`.
-7. Get repo tree with `getGitTree(recursive=1)` to discover existing memory files.
-8. Load format guide `/mnt/data/CareerCorpusFormat.md` before corpus writes.
-9. Keep initialization focused on remote repo/account readiness and file discovery.
+7. Get root repo tree with non-recursive `getGitTree`.
+8. Locate and read the `CareerCorpus` subtree with non-recursive `getGitTree`.
+9. Continue initialization with discovered tree data.
+10. Load format guide `/mnt/data/CareerCorpusFormat.md` before corpus writes.
+11. Keep initialization focused on remote repo/account readiness and file discovery.
 
 ## No-GitHub branch
 - If account/auth is not ready, stop memory flow and give concise setup steps.

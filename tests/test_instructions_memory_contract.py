@@ -30,6 +30,7 @@ class InstructionsMemoryContractTests(unittest.TestCase):
             "Use GitHub section files as the working memory source.",
             "Read and write section files directly by intent/context.",
             "Use on-demand remote reads by intent",
+            "Use non-recursive tree traversal by default (root tree -> `CareerCorpus` subtree -> required blobs).",
         ]
         for term in required_terms:
             self.assertIn(term, self.text, term)
