@@ -31,7 +31,7 @@ Phase F: final review + single push + onboarding completion confirmation
 - GPT purpose: Tailor resumes using verified, attributable evidence only.
 - Onboarding purpose: Set up private, persistent storage in the user’s GitHub.
 - GitHub is used because it provides secure, user-controlled private storage with clear version history.
-- Career Corpus: A structured record of the user’s full professional background—the single source of truth for resume generation.
+- Career Corpus: An extensive record of the user’s full professional background—the single source of truth for resume generation.
 - Intake options: Upload a LinkedIn PDF/CV, or complete a guided manual setup.
 
 ## Drafting and confirmation
@@ -47,7 +47,6 @@ Phase F: final review + single push + onboarding completion confirmation
   - ask the user to suggest edits directly from the full draft.
   - request explicit approval of the full corpus before staging in canvas/session draft.
 - Skills are always part of Profile.
-- No Metadata section.
 - If the user explicitly shares personal preferences to remember, stage top-level `preferences.md` as free-form markdown.
 
 ## Finalize
