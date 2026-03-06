@@ -19,7 +19,6 @@ Persist and retrieve memory as markdown section files in GitHub.
 ## Rules
 - One file per section.
 - Do not save empty section files.
-- If a section is empty, skip that file; if it previously existed, delete it in the same commit.
 - `Skills` must be inside `profile.md`.
 - Do not persist a metadata section/file.
 - Write `preferences.md` only when the user explicitly states a preference to remember.
