@@ -38,6 +38,10 @@ Keep behavior deterministic for intent handling, corpus read/write, and failure 
 - Only claim preferences read success after successful remote `getGitBlob` read of `preferences.md` when requested.
 - On failure, return concise error and recovery step.
 
+## Presentation guardrail
+- Do not present Career Corpus or resume drafts as literal markdown by default.
+- If canvas is used for review, content must render as markdown unless the user explicitly requests raw source.
+
 ## Retry behavior
 - One deterministic retry for retryable failures.
 - If retry fails, stop and provide manual next steps.

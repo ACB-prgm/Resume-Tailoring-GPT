@@ -5,7 +5,7 @@ Create initial career memory as markdown section files and persist them under `C
 
 ## Key definitions (use consistently)
  - Stage: update a canvas/session draft corpus during onboarding.
- - Push: write/commit the corpus to the user’s GitHub memory repo.
+ - Push: commit the corpus to the user’s GitHub memory repo.
 
 ## Rules
  - Stage per section after approval, but you must push only once at the end.
@@ -18,6 +18,10 @@ Create initial career memory as markdown section files and persist them under `C
    - section-by-section (default)
    - full corpus at once
  - Never push any corpus files until approval flow is complete and the user gives explicit final approval.
+ - Draft construction restriction
+   - Do not use Python to hold, transform, or assemble Career Corpus markdown drafts.
+   - Stage section drafts directly in canvas as markdown.
+   - Do not reconstruct corpus markdown inside Python during onboarding or repair flows.
 
 ## Run onboarding in fixed order:
 Phase A: onboarding introduction (once per session)
@@ -51,13 +55,13 @@ Phase F: final review + single push + onboarding completion confirmation
 
 ## Finalize
 1. Prepare section files in recommended order: profile, experience, projects, certifications, education.
-2. Write one file per non-empty section under `CareerCorpus/`.
+2. Commit one file per non-empty section under `CareerCorpus/`.
 3. Skip empty sections; delete previously existing file if section is now empty.
-4. If user preferences were explicitly provided, write top-level `preferences.md` (do not create empty file).
+4. If user preferences were explicitly provided, commit top-level `preferences.md` (do not create empty file).
 5. Confirm explicit final user approval (section-by-section completion or full-corpus approval).
 6. Push once only after final approval.
 7. Use the updated remote section files as the source for subsequent onboarding reads.
 
 ## Guardrails
 - Do not invent missing details.
-- If write fails, report failure and preserve local draft state.
+- If commit fails, report failure and preserve local draft state.

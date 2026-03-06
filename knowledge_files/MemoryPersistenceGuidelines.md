@@ -19,15 +19,18 @@ Persist and retrieve memory as markdown section files in GitHub.
 - One file per section.
 - Do not save empty section files.
 - `Skills` must be inside `profile.md`.
-- Do not persist a metadata section/file.
 - Use GitHub section files as the active working source.
-- Read and write section files directly by intent/context.
-- Write `preferences.md` only when the user explicitly states a preference to remember.
+- Read and commit section files directly by intent/context.
+- Commit `preferences.md` only when the user explicitly states a preference to remember.
 - `preferences.md` has no strict schema/template requirement.
 - Do not create or keep an empty `preferences.md`.
 - For onboarding, default approval mode is section-by-section.
 - If user chooses full-corpus approval, review full draft in canvas and collect explicit final approval.
 - In onboarding, push exactly once after approvals; do not push during draft review.
+- Tool-use restriction
+  - Do not use Python as an intermediate workspace for `CareerCorpus/*.md` or resume markdown.
+  - Read section content from GitHub blobs directly.
+  - Never paste full or partial corpus markdown into Python code, Python strings, or Python temp files during memory updates.
 
 ## Direct read flow (on-demand)
 1. Resolve owner: `getAuthenticatedUser` (if not already known).
@@ -45,27 +48,27 @@ Persist and retrieve memory as markdown section files in GitHub.
 - `memory_status`: tree/head probe first; fetch blob content only if user asks for content-level detail.
 - `onboarding_import_repair`: fetch only sections needed to repair/merge current onboarding flow.
 
-## Direct write flow
+## Direct commit flow
 1. Ensure repo exists.
 2. Determine target section(s).
 3. Build section markdown from `/mnt/data/CareerCorpusFormat.md`.
 4. For each target section:
-   - non-empty content -> write/update file.
-   - empty content -> do not write; delete existing file if present.
+   - non-empty content -> commit/update file.
+   - empty content -> do not commit; delete existing file if present.
 5. For preferences:
-   - if user explicitly provided a preference note, write/update top-level `preferences.md`.
-   - if resulting preference content is empty, do not write it.
+   - if user explicitly provided a preference note, commit/update top-level `preferences.md`.
+   - if resulting preference content is empty, do not commit it.
 6. `createGitBlob` for non-empty changed files.
 7. `createGitTree` with changed paths.
 8. `createGitCommit`.
 9. `updateBranchRef`.
-10. Use the updated remote section files as the source for subsequent reads/writes.
+10. Use the updated remote section files as the source for subsequent reads/commits.
 
 ## Header contract
 - `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`
 - All other memory calls that include `Accept`: `Accept: application/vnd.github+json`
 
 ## Retry and failure handling
-- One deterministic retry for retryable write failures.
+- One deterministic retry for retryable commit failures.
 - If retry fails, return explicit failure and next manual step.
 - Do not claim persistence success when ref update fails.
