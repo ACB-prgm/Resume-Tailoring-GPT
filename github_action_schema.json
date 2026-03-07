@@ -18,8 +18,8 @@
                         "authorizationUrl": "https://github.com/login/oauth/authorize",
                         "tokenUrl": "https://github.com/login/oauth/access_token",
                         "scopes": {
-                            "repo": "Full control of private repositories",
-                            "read:user": "Read user profile"
+                            "repo": "Full control of 'career-corpus-memory' private repository",
+                            "read:user": "Read user profile information"
                         }
                     }
                 }
