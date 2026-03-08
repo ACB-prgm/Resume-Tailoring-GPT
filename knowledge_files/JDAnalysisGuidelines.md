@@ -1,8 +1,13 @@
 # Phase 1 - JD Analysis (Requirements-first)
 
 ## Objective
-- Treat the JD as a requirements document, not marketing copy. Extract constraints, 
-weighted requirements, and the hiring risk model before writing resume content.
+- Treat the JD as a requirements document, not marketing copy.
+- Extract constraints, weighted requirements, and hiring risk model before writing resume content.
+
+## Preflight gate (required)
+- Before analysis, confirm `career_corpus.md` is uploaded in this session.
+- If missing, request upload and stop.
+- Required sections for JD analysis: Profile, Experience, Projects.
 
 ## Rules
 - Prioritize hard constraints and literal requirements.
@@ -10,9 +15,9 @@ weighted requirements, and the hiring risk model before writing resume content.
 - If a requirement is not supported, flag it as a gap.
 - In the Binary Gates section, omit any gate not explicitly specified in the JD.
 - Use marker statuses throughout the full analysis:
-    - 🟢 solid matching corpus evidence
-    - 🟡 mediocre/partial evidence alignment
-    - 🔴 total gap (no supporting evidence)
+  - 🟢 solid matching corpus evidence
+  - 🟡 mediocre/partial evidence alignment
+  - 🔴 total gap (no supporting evidence)
 
 ## Formatting
 ### Target Role
@@ -38,10 +43,14 @@ weighted requirements, and the hiring risk model before writing resume content.
   - First 2-3 bullets in most relevant role: 🟢 | 🟡 | 🔴
 
 ### Core Need (1-2 sentences: what are they looking for?)
-- 
+-
 
 ### Candidate Alignment to Role (concise, experience-based)
 - Overall alignment: 🟢 Strong | 🟡 Moderate | 🔴 Limited
 - Top gaps (if any):
   - 🔴 Gap:
   - 🔴 Gap:
+
+### Next Step
+Would you like me to draft a tailored resume for this role now?
+If yes, route to `intent_resume_drafting` from `instructions.txt`.

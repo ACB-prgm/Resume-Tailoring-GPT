@@ -1,47 +1,24 @@
-# CareerCorpus Markdown Format
+# Career Corpus Markdown Format
 
 ## Objective
-Provide a recommended markdown structure for section files under `CareerCorpus/`.
+Provide a recommended markdown structure for a single corpus file: `career_corpus.md`.
 
 ## Usage rules
 - This is a formatting target, not a hard validator.
-- Save one GitHub file per section.
-- Do not save an empty file for any section.
-- If a section has no data, omit that file.
-- If a previously saved section becomes empty, delete that section file.
+- Keep all corpus content in one file: `career_corpus.md`.
+- Keep explicit numbered section boundaries.
+- If a section has no data, keep the section header and leave placeholders blank.
 
 ## Section boundary contract (explicit)
-- Treat each file as one numbered section boundary.
-- Do not merge boundaries across files.
-- Use this order for boundaries:
-  1. `CareerCorpus/profile.md`
-  2. `CareerCorpus/experience.md`
-  3. `CareerCorpus/projects.md`
-  4. `CareerCorpus/certifications.md`
-  5. `CareerCorpus/education.md`
-- Within each file, keep the numbered subsection headers so boundaries remain easy to parse.
-- If a subsection has no content yet, keep the header and leave list items blank.
+Use this exact section order in `career_corpus.md`:
+1. Profile (includes Skills)
+2. Experience
+3. Projects
+4. Certifications
+5. Education
+6. Preferences (optional)
 
-## Canonical section files
-- `CareerCorpus/profile.md` (includes Profile + Skills)
-- `CareerCorpus/experience.md`
-- `CareerCorpus/projects.md`
-- `CareerCorpus/certifications.md`
-- `CareerCorpus/education.md`
-
-## Do not persist
-- No `CareerCorpus/metadata.md`.
-- No `CareerCorpus/corpus.md` aggregate file.
-
-## User preferences file (separate from corpus)
-- Use top-level `preferences.md` for personal user preferences.
-- `preferences.md` is free-form markdown (no strict schema/template).
-- Only write `preferences.md` when user explicitly states a preference they want remembered.
-- Do not create an empty `preferences.md`.
-
-## Section templates
-
-### `CareerCorpus/profile.md`
+## `career_corpus.md` template
 ```md
 <!-- START SECTION 1: PROFILE -->
 # 1) Profile
@@ -51,7 +28,7 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 - Phone:
 
 ## 1.1) Links
-- Name (eg. GitHub): URL
+- Name: URL
 
 ## 1.2) Skills
 ### 1.2.1) Technical
@@ -66,10 +43,7 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 ## 1.3) Notes
 - 
 <!-- END SECTION 1: PROFILE -->
-```
 
-### `CareerCorpus/experience.md`
-```md
 <!-- START SECTION 2: EXPERIENCE -->
 # 2) Experience
 ## 2.1) Experience Title
@@ -93,10 +67,7 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 - 
 <!-- Repeat 2.1 blocks for additional experience items -->
 <!-- END SECTION 2: EXPERIENCE -->
-```
 
-### `CareerCorpus/projects.md`
-```md
 <!-- START SECTION 3: PROJECTS -->
 # 3) Projects
 ## 3.1) Project Title
@@ -113,24 +84,18 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 - 
 <!-- Repeat 3.1 blocks for additional project items -->
 <!-- END SECTION 3: PROJECTS -->
-```
 
-### `CareerCorpus/certifications.md`
-```md
 <!-- START SECTION 4: CERTIFICATIONS -->
 # 4) Certifications
 ## 4.1) Certification Title
 - issuer:
 - issue_date:
 - status:
-- url: 
+- url:
 - notes:
 <!-- Repeat 4.1 blocks for additional certification items -->
 <!-- END SECTION 4: CERTIFICATIONS -->
-```
 
-### `CareerCorpus/education.md`
-```md
 <!-- START SECTION 5: EDUCATION -->
 # 5) Education
 ## 5.1) Education Title
@@ -141,11 +106,12 @@ Provide a recommended markdown structure for section files under `CareerCorpus/`
 - notes:
 <!-- Repeat 5.1 blocks for additional education items -->
 <!-- END SECTION 5: EDUCATION -->
-```
 
-## Section order (recommended)
-1. `profile.md`
-2. `experience.md`
-3. `projects.md`
-4. `certifications.md`
-5. `education.md`
+<!-- START SECTION 6: PREFERENCES -->
+# 6) Preferences (Optional)
+- Resume preferences:
+- Role preferences:
+- Communication preferences:
+- Notes:
+<!-- END SECTION 6: PREFERENCES -->
+```

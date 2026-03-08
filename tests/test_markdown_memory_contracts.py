@@ -8,77 +8,44 @@ class MarkdownMemoryContractsTests(unittest.TestCase):
     def setUp(self) -> None:
         self.repo_root = Path(__file__).resolve().parents[1]
 
-    def test_runtime_stack_modules_removed(self) -> None:
+    def test_legacy_memory_files_removed(self) -> None:
         removed = [
-            "knowledge_files/career_corpus_store_surface.py",
-            "knowledge_files/career_corpus_store_core.py",
-            "knowledge_files/career_corpus_sync_surface.py",
-            "knowledge_files/career_corpus_sync_core.py",
-            "knowledge_files/memory_validation_surface.py",
-            "knowledge_files/memory_validation_core.py",
-            "knowledge_files/career_corpus.schema.json",
+            "github_action_schema.json",
+            "knowledge_files/MemoryPersistenceGuidelines.md",
+            "knowledge_files/MemoryStateModel.md",
         ]
         for rel in removed:
             self.assertFalse((self.repo_root / rel).exists(), rel)
 
-    def test_memory_persistence_guide_uses_section_files(self) -> None:
-        text = (self.repo_root / "knowledge_files/MemoryPersistenceGuidelines.md").read_text(
+    def test_onboarding_and_init_use_upload_download_model(self) -> None:
+        onboarding = (self.repo_root / "knowledge_files/OnboardingGuidelines.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("CareerCorpus/profile.md", text)
-        self.assertIn("CareerCorpus/experience.md", text)
-        self.assertIn("CareerCorpus/projects.md", text)
-        self.assertIn("CareerCorpus/certifications.md", text)
-        self.assertIn("CareerCorpus/education.md", text)
-        self.assertIn("preferences.md", text)
-        self.assertIn("Do not save empty section files", text)
-        self.assertIn("Skills` must be inside `profile.md`", text)
-        self.assertIn("Use GitHub section files as the active working source", text)
-        self.assertIn("Read and write section files directly by intent", text)
-        self.assertIn("Read root tree non-recursively with `getGitTree`", text)
-        self.assertIn("Locate `CareerCorpus` subtree SHA", text)
-        self.assertNotIn("recursive=1", text)
-        self.assertNotIn("CareerCorpus/corpus.md", text)
-        self.assertNotIn("CareerCorpus/metadata.md", text)
-
-    def test_onboarding_uses_section_files(self) -> None:
-        text = (self.repo_root / "knowledge_files/OnboardingGuidelines.md").read_text(
+        init = (self.repo_root / "knowledge_files/InitializationGuidelines.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("one file per non-empty section", text)
-        self.assertIn("Skills are always part of Profile", text)
-        self.assertIn("No Metadata section", text)
-        self.assertIn("memory is opt-out", text)
-        self.assertIn("Default approval behavior is section-by-section review", text)
-        self.assertIn("full corpus at once", text)
-        self.assertIn("write the complete corpus draft to canvas", text)
-        self.assertIn("Push once only after final approval", text)
-        self.assertIn("canvas/session draft", text)
+        self.assertIn("downloadable `career_corpus.md`", onboarding)
+        self.assertIn("section-by-section", onboarding)
+        self.assertIn("full corpus", onboarding)
+        self.assertIn("request `career_corpus.md` upload", init)
+        self.assertNotIn("github", onboarding.lower())
+        self.assertNotIn("github", init.lower())
+        self.assertNotIn("commit", onboarding.lower())
+        self.assertNotIn("push", onboarding.lower())
 
-    def test_career_corpus_format_exists_and_matches_new_contract(self) -> None:
-        path = self.repo_root / "knowledge_files/CareerCorpusFormat.md"
-        self.assertTrue(path.exists())
-        text = path.read_text(encoding="utf-8")
-        self.assertIn("CareerCorpus/profile.md", text)
-        self.assertIn("CareerCorpus/experience.md", text)
-        self.assertIn("CareerCorpus/projects.md", text)
-        self.assertIn("CareerCorpus/certifications.md", text)
-        self.assertIn("CareerCorpus/education.md", text)
-        self.assertIn("preferences.md", text)
-        self.assertIn("Do not save an empty file", text)
-        self.assertIn("No `CareerCorpus/metadata.md`", text)
-        self.assertNotIn("## Metadata", text)
-
-    def test_initialization_uses_remote_readiness_process(self) -> None:
-        text = (self.repo_root / "knowledge_files/InitializationGuidelines.md").read_text(
+    def test_career_corpus_format_is_single_file_numbered_sections(self) -> None:
+        text = (self.repo_root / "knowledge_files/CareerCorpusFormat.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("remote repo/account readiness and file discovery", text)
-        self.assertIn("Read and write section files directly by intent/context", text)
-        self.assertIn("Get root repo tree with non-recursive `getGitTree`", text)
-        self.assertIn("Locate and read the `CareerCorpus` subtree with non-recursive `getGitTree`", text)
-        self.assertNotIn("recursive=1", text)
-        self.assertNotIn("mirror to /mnt/data/preferences.md", text)
+        self.assertIn("single corpus file: `career_corpus.md`", text)
+        self.assertIn("1. Profile", text)
+        self.assertIn("2. Experience", text)
+        self.assertIn("3. Projects", text)
+        self.assertIn("4. Certifications", text)
+        self.assertIn("5. Education", text)
+        self.assertIn("6. Preferences (optional)", text)
+        self.assertNotIn("CareerCorpus/", text)
+        self.assertNotIn("preferences.md", text)
 
 
 if __name__ == "__main__":

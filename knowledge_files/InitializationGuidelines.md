@@ -1,32 +1,24 @@
 # Initialization Guide
 
 ## Objective
-Run deterministic startup for direct GitHub markdown memory operations.
+Run deterministic startup for session-based corpus upload/download workflows.
 
-## Mandatory startup order
-1. Add `/mnt/data` to `sys.path` before Python imports.
-2. Confirm GitHub account/auth readiness.
-3. Resolve owner using `getAuthenticatedUser`.
-4. `getMemoryRepo(owner)`.
-5. If `404`, `createMemoryRepo` once, then confirm with `getMemoryRepo(owner)`.
-6. Resolve branch/head references with `getBranchRef` and `getGitCommit`.
-7. Get root repo tree with non-recursive `getGitTree`.
-8. Locate and read the `CareerCorpus` subtree with non-recursive `getGitTree`.
-9. Continue initialization with discovered tree data.
-10. Load format guide `/mnt/data/CareerCorpusFormat.md` before corpus writes.
-11. Keep initialization focused on remote repo/account readiness and file discovery.
+## Required initialization flow
+1. Confirm whether `career_corpus.md` is already uploaded in the current session.
+2. If missing, request upload before any corpus-dependent workflow.
+3. If uploaded, confirm the file is readable markdown.
+4. Parse section boundaries using `/mnt/data/CareerCorpusFormat.md`.
+5. Confirm presence/absence of core sections for the active intent.
+6. Set session state to ready when parse succeeds.
+7. If parse fails, run one deterministic retry, then return clear recovery instructions.
 
-## No-GitHub branch
-- If account/auth is not ready, stop memory flow and give concise setup steps.
+## Missing-corpus branch
+- If the user asks for JD analysis or resume drafting without corpus upload:
+  - stop the workflow,
+  - request `career_corpus.md` upload,
+  - resume only after upload succeeds.
 
-## Header contract
-- `getGitBlob` and `createGitBlob`: `Accept: application/vnd.github.raw`
-- All other calls that include `Accept`: `Accept: application/vnd.github+json`
-
-## Architecture lock
-- Use direct GitHub tool-call workflow only.
-- Corpus persistence is section-scoped files under `CareerCorpus/`.
-- User preferences persist in top-level `preferences.md` (free-form markdown).
-- Read and write section files directly by intent/context.
-- Do not write empty section files.
-- Keep skills in `profile.md`.
+## Rules
+- Use upload/download flow only.
+- Keep initialization focused on corpus readiness and section discovery.
+- Preferences are handled only as the optional Preferences section inside `career_corpus.md`.
